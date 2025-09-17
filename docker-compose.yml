@@ -1,0 +1,17 @@
+services:
+  db:
+    image: postgres:16
+    container_name: tfi_pg
+    environment:
+      POSTGRES_DB: tfi
+      POSTGRES_USER: tfi
+      POSTGRES_PASSWORD: tfi
+    ports:
+      - "5433:5432"   # <-- puerto host 5433 para no chocar con tu otro postgres
+    volumes:
+      - ./var/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tfi -d tfi"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
