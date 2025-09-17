@@ -1,3 +1,20 @@
+#services:
+#  db:
+#    image: postgres:16
+#    container_name: tfi_pg
+#    environment:
+#      POSTGRES_DB: tfi
+#      POSTGRES_USER: tfi
+#      POSTGRES_PASSWORD: tfi
+#    ports:
+#      - "5433:5432"   # <-- puerto host 5433 para no chocar con tu otro postgres
+#    volumes:
+#      - ./var/postgres:/var/lib/postgresql/data
+#    healthcheck:
+#      test: ["CMD-SHELL", "pg_isready -U tfi -d tfi"]
+#      interval: 10s
+#      timeout: 5s
+#      retries: 5
 services:
   db:
     image: postgres:16
@@ -7,11 +24,12 @@ services:
       POSTGRES_USER: tfi
       POSTGRES_PASSWORD: tfi
     ports:
-      - "5433:5432"   # <-- puerto host 5433 para no chocar con tu otro postgres
-    volumes:
-      - ./var/postgres:/var/lib/postgresql/data
+      - "5433:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U tfi -d tfi"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    # Bind mount a carpeta local (la que borraste recién)
+    volumes:
+      - ./var/postgres:/var/lib/postgresql/data
