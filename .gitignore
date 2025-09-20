@@ -33,3 +33,6 @@ build/
 .vscode/
 
 /var/postgres/
+
+# Local Postgres data (no commitear)
+var/postgres/
