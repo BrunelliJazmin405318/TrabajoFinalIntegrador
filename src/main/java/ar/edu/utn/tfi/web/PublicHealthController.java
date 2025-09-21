@@ -10,4 +10,8 @@ public class PublicHealthController {
     public Map<String, String> health() {
         return Map.of("status", "ok");
     }
+
+    @GetMapping("/public/ping")
+    public String ping() { return "ok-public"; }
 }
+
