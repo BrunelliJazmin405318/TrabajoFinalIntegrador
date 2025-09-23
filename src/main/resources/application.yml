@@ -110,6 +110,7 @@ spring:
     locations: classpath:db/migration
 
 springdoc:
+  override-with-generic-response: false
   api-docs:
     enabled: true
     path: /v3/api-docs
