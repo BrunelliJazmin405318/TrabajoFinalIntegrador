@@ -1,4 +1,6 @@
 package ar.edu.utn.tfi.web.dto;
-
-public record PublicOrderDetailsDTO() {
+import java.util.List;
+public record PublicOrderDetailsDTO(
+        PublicOrderStatusDTO estado,
+        List<OrderStageDTO> historial) {
 }
