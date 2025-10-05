@@ -23,15 +23,20 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // público
                         .requestMatchers("/public/**").permitAll()
-                        // swagger público para poder probar
+                        // swagger público
+                        .requestMatchers("/swagger-ui/**","/v3/api-docs/**","/v3/api-docs.yaml").permitAll()
+                        // estáticos y vistas públicas
                         .requestMatchers(
-                                "/swagger-ui/**",
-                                "/v3/api-docs/**",
-                                "/v3/api-docs.yaml"
+                                "/login.html",
+                                "/consulta.html",
+                                "/historial.html",
+                                "/css/**",
+                                "/js/**",
+                                "/images/**"
                         ).permitAll()
                         // admin
                         .requestMatchers("/admin/**").hasRole("ADMIN")
-                        // cualquier otra cosa autenticada
+                        // lo demás autenticado
                         .anyRequest().authenticated()
                 )
                 .httpBasic(Customizer.withDefaults()); // BASIC auth (simple para el sprint)

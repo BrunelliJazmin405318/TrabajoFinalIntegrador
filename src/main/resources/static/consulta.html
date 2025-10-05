@@ -21,6 +21,22 @@
           <li class="nav-item"><a class="nav-link active" href="/consulta.html">Consulta</a></li>
           <li class="nav-item"><a class="nav-link" href="/historial.html">Historial</a></li>
           <li class="nav-item"><a class="nav-link" href="/swagger-ui.html" target="_blank">API Docs</a></li>
+          <!-- en la navbar -->
+          <li class="nav-item"><a id="logoutLink" class="nav-link" href="#">Salir</a></li>
+
+<script type="module">
+  import { clearAuth, getAuth } from "/js/auth.js";
+  const link = document.getElementById("logoutLink");
+  if (link) {
+    // mostrar salir sólo si hay token
+    if (!getAuth()) link.classList.add("d-none");
+    link.addEventListener("click", (e)=>{
+      e.preventDefault();
+      clearAuth();
+      window.location.href = "/login.html";
+    });
+  }
+</script>
         </ul>
       </div>
     </div>
