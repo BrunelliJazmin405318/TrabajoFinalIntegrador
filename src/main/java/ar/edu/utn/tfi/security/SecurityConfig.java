@@ -32,7 +32,8 @@ public class SecurityConfig {
                                 "/historial.html",
                                 "/css/**",
                                 "/js/**",
-                                "/images/**"
+                                "/images/**",
+                                "/favicon.ico"
                         ).permitAll()
                         // admin
                         .requestMatchers("/admin/**").hasRole("ADMIN")
