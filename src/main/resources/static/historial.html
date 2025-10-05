@@ -21,22 +21,7 @@
           <li class="nav-item"><a class="nav-link" href="/consulta.html">Consulta</a></li>
           <li class="nav-item"><a class="nav-link active" href="/historial.html">Historial</a></li>
           <li class="nav-item"><a class="nav-link" href="/swagger-ui.html" target="_blank">API Docs</a></li>
-          <!-- en la navbar -->
           <li class="nav-item"><a id="logoutLink" class="nav-link" href="#">Salir</a></li>
-
-<script type="module">
-  import { clearAuth, getAuth } from "/js/auth.js";
-  const link = document.getElementById("logoutLink");
-  if (link) {
-    // mostrar salir sólo si hay token
-    if (!getAuth()) link.classList.add("d-none");
-    link.addEventListener("click", (e)=>{
-      e.preventDefault();
-      clearAuth();
-      window.location.href = "/login.html";
-    });
-  }
-</script>
         </ul>
       </div>
     </div>
@@ -65,7 +50,12 @@
       <div class="card-body">
         <div class="d-flex justify-content-between align-items-center mb-3">
           <h5 class="card-title m-0">Registro cronológico</h5>
-          <span id="chipEstado" class="status"><span class="dot"></span><span class="label">-</span></span>
+          <div class="d-flex align-items-center gap-2">
+            <span id="chipEstado" class="status"><span class="dot"></span><span class="label">-</span></span>
+            <button id="btnAvanzar" class="btn btn-outline-light btn-sm d-none" type="button">
+              <i class="bi bi-fast-forward-fill me-1"></i>Avanzar etapa
+            </button>
+          </div>
         </div>
 
         <div class="table-responsive">
@@ -134,7 +124,6 @@
       const tbody = document.querySelector("#tablaHistorial tbody");
       tbody.innerHTML = "";
 
-      // Pintamos cada fila: si no tiene fechaFin => activa; si tiene => cerrada
       historial.forEach(h => {
         const isActive = !h.fechaFin;
         const rowClass = isActive ? 'row-active' : 'row-closed';
@@ -154,6 +143,45 @@
       document.getElementById("wrapTabla").scrollIntoView({behavior:'smooth', block:'start'});
     });
   </script>
+<script type="module">
+  import { isAuthenticated, getAuthHeader } from "/js/auth.js";
+
+  const btnAvanzar = document.getElementById("btnAvanzar");
+
+  // Mostrar botón solo si está logueado como admin
+  if (isAuthenticated()) {
+    btnAvanzar.classList.remove("d-none");
+  }
+
+  // Acción del botón (usa el endpoint por NRO directamente)
+  btnAvanzar?.addEventListener("click", async () => {
+    const nro = document.getElementById("nroOrden").value.trim();
+    if (!nro) return alert("Ingresá un N° de orden primero");
+
+    try {
+      const resp = await fetch(`/admin/ordenes/${encodeURIComponent(nro)}/avanzar`, {
+        method: "POST",
+        headers: {
+          ...getAuthHeader(),
+          "Content-Type": "application/json"
+        }
+      });
+
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({}));
+        const msg = err?.message || err?.error || `Error ${resp.status}`;
+        return alert("No se pudo avanzar: " + msg);
+      }
+
+      alert("Etapa avanzada correctamente ✅");
+      // refrescá la tabla
+      document.getElementById("historialForm").dispatchEvent(new Event("submit"));
+    } catch (e) {
+      console.error(e);
+      alert("Error de red intentando avanzar.");
+    }
+  });
+</script>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
