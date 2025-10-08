@@ -18,11 +18,14 @@ public class OrderIrreparableService {
 
     private final OrdenTrabajoRepository ordenRepo;
     private final OrdenEtapaHistorialRepository historialRepo;
+    private final AuditoriaService auditoria;
 
     public OrderIrreparableService(OrdenTrabajoRepository ordenRepo,
-                                   OrdenEtapaHistorialRepository historialRepo) {
+                                   OrdenEtapaHistorialRepository historialRepo,
+                                   AuditoriaService auditoria) {
         this.ordenRepo = ordenRepo;
         this.historialRepo = historialRepo;
+        this.auditoria = auditoria;
     }
 
     @Transactional
@@ -31,14 +34,20 @@ public class OrderIrreparableService {
                 .orElseThrow(() -> new EntityNotFoundException("Orden no encontrada: " + nroOrden));
 
         String actual = (orden.getEstadoActual() == null) ? "" : orden.getEstadoActual().toUpperCase();
+
+        // Si ya está irreparable, evitamos duplicar historial/auditoría
+        if (ETAPA_IRREPARABLE.equals(actual)) {
+            return;
+        }
+
         if (!ETAPA_DIAGNOSTICO.equals(actual)) {
             throw new IllegalStateException("Sólo puede marcarse irreparable desde DIAGNOSTICO (actual: " + actual + ")");
         }
 
-        // 1) cerrar la etapa abierta (si existe) respetando el CHECK
+        // 1) cerrar etapa abierta (si existe) respetando el CHECK
         historialRepo.findTopByOrdenIdAndFechaFinIsNullOrderByFechaInicioDesc(orden.getId())
                 .ifPresent(abierta -> {
-                    LocalDateTime now = nowUtc(); // UTC
+                    LocalDateTime now = nowUtc();
                     LocalDateTime fin = now.isBefore(abierta.getFechaInicio()) ? abierta.getFechaInicio() : now;
                     abierta.setFechaFin(fin);
                     historialRepo.save(abierta);
@@ -46,17 +55,25 @@ public class OrderIrreparableService {
 
         // 2) cambiar estado
         orden.setEstadoActual(ETAPA_IRREPARABLE);
+        ordenRepo.save(orden);
 
         // 3) insertar nueva etapa
         OrdenEtapaHistorial h = new OrdenEtapaHistorial();
         h.setOrdenId(orden.getId());
         h.setEtapaCodigo(ETAPA_IRREPARABLE);
-        h.setFechaInicio(nowUtc()); // UTC
+        h.setFechaInicio(nowUtc());
         h.setObservacion("Pieza declarada irreparable");
         h.setUsuario(usuario);
-
         historialRepo.save(h);
-        ordenRepo.save(orden);
+
+        // 4) AUDITORÍA (estado_actual)
+        auditoria.registrarCambio(
+                orden.getId(),
+                "estado_actual",
+                ETAPA_DIAGNOSTICO,
+                ETAPA_IRREPARABLE,
+                usuario
+        );
     }
 
     private LocalDateTime nowUtc() {

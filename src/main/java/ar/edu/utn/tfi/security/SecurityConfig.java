@@ -11,36 +11,47 @@ import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.http.HttpMethod;
 
 @Configuration
 @EnableWebSecurity
-
 public class SecurityConfig {
+
     @Bean
     SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(csrf -> csrf.disable()) // por ahora; si más adelante usás forms/PUT, lo revisamos
+                .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        // público
-                        .requestMatchers("/public/**").permitAll()
-                        // swagger público
-                        .requestMatchers("/swagger-ui/**","/v3/api-docs/**","/v3/api-docs.yaml").permitAll()
-                        // estáticos y vistas públicas
+                        // preflight CORS
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+
+                        // páginas públicas y recursos estáticos
                         .requestMatchers(
+                                "/", "/index.html",
                                 "/login.html",
                                 "/consulta.html",
                                 "/historial.html",
-                                "/css/**",
-                                "/js/**",
-                                "/images/**",
-                                "/favicon.ico"
+                                "/css/**", "/js/**", "/images/**", "/favicon.ico",
+                                "/error"
                         ).permitAll()
-                        // admin
+
+                        // Swagger abierto
+                        .requestMatchers(
+                                "/swagger-ui.html", "/swagger-ui/**",
+                                "/v3/api-docs/**", "/v3/api-docs.yaml"
+                        ).permitAll()
+
+                        // API pública abierta
+                        .requestMatchers("/public/**").permitAll()
+
+                        // zona admin
                         .requestMatchers("/admin/**").hasRole("ADMIN")
-                        // lo demás autenticado
+
+                        // cualquier otra ruta autenticada
                         .anyRequest().authenticated()
                 )
-                .httpBasic(Customizer.withDefaults()); // BASIC auth (simple para el sprint)
+                .httpBasic(Customizer.withDefaults());
+
         return http.build();
     }
 
