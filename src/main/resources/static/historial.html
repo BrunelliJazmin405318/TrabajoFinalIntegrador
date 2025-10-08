@@ -59,6 +59,9 @@
                     <button id="btnIrreparable" class="btn btn-outline-danger btn-sm d-none" type="button">
                         ⚠️ Marcar irreparable
                     </button>
+                    <button id="btnDemora" class="btn btn-warning btn-sm d-none" type="button">
+                        🕒 Registrar demora
+                    </button>
                 </div>
             </div>
 
@@ -88,9 +91,8 @@
     </div>
 </footer>
 
-<!-- ======= LÓGICA PÚBLICA (historial + estado + pintar) ======= -->
+<!-- ======= LÓGICA PÚBLICA ======= -->
 <script>
-    // Logout visible solo si hay token guardado
     (async () => {
         try {
             const { getAuth, clearAuth } = await import("/js/auth.js");
@@ -122,38 +124,31 @@
         label.textContent = estado || '-';
     }
 
-    // NUEVO: decide visibilidad de botones admin según estado actual
+    // ✅ ACTUALIZADO: solo muestra "Registrar demora" en SEMI_ARMADO
     function updateAdminButtons(estadoActual, isAuth) {
         const btnAvanzar = document.getElementById("btnAvanzar");
         const btnIrreparable = document.getElementById("btnIrreparable");
+        const btnDemora = document.getElementById("btnDemora");
 
-        // ocultar por defecto
-        btnAvanzar.classList.add("d-none");
-        btnIrreparable.classList.add("d-none");
-        if (!isAuth) return; // si no está logueado, no se muestran
+        [btnAvanzar, btnIrreparable, btnDemora].forEach(b => b.classList.add("d-none"));
+        if (!isAuth) return;
 
         const e = (estadoActual || "").toUpperCase();
         const esIrreparable = e.includes("PIEZA_IRREPARABLE");
         const esFinal = e.includes("LISTO_RETIRAR") || e.includes("ENTREGADO");
 
-        // Avanzar: visible solo si no es irreparable ni estado final
-        if (!esIrreparable && !esFinal) {
-            btnAvanzar.classList.remove("d-none");
-        }
-        // Irreparable: visible solo en DIAGNOSTICO
-        if (e === "DIAGNOSTICO") {
-            btnIrreparable.classList.remove("d-none");
-        }
+        if (!esIrreparable && !esFinal) btnAvanzar.classList.remove("d-none");
+        if (e === "DIAGNOSTICO") btnIrreparable.classList.remove("d-none");
+
+        // 👇 sólo mostrar en SEMI_ARMADO
+        if (e === "SEMI_ARMADO") btnDemora.classList.remove("d-none");
     }
 
-    // Cargar y pintar historial + estado, y ajustar botones
     async function cargarHistorial(nro) {
-        // 1) historial
         const rHist = await fetch(`/public/ordenes/${encodeURIComponent(nro)}/historial`);
         if (!rHist.ok) { alert("Orden no encontrada"); return; }
         const historial = await rHist.json();
 
-        // 2) estado (para el chip)
         let estadoActual = '-';
         try {
             const rEst = await fetch(`/public/ordenes/${encodeURIComponent(nro)}/estado`);
@@ -163,27 +158,24 @@
             }
         } catch(_){}
 
-        // 3) pintar tabla
         const tbody = document.querySelector("#tablaHistorial tbody");
         tbody.innerHTML = "";
         historial.forEach(h => {
             const isActive = !h.fechaFin;
             const rowClass = isActive ? 'row-active' : 'row-closed';
             tbody.insertAdjacentHTML('beforeend', `
-          <tr class="${rowClass}">
-            <td><strong>${h.etapaCodigo}</strong></td>
-            <td>${fmtDate(h.fechaInicio)}</td>
-            <td>${fmtDate(h.fechaFin)}</td>
-            <td>${h.observacion || "-"}</td>
-            <td>${h.usuario || "-"}</td>
-          </tr>
-        `);
+              <tr class="${rowClass}">
+                <td><strong>${h.etapaCodigo}</strong></td>
+                <td>${fmtDate(h.fechaInicio)}</td>
+                <td>${fmtDate(h.fechaFin)}</td>
+                <td>${h.observacion || "-"}</td>
+                <td>${h.usuario || "-"}</td>
+              </tr>
+            `);
         });
 
-        // 4) pintar chip de estado
         paintStatus(document.getElementById('chipEstado'), estadoActual);
 
-        // 5) ajustar botones admin según estado y sesión
         try {
             const mod = await import("/js/auth.js");
             updateAdminButtons(estadoActual, mod.isAuthenticated());
@@ -191,12 +183,10 @@
             updateAdminButtons(estadoActual, false);
         }
 
-        // 6) mostrar card
         document.getElementById("wrapTabla").classList.remove("d-none");
         document.getElementById("wrapTabla").scrollIntoView({behavior:'smooth', block:'start'});
     }
 
-    // Submit del formulario
     document.getElementById("historialForm").addEventListener("submit", async (e) => {
         e.preventDefault();
         const nro = document.getElementById("nroOrden").value.trim();
@@ -205,14 +195,14 @@
     });
 </script>
 
-<!-- ======= ACCIONES ADMIN (avanzar / irreparable) ======= -->
+<!-- ======= ACCIONES ADMIN ======= -->
 <script type="module">
     import { isAuthenticated, getAuthHeader } from "/js/auth.js";
 
     const btnAvanzar = document.getElementById("btnAvanzar");
     const btnIrreparable = document.getElementById("btnIrreparable");
+    const btnDemora = document.getElementById("btnDemora");
 
-    // Handlers (la visibilidad ahora la decide updateAdminButtons)
     btnAvanzar?.addEventListener("click", async () => {
         const nro = document.getElementById("nroOrden").value.trim();
         if (!nro) return alert("Ingresá un N° de orden primero");
@@ -263,6 +253,47 @@
         } catch (e) {
             console.error(e);
             alert("Error de red intentando marcar irreparable.");
+        }
+    });
+
+    btnDemora?.addEventListener("click", async () => {
+        const input = document.getElementById("nroOrden");
+        const nro = input?.value?.trim();
+        if (!nro) return alert("Ingresá un N° de orden primero (y tocá 'Ver historial').");
+        if (!isAuthenticated()) return alert("Necesitás iniciar sesión.");
+
+        const motivo = prompt("Motivo de demora:");
+        if (!motivo) return alert("Debés ingresar un motivo.");
+
+        const observacion = prompt("Observación (opcional):");
+
+        try {
+            const resp = await fetch(`/admin/ordenes/${encodeURIComponent(nro)}/demora`, {
+                method: "POST",
+                headers: {
+                    ...getAuthHeader(),
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ motivo, observacion })
+            });
+
+            if (resp.status === 401) {
+                alert("Tu sesión expiró o no estás logueada. Iniciá sesión para continuar.");
+                window.location.href = "/login.html";
+                return;
+            }
+
+            if (!resp.ok) {
+                const err = await resp.json().catch(() => ({}));
+                const msg = err?.message || err?.error || `Error ${resp.status}`;
+                return alert("No se pudo registrar la demora: " + msg);
+            }
+
+            alert("Demora registrada correctamente ✅");
+            document.getElementById("historialForm").dispatchEvent(new Event("submit"));
+        } catch (e) {
+            console.error(e);
+            alert("Error al registrar demora.");
         }
     });
 </script>
