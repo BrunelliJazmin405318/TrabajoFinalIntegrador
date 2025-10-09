@@ -32,7 +32,9 @@ public class SecurityConfig {
                                 "/consulta.html",
                                 "/historial.html",
                                 "/css/**", "/js/**", "/images/**", "/favicon.ico",
-                                "/error"
+                                "/error", "/presupuesto.html",
+                                "/estado-solicitud.html",
+                                "/admin-solicitudes.html"
                         ).permitAll()
 
                         // Swagger abierto
