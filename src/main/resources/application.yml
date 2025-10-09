@@ -14,7 +14,7 @@ spring:
     activate:
       on-profile: dev
   datasource:
-    url: jdbc:postgresql://localhost:5433/tfi   # <-- 5433
+    url: jdbc:postgresql://localhost:5433/tfi
     username: tfi
     password: tfi
   jpa:
@@ -25,12 +25,20 @@ spring:
     enabled: true
     locations: classpath:db/migration
 
-#springdoc:
-#  packages-to-scan: ar.edu.utn.tfi.web
-#  swagger-ui:
-#    path: /swagger-ui
-#  api-docs:
-#    path: /v3/api-docs
+  mail:
+    host: localhost         # MailHog
+    port: 1025              # MailHog SMTP
+    username: ""            # sin auth
+    password: ""            # sin auth
+    properties:
+      mail:
+        smtp:
+          auth: false
+          starttls:
+            enable: false
+    default-encoding: UTF-8
+    test-connection: false
+
 springdoc:
   override-with-generic-response: false
 
