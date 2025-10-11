@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Admin | Presupuestos</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/styles.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark">
+    <div class="container">
+        <a class="navbar-brand" href="/presupuesto.html"><i class="bi bi-gear-fill me-2"></i>Rectificadora</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav"><span class="navbar-toggler-icon"></span></button>
+        <div id="nav" class="collapse navbar-collapse">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item"><a class="nav-link" href="/admin-solicitudes.html">Solicitudes</a></li>
+                <li class="nav-item"><a class="nav-link active" href="/admin-presupuestos.html">Presupuestos</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<main class="container page-wrap">
+    <div class="page-title">
+        <h1 class="m-0">Presupuestos</h1>
+        <span class="badge">Panel Admin</span>
+    </div>
+
+    <!-- Generación rápida -->
+    <div class="card mb-3">
+        <div class="card-body">
+            <h5 class="card-title">Generar desde solicitud aprobada</h5>
+            <form id="gen" class="row g-3">
+                <div class="col-md-2">
+                    <label class="form-label">Solicitud ID</label>
+                    <input class="form-control" name="solicitudId" required>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Tipo vehículo</label>
+                    <select class="form-select" name="vehiculoTipo" required>
+                        <option value="CONVENCIONAL">Convencional</option>
+                        <option value="IMPORTADO">Importado</option>
+                    </select>
+                </div>
+
+                <div class="col-12">
+                    <label class="form-label d-block">Servicios</label>
+
+                    <!-- Motor / Block -->
+                    <div class="row g-2">
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="srv_m001" name="servicios" value="Rectificación de cilindros">
+                                <label class="form-check-label" for="srv_m001">Rectificación de cilindros</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="srv_m002" name="servicios" value="Bruñido de cilindros">
+                                <label class="form-check-label" for="srv_m002">Bruñido de cilindros</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="srv_m003" name="servicios" value="Planeado de block">
+                                <label class="form-check-label" for="srv_m003">Planeado de block</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="srv_m004" name="servicios" value="Cambio de camisas">
+                                <label class="form-check-label" for="srv_m004">Cambio de camisas</label>
+                            </div>
+                        </div>
+
+                        <!-- Conjunto móvil -->
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="srv_m005" name="servicios" value="Rectificación de cigüeñal">
+                                <label class="form-check-label" for="srv_m005">Rectificación de cigüeñal</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="srv_m006" name="servicios" value="Pulido de cigüeñal">
+                                <label class="form-check-label" for="srv_m006">Pulido de cigüeñal</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="srv_m007" name="servicios" value="Rectificación de bielas">
+                                <label class="form-check-label" for="srv_m007">Rectificación de bielas</label>
+                            </div>
+                        </div>
+
+                        <!-- General / Ensamble -->
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="srv_m008" name="servicios" value="Limpieza de block y piezas">
+                                <label class="form-check-label" for="srv_m008">Limpieza de block y piezas</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="srv_m009" name="servicios" value="Armado de motor completo">
+                                <label class="form-check-label" for="srv_m009">Armado de motor completo</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-3 d-grid">
+                    <button class="btn btn-primary" type="submit">Generar</button>
+                </div>
+            </form>
+            <div id="genOk" class="alert alert-success mt-2 d-none"></div>
+            <div id="genErr" class="alert alert-danger mt-2 d-none"></div>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="row g-2 mb-3">
+        <div class="col-md-3">
+            <select id="fEstado" class="form-select">
+                <option value="">Todos</option>
+                <option value="PENDIENTE" selected>Pendientes</option>
+                <option value="APROBADO">Aprobados</option>
+                <option value="RECHAZADO">Rechazados</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <input id="fSolicitud" class="form-control" placeholder="Filtrar por Solicitud ID">
+        </div>
+        <div class="col-md-2 d-grid">
+            <button id="btnBuscar" class="btn btn-secondary">Buscar</button>
+        </div>
+    </div>
+
+    <!-- Tabla -->
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered align-middle mb-0">
+                    <thead>
+                    <tr>
+                        <th>ID</th><th>Solicitud</th><th>Cliente</th><th>Tipo</th><th>Total</th><th>Estado</th><th>Creada</th><th>Acciones</th>
+                    </tr>
+                    </thead>
+                    <tbody id="tbody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</main>
+
+<footer class="site-footer">
+    <div class="container d-flex justify-content-between">
+        <span>© Rectificadora — demo académica</span>
+        <span class="muted">Negro/Gris/Blanco + Rojo</span>
+    </div>
+</footer>
+
+<script type="module">
+    import { getAuthHeader, isAuthenticated } from "/js/auth.js";
+
+    const badge = est => est==='APROBADO'?'bg-success':(est==='RECHAZADO'?'bg-danger':'bg-secondary');
+    const fmt = s => s ? s.replace('T',' ').substring(0,19) : '-';
+    const money = n => new Intl.NumberFormat('es-AR',{style:'currency', currency:'ARS'}).format(n || 0);
+
+    async function cargar() {
+        if (!isAuthenticated()) { alert("Iniciá sesión admin."); location.href="/login.html"; return; }
+        const estado = document.getElementById('fEstado').value;
+        const sid = document.getElementById('fSolicitud').value.trim();
+        const qs = new URLSearchParams();
+        if (estado) qs.set('estado', estado);
+        if (sid) qs.set('solicitudId', sid);
+
+        const url = '/admin/presupuestos' + (qs.toString()?`?${qs.toString()}`:'');
+        const r = await fetch(url, { headers: { ...getAuthHeader() }});
+        const list = await r.json();
+
+        const tb = document.getElementById('tbody');
+        tb.innerHTML = '';
+        list.forEach(p => {
+            tb.insertAdjacentHTML('beforeend', `
+        <tr>
+          <td>${p.id}</td>
+          <td>${p.solicitudId ?? '-'}</td>
+          <td>${p.clienteNombre}</td>
+          <td>${p.vehiculoTipo}</td>
+          <td>${money(p.total)}</td>
+          <td><span class="badge ${badge(p.estado)}">${p.estado}</span></td>
+          <td>${fmt(p.creadaEn)}</td>
+          <td>
+            ${p.estado==='PENDIENTE' ? `
+              <button class="btn btn-success btn-sm me-1" data-act="aprobar" data-id="${p.id}">
+                <i class="bi bi-check2"></i> Aprobar
+              </button>
+              <button class="btn btn-danger btn-sm" data-act="rechazar" data-id="${p.id}">
+                <i class="bi bi-x-lg"></i> Rechazar
+              </button>` : '-'}
+          </td>
+        </tr>
+      `);
+        });
+    }
+
+    document.getElementById('btnBuscar').addEventListener('click', cargar);
+
+    document.getElementById('tbody').addEventListener('click', async (e)=>{
+        const btn = e.target.closest('button[data-act]');
+        if (!btn) return;
+        const id = btn.dataset.id, act = btn.dataset.act;
+        const nota = prompt(`${act.toUpperCase()}: nota/observación (opcional)`) || '';
+        const r = await fetch(`/admin/presupuestos/${id}/${act}`, {
+            method: 'PUT',
+            headers: { ...getAuthHeader(), 'Content-Type':'application/json' },
+            body: JSON.stringify({ nota })
+        });
+        const j = await r.json().catch(()=>({}));
+        if (!r.ok) { alert('Error: ' + (j.message||r.status)); return; }
+        alert('OK');
+        cargar();
+    });
+
+    // Generar
+    document.getElementById('gen').addEventListener('submit', async (e)=>{
+        e.preventDefault();
+        const fd = new FormData(e.target);
+        const servicios = [...document.querySelectorAll('input[name="servicios"]:checked')].map(i => i.value);
+        const payload = {
+            solicitudId: Number(fd.get('solicitudId')),
+            vehiculoTipo: fd.get('vehiculoTipo'),
+            servicios
+        };
+        try {
+            const r = await fetch('/presupuestos/generar', {
+                method:'POST',
+                headers: { ...getAuthHeader(), 'Content-Type':'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const j = await r.json().catch(()=>({}));
+            if (!r.ok) throw new Error(j.message || 'No se pudo generar');
+            const ok = document.getElementById('genOk');
+            ok.classList.remove('d-none');
+            ok.textContent = `Generado presupuesto #${j.id} por ${money(j.total)}.`;
+            document.getElementById('genErr').classList.add('d-none');
+            cargar();
+        } catch (err) {
+            const el = document.getElementById('genErr');
+            el.classList.remove('d-none');
+            el.textContent = err.message;
+        }
+    });
+
+    cargar();
+</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
