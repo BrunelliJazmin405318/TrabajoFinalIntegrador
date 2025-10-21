@@ -40,17 +40,25 @@ public class PresupuestoGestionService {
     @Transactional
     public Presupuesto generarDesdeSolicitud(Long solicitudId, String vehiculoTipo, List<String> servicios) {
         if (solicitudId == null) throw new IllegalArgumentException("solicitudId es obligatorio");
-        if (vehiculoTipo == null || vehiculoTipo.isBlank()) throw new IllegalArgumentException("vehiculoTipo es obligatorio");
-        if (servicios == null || servicios.isEmpty()) throw new IllegalArgumentException("Debe seleccionar al menos un servicio");
+        if (vehiculoTipo == null || vehiculoTipo.isBlank())
+            throw new IllegalArgumentException("vehiculoTipo es obligatorio");
+        if (servicios == null || servicios.isEmpty())
+            throw new IllegalArgumentException("Debe seleccionar al menos un servicio");
 
+        // El tipo de vehículo sí en mayúsculas (congruente con la V10)
         vehiculoTipo = vehiculoTipo.trim().toUpperCase();
-        List<String> nombres = servicios.stream().map(s -> s.trim().toUpperCase()).toList();
+
+        // NO cambiar el casing de los nombres: deben coincidir 1:1 con la DB (tienen acentos y mayúsculas/minúsculas)
+        List<String> nombres = servicios.stream()
+                .map(s -> s == null ? null : s.trim())
+                .filter(s -> s != null && !s.isEmpty())
+                .toList();
 
         // Traer solicitud
         SolicitudPresupuesto s = solicitudRepo.findById(solicitudId)
                 .orElseThrow(() -> new EntityNotFoundException("Solicitud no encontrada: " + solicitudId));
 
-        // Resolver tarifas
+        // Resolver tarifas exactas
         List<ServicioTarifa> tarifas = tarifaRepo.findByVehiculoTipoAndNombreServicioIn(vehiculoTipo, nombres);
         if (tarifas.size() != nombres.size()) {
             Set<String> hallados = new HashSet<>();
@@ -66,16 +74,16 @@ public class PresupuestoGestionService {
             total = total.add(t.getPrecio());
         }
 
-        // Crear encabezado en estado PENDIENTE
+        // Encabezado en PENDIENTE
         Presupuesto p = new Presupuesto();
         p.setSolicitudId(s.getId());
         p.setClienteNombre(s.getClienteNombre());
         p.setClienteEmail(s.getClienteEmail());
         p.setVehiculoTipo(vehiculoTipo);
-        p.setEstado("PENDIENTE");       // <-- antes era EN_REVISION
-        p.setTotal(total);              // seteo explícito del total
+        p.setEstado("PENDIENTE");
+        p.setTotal(total);                 // total explícito para cumplir NOT NULL
 
-        p = presupuestoRepo.save(p);    // persistimos encabezado
+        p = presupuestoRepo.save(p);       // persistimos encabezado para tener ID
 
         // Ítems
         for (ServicioTarifa t : tarifas) {
