@@ -44,3 +44,9 @@ springdoc:
 
 server:
   port: 8080
+
+# —— Mercado Pago ——————————————————————————————————————
+mp:
+  public-key: ${MP_PUBLIC_KEY}       # export MP_PUBLIC_KEY="APP_USR-..."
+  access-token: ${MP_ACCESS_TOKEN}   # export MP_ACCESS_TOKEN="APP_USR-..."
+  sena-percent: 0.30                 # 30% de seña

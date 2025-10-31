@@ -124,3 +124,8 @@ a:hover{ color:var(--red-600); }
 .kv .k{ color:var(--muted); min-width:160px; }
 .kv .v{ color:var(--white); }
 
+.btn.disabled, .btn:disabled {
+    opacity: 0.55;
+    pointer-events: none;
+}
+
