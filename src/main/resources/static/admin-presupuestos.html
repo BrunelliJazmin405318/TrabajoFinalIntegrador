@@ -165,87 +165,174 @@
 <script type="module">
     import { getAuthHeader, isAuthenticated } from "/js/auth.js";
 
-    const badge = est => est==='APROBADO'?'bg-success':(est==='RECHAZADO'?'bg-danger':'bg-secondary');
-    const fmt = s => s ? s.replace('T',' ').substring(0,19) : '-';
-    const money = n => new Intl.NumberFormat('es-AR',{style:'currency', currency:'ARS'}).format(n || 0);
+    const badge = function(est){
+        return est === 'APROBADO' ? 'bg-success' : (est === 'RECHAZADO' ? 'bg-danger' : 'bg-secondary');
+    };
+    const fmt = function(s){
+        return s ? s.replace('T',' ').substring(0,19) : '-';
+    };
+    const money = function(n){
+        return new Intl.NumberFormat('es-AR', { style:'currency', currency:'ARS' }).format(n || 0);
+    };
 
-    async function cargar() {
-        if (!isAuthenticated()) { alert("Iniciá sesión admin."); location.href="/login.html"; return; }
+    async function cargar () {
+        if (!isAuthenticated()) {
+            alert('Iniciá sesión admin.');
+            location.href = '/login.html';
+            return;
+        }
+
         const estado = document.getElementById('fEstado').value;
         const sid = document.getElementById('fSolicitud').value.trim();
         const qs = new URLSearchParams();
         if (estado) qs.set('estado', estado);
         if (sid) qs.set('solicitudId', sid);
 
-        const url = '/admin/presupuestos' + (qs.toString()?`?${qs.toString()}`:'');
-        const r = await fetch(url, { headers: { ...getAuthHeader() }});
+        const url = '/admin/presupuestos' + (qs.toString() ? ('?' + qs.toString()) : '');
+        const r = await fetch(url, { headers: Object.assign({}, getAuthHeader()) });
         const list = await r.json();
 
         const tb = document.getElementById('tbody');
         tb.innerHTML = '';
-        list.forEach(p => {
-            tb.insertAdjacentHTML('beforeend', `
-        <tr>
-          <td>${p.id}</td>
-          <td>${p.solicitudId ?? '-'}</td>
-          <td>${p.clienteNombre}</td>
-          <td>${p.vehiculoTipo}</td>
-          <td>${money(p.total)}</td>
-          <td><span class="badge ${badge(p.estado)}">${p.estado}</span></td>
-          <td>${fmt(p.creadaEn)}</td>
-          <td>
-            ${p.estado==='PENDIENTE' ? `
-              <button class="btn btn-success btn-sm me-1" data-act="aprobar" data-id="${p.id}">
-                <i class="bi bi-check2"></i> Aprobar
-              </button>
-              <button class="btn btn-danger btn-sm" data-act="rechazar" data-id="${p.id}">
-                <i class="bi bi-x-lg"></i> Rechazar
-              </button>` : '-'}
-          </td>
-        </tr>
-      `);
+
+        list.forEach(function (p) {
+            // Tomo un posible link guardado si tu API lo devuelve
+            // Tomo link guardado si el backend lo envía
+            var senaUrl = p.senaInitPoint || p.senaUrl || null;
+
+            var acciones = '-';
+            if (p.estado === 'PENDIENTE') {
+                acciones =
+                    '<button class="btn btn-success btn-sm me-1" data-act="aprobar" data-id="' + p.id + '">' +
+                    '<i class="bi bi-check2"></i> Aprobar' +
+                    '</button>' +
+                    '<button class="btn btn-danger btn-sm" data-act="rechazar" data-id="' + p.id + '">' +
+                    '<i class="bi bi-x-lg"></i> Rechazar' +
+                    '</button>';
+            } else if (p.estado === 'APROBADO') {
+                // si ya hay seña pendiente, bloquear "Generar" y ofrecer "Abrir link"
+                if (p.senaEstado === 'PENDIENTE' && p.senaPreferenceId) {
+                    acciones =
+                        '<button class="btn btn-warning btn-sm disabled" disabled title="Ya existe una seña pendiente">' +
+                        '<i class="bi bi-cash-coin"></i> Generar link de seña' +
+                        '</button>' +
+                        (senaUrl
+                            ? ' <a class="btn btn-outline-primary btn-sm ms-1" href="' + senaUrl + '" target="_blank" rel="noopener">Abrir link</a>'
+                            : ' <span class="text-muted small ms-1">(link no guardado)</span>');
+                } else {
+                    acciones =
+                        '<button class="btn btn-warning btn-sm" data-act="sena" data-id="' + p.id + '">' +
+                        '<i class="bi bi-cash-coin"></i> Generar link de seña' +
+                        '</button>';
+                }
+            }
+
+
+            var solicitudTxt = (p.solicitudId !== null && p.solicitudId !== undefined) ? p.solicitudId : '-';
+
+            tb.insertAdjacentHTML('beforeend',
+                '<tr>' +
+                '<td>' + p.id + '</td>' +
+                '<td>' + solicitudTxt + '</td>' +
+                '<td>' + p.clienteNombre + '</td>' +
+                '<td>' + p.vehiculoTipo + '</td>' +
+                '<td>' + money(p.total) + '</td>' +
+                '<td><span class="badge ' + badge(p.estado) + '">' + p.estado + '</span></td>' +
+                '<td>' + fmt(p.creadaEn) + '</td>' +
+                '<td>' + acciones + '</td>' +
+                '</tr>'
+            );
         });
     }
 
     document.getElementById('btnBuscar').addEventListener('click', cargar);
 
-    document.getElementById('tbody').addEventListener('click', async (e)=>{
-        const btn = e.target.closest('button[data-act]');
+    // Listener de acciones (aprobar / rechazar / seña)
+    document.getElementById('tbody').addEventListener('click', async function (e) {
+        var btn = e.target.closest('button[data-act]');
         if (!btn) return;
-        const id = btn.dataset.id, act = btn.dataset.act;
-        const nota = prompt(`${act.toUpperCase()}: nota/observación (opcional)`) || '';
-        const r = await fetch(`/admin/presupuestos/${id}/${act}`, {
-            method: 'PUT',
-            headers: { ...getAuthHeader(), 'Content-Type':'application/json' },
-            body: JSON.stringify({ nota })
-        });
-        const j = await r.json().catch(()=>({}));
-        if (!r.ok) { alert('Error: ' + (j.message||r.status)); return; }
-        alert('OK');
-        cargar();
+
+        // Evita clic si está deshabilitado visualmente
+        if (btn.classList.contains('disabled')) return;
+
+        var id = btn.dataset.id;
+        var act = btn.dataset.act;
+
+        // ---- Aprobación / Rechazo ----
+        if (act === 'aprobar' || act === 'rechazar') {
+            var titulo = act.toUpperCase() + ': nota/observación (opcional)';
+            var nota = prompt(titulo) || '';
+            var r = await fetch('/admin/presupuestos/' + id + '/' + act, {
+                method: 'PUT',
+                headers: Object.assign({ 'Content-Type': 'application/json' }, getAuthHeader()),
+                body: JSON.stringify({ nota: nota })
+            });
+            var j = await r.json().catch(function(){ return {}; });
+            if (!r.ok) {
+                alert('Error: ' + (j.message || r.status));
+                return;
+            }
+            alert('OK');
+            await cargar();
+            return;
+        }
+
+        // ---- Generar link de seña ----
+        if (act === 'sena') {
+            var confirmar = confirm('¿Generar link de seña (30%) para el presupuesto #' + id + '?');
+            if (!confirmar) return;
+
+            var r2 = await fetch('/admin/pagos/link-sena/' + id, {
+                method: 'POST',
+                headers: Object.assign({}, getAuthHeader())
+            });
+            var j2 = await r2.json().catch(function(){ return {}; });
+            if (!r2.ok) {
+                alert('Error: ' + (j2.message || r2.status));
+                return;
+            }
+
+            // abrir primero (evita bloqueo de popups) y luego avisar
+            // Abrimos solo UNA pestaña
+            if (j2.url) {
+                window.open(j2.url, '_blank', 'noopener'); // abrir Mercado Pago
+            }
+
+            // Mostrar mensaje sin volver a abrir el link
+            alert('✅ Seña generada por ' + money(j2.monto) + '.');
+
+            await cargar();
+            return;
+        }
     });
 
-    // Generar
-    document.getElementById('gen').addEventListener('submit', async (e)=>{
+
+    // Generar presupuesto rápido
+    document.getElementById('gen').addEventListener('submit', async function(e){
         e.preventDefault();
         const fd = new FormData(e.target);
-        const servicios = [...document.querySelectorAll('input[name="servicios"]:checked')].map(i => i.value);
+        const checkboxes = document.querySelectorAll('input[name="servicios"]:checked');
+        const servicios = [];
+        for (var i=0; i<checkboxes.length; i++) { servicios.push(checkboxes[i].value); }
+
         const payload = {
             solicitudId: Number(fd.get('solicitudId')),
             vehiculoTipo: fd.get('vehiculoTipo'),
-            servicios
+            servicios: servicios
         };
+
         try {
             const r = await fetch('/presupuestos/generar', {
-                method:'POST',
-                headers: { ...getAuthHeader(), 'Content-Type':'application/json' },
+                method: 'POST',
+                headers: Object.assign({ 'Content-Type':'application/json' }, getAuthHeader()),
                 body: JSON.stringify(payload)
             });
-            const j = await r.json().catch(()=>({}));
+            const j = await r.json().catch(function(){ return {}; });
             if (!r.ok) throw new Error(j.message || 'No se pudo generar');
+
             const ok = document.getElementById('genOk');
             ok.classList.remove('d-none');
-            ok.textContent = `Generado presupuesto #${j.id} por ${money(j.total)}.`;
+            ok.textContent = 'Generado presupuesto #' + j.id + ' por ' + money(j.total) + '.';
             document.getElementById('genErr').classList.add('d-none');
             cargar();
         } catch (err) {
