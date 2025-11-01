@@ -3,10 +3,14 @@
 <head>
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Admin | Presupuestos</title>
+    <title>Admin | Presupuestos (Checkout API)</title>
+
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="/css/styles.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+
+    <!-- SDK MP v2 -->
+    <script src="https://sdk.mercadopago.com/js/v2"></script>
 </head>
 <body>
 <nav class="navbar navbar-expand-lg navbar-dark">
@@ -23,9 +27,10 @@
 </nav>
 
 <main class="container page-wrap">
-    <div class="page-title">
+    <div class="page-title d-flex align-items-center gap-2 my-3">
         <h1 class="m-0">Presupuestos</h1>
         <span class="badge">Panel Admin</span>
+        <span class="badge text-bg-info">Checkout API</span>
     </div>
 
     <!-- Generación rápida -->
@@ -47,8 +52,6 @@
 
                 <div class="col-12">
                     <label class="form-label d-block">Servicios</label>
-
-                    <!-- Motor / Block -->
                     <div class="row g-2">
                         <div class="col-md-6">
                             <div class="form-check">
@@ -75,7 +78,6 @@
                             </div>
                         </div>
 
-                        <!-- Conjunto móvil -->
                         <div class="col-md-6">
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" id="srv_m005" name="servicios" value="Rectificación de cigüeñal">
@@ -95,7 +97,6 @@
                             </div>
                         </div>
 
-                        <!-- General / Ensamble -->
                         <div class="col-md-6">
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" id="srv_m008" name="servicios" value="Limpieza de block y piezas">
@@ -162,25 +163,39 @@
     </div>
 </footer>
 
+<!-- Modal MP (Brick tarjeta) -->
+<div class="modal fade" id="mpModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark text-light">
+            <div class="modal-header">
+                <h5 class="modal-title">Cobrar seña</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="mp-card-container"></div>
+                <div id="mp-status" class="small mt-2 text-muted"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script type="module">
     import { getAuthHeader, isAuthenticated } from "/js/auth.js";
 
-    const badge = function(est){
-        return est === 'APROBADO' ? 'bg-success' : (est === 'RECHAZADO' ? 'bg-danger' : 'bg-secondary');
-    };
-    const fmt = function(s){
-        return s ? s.replace('T',' ').substring(0,19) : '-';
-    };
-    const money = function(n){
-        return new Intl.NumberFormat('es-AR', { style:'currency', currency:'ARS' }).format(n || 0);
-    };
+    // —— Utils UI ——
+    const badge = (est) => est === 'APROBADO' ? 'bg-success' : (est === 'RECHAZADO' ? 'bg-danger' : 'bg-secondary');
+    const fmt   = (s) => s ? s.replace('T',' ').substring(0,19) : '-';
+    const money = (n) => new Intl.NumberFormat('es-AR', { style:'currency', currency:'ARS' }).format(n || 0);
 
+    // —— MP (TEST) ——
+    const MP_PUBLIC_KEY = 'TEST-57f55bd7-4769-45fe-8268-c776df0b3791'; // tu KEY TEST
+    const mp = new MercadoPago(MP_PUBLIC_KEY);
+    const bricksBuilder = mp.bricks();
+    let currentBrick = null;
+
+    // —— Carga de grilla ——
     async function cargar () {
-        if (!isAuthenticated()) {
-            alert('Iniciá sesión admin.');
-            location.href = '/login.html';
-            return;
-        }
+        if (!isAuthenticated()) { alert('Iniciá sesión admin.'); location.href = '/login.html'; return; }
 
         const estado = document.getElementById('fEstado').value;
         const sid = document.getElementById('fSolicitud').value.trim();
@@ -189,57 +204,49 @@
         if (sid) qs.set('solicitudId', sid);
 
         const url = '/admin/presupuestos' + (qs.toString() ? ('?' + qs.toString()) : '');
-        const r = await fetch(url, { headers: Object.assign({}, getAuthHeader()) });
+        const r = await fetch(url, { headers: { ...getAuthHeader() } });
         const list = await r.json();
 
         const tb = document.getElementById('tbody');
         tb.innerHTML = '';
 
-        list.forEach(function (p) {
-            // Tomo un posible link guardado si tu API lo devuelve
-            // Tomo link guardado si el backend lo envía
-            var senaUrl = p.senaInitPoint || p.senaUrl || null;
+        list.forEach((p) => {
+            let acciones = '-';
 
-            var acciones = '-';
             if (p.estado === 'PENDIENTE') {
                 acciones =
-                    '<button class="btn btn-success btn-sm me-1" data-act="aprobar" data-id="' + p.id + '">' +
+                    '<button class="btn btn-success btn-sm me-1" data-act="aprobar" data-id="'+p.id+'">' +
                     '<i class="bi bi-check2"></i> Aprobar' +
                     '</button>' +
-                    '<button class="btn btn-danger btn-sm" data-act="rechazar" data-id="' + p.id + '">' +
+                    '<button class="btn btn-danger btn-sm" data-act="rechazar" data-id="'+p.id+'">' +
                     '<i class="bi bi-x-lg"></i> Rechazar' +
                     '</button>';
             } else if (p.estado === 'APROBADO') {
-                // si ya hay seña pendiente, bloquear "Generar" y ofrecer "Abrir link"
-                if (p.senaEstado === 'PENDIENTE' && p.senaPreferenceId) {
+                if (p.senaEstado === 'ACREDITADA') {
                     acciones =
-                        '<button class="btn btn-warning btn-sm disabled" disabled title="Ya existe una seña pendiente">' +
-                        '<i class="bi bi-cash-coin"></i> Generar link de seña' +
-                        '</button>' +
-                        (senaUrl
-                            ? ' <a class="btn btn-outline-primary btn-sm ms-1" href="' + senaUrl + '" target="_blank" rel="noopener">Abrir link</a>'
-                            : ' <span class="text-muted small ms-1">(link no guardado)</span>');
+                        '<span class="badge bg-success me-2">Seña acreditada</span>' +
+                        (p.senaPaymentId ? '<span class="text-muted">#' + p.senaPaymentId + '</span>' : '');
                 } else {
+                    // Botón para abrir el Brick
                     acciones =
-                        '<button class="btn btn-warning btn-sm" data-act="sena" data-id="' + p.id + '">' +
-                        '<i class="bi bi-cash-coin"></i> Generar link de seña' +
+                        '<button class="btn btn-primary btn-sm" data-act="cobrar" data-id="'+p.id+'">' +
+                        '<i class="bi bi-credit-card"></i> Cobrar seña' +
                         '</button>';
                 }
             }
 
-
-            var solicitudTxt = (p.solicitudId !== null && p.solicitudId !== undefined) ? p.solicitudId : '-';
+            const solicitudTxt = (p.solicitudId !== null && p.solicitudId !== undefined) ? p.solicitudId : '-';
 
             tb.insertAdjacentHTML('beforeend',
                 '<tr>' +
-                '<td>' + p.id + '</td>' +
-                '<td>' + solicitudTxt + '</td>' +
-                '<td>' + p.clienteNombre + '</td>' +
-                '<td>' + p.vehiculoTipo + '</td>' +
-                '<td>' + money(p.total) + '</td>' +
-                '<td><span class="badge ' + badge(p.estado) + '">' + p.estado + '</span></td>' +
-                '<td>' + fmt(p.creadaEn) + '</td>' +
-                '<td>' + acciones + '</td>' +
+                '<td>'+p.id+'</td>' +
+                '<td>'+solicitudTxt+'</td>' +
+                '<td>'+p.clienteNombre+'</td>' +
+                '<td>'+p.vehiculoTipo+'</td>' +
+                '<td>'+money(p.total)+'</td>' +
+                '<td><span class="badge '+badge(p.estado)+'">'+p.estado+'</span></td>' +
+                '<td>'+fmt(p.creadaEn)+'</td>' +
+                '<td>'+acciones+'</td>' +
                 '</tr>'
             );
         });
@@ -247,92 +254,109 @@
 
     document.getElementById('btnBuscar').addEventListener('click', cargar);
 
-    // Listener de acciones (aprobar / rechazar / seña)
-    document.getElementById('tbody').addEventListener('click', async function (e) {
-        var btn = e.target.closest('button[data-act]');
+    // —— Acciones en la tabla ——
+    document.getElementById('tbody').addEventListener('click', async (e) => {
+        const btn = e.target.closest('button[data-act]');
         if (!btn) return;
 
-        // Evita clic si está deshabilitado visualmente
-        if (btn.classList.contains('disabled')) return;
+        const id  = btn.dataset.id;
+        const act = btn.dataset.act;
 
-        var id = btn.dataset.id;
-        var act = btn.dataset.act;
-
-        // ---- Aprobación / Rechazo ----
+        // Aprobar / Rechazar
         if (act === 'aprobar' || act === 'rechazar') {
-            var titulo = act.toUpperCase() + ': nota/observación (opcional)';
-            var nota = prompt(titulo) || '';
-            var r = await fetch('/admin/presupuestos/' + id + '/' + act, {
+            const nota = prompt(act.toUpperCase()+': nota/observación (opcional)') || '';
+            const r = await fetch('/admin/presupuestos/'+id+'/'+act, {
                 method: 'PUT',
-                headers: Object.assign({ 'Content-Type': 'application/json' }, getAuthHeader()),
-                body: JSON.stringify({ nota: nota })
+                headers: { 'Content-Type':'application/json', ...getAuthHeader() },
+                body: JSON.stringify({ nota })
             });
-            var j = await r.json().catch(function(){ return {}; });
-            if (!r.ok) {
-                alert('Error: ' + (j.message || r.status));
-                return;
-            }
+            const j = await r.json().catch(()=> ({}));
+            if (!r.ok) { alert('Error: '+(j.message || r.status)); return; }
             alert('OK');
             await cargar();
             return;
         }
 
-        // ---- Generar link de seña ----
-        if (act === 'sena') {
-            var confirmar = confirm('¿Generar link de seña (30%) para el presupuesto #' + id + '?');
-            if (!confirmar) return;
+        // Cobrar con tarjeta (Checkout API + Bricks)
+        if (act === 'cobrar') {
+            // 1) Traer info de seña (monto, email sugerido)
+            const rInfo = await fetch(`/admin/pagos/api/info-sena/${id}`, { headers: { ...getAuthHeader() } });
+            if (!rInfo.ok) { alert('No se pudo obtener la info de la seña'); return; }
+            const info = await rInfo.json();
 
-            var r2 = await fetch('/admin/pagos/link-sena/' + id, {
-                method: 'POST',
-                headers: Object.assign({}, getAuthHeader())
+            // 2) Abrir modal
+            const modalEl = document.getElementById('mpModal');
+            const modal = new bootstrap.Modal(modalEl);
+            modal.show();
+
+            // 3) Render del Brick
+            const cont = document.getElementById('mp-card-container');
+            cont.innerHTML = '';
+            document.getElementById('mp-status').textContent = 'Ingrese tarjeta de prueba (MP Sandbox).';
+
+            if (currentBrick) { try { await currentBrick.unmount(); } catch (_){} }
+
+            currentBrick = await bricksBuilder.create('cardPayment', 'mp-card-container', {
+                initialization: {
+                    amount: info.monto,                 // ARS
+                    payer: { email: info.emailSugerido || '' }
+                },
+                customization: {
+                    paymentMethods: { maxInstallments: 1 }
+                },
+                callbacks: {
+                    onReady: () => {},
+                    onSubmit: async (formData) => {
+                        // 4) Enviar al backend (captura)
+                        const rPay = await fetch(`/admin/pagos/api/cobrar-sena/${id}`, {
+                            method: 'POST',
+                            headers: { 'Content-Type':'application/json', ...getAuthHeader() },
+                            body: JSON.stringify(formData)
+                        });
+                        const j = await rPay.json().catch(()=> ({}));
+
+                        if (!rPay.ok || j.status !== 'approved') {
+                            document.getElementById('mp-status').textContent = 'No pudimos procesar el pago: ' + (j.message || rPay.status);
+                            return;
+                        }
+
+                        modal.hide();
+                        alert('Seña acreditada. Pago #' + j.id);
+                        await cargar();
+                    },
+                    onError: (error) => {
+                        document.getElementById('mp-status').textContent = 'Error: ' + (error?.message || error);
+                    }
+                }
             });
-            var j2 = await r2.json().catch(function(){ return {}; });
-            if (!r2.ok) {
-                alert('Error: ' + (j2.message || r2.status));
-                return;
-            }
-
-            // abrir primero (evita bloqueo de popups) y luego avisar
-            // Abrimos solo UNA pestaña
-            if (j2.url) {
-                window.open(j2.url, '_blank', 'noopener'); // abrir Mercado Pago
-            }
-
-            // Mostrar mensaje sin volver a abrir el link
-            alert('✅ Seña generada por ' + money(j2.monto) + '.');
-
-            await cargar();
-            return;
         }
     });
 
-
-    // Generar presupuesto rápido
-    document.getElementById('gen').addEventListener('submit', async function(e){
+    // —— Generar presupuesto rápido ——
+    document.getElementById('gen').addEventListener('submit', async (e) => {
         e.preventDefault();
         const fd = new FormData(e.target);
-        const checkboxes = document.querySelectorAll('input[name="servicios"]:checked');
-        const servicios = [];
-        for (var i=0; i<checkboxes.length; i++) { servicios.push(checkboxes[i].value); }
+        const checks = document.querySelectorAll('input[name="servicios"]:checked');
+        const servicios = Array.from(checks).map(i => i.value);
 
         const payload = {
             solicitudId: Number(fd.get('solicitudId')),
             vehiculoTipo: fd.get('vehiculoTipo'),
-            servicios: servicios
+            servicios
         };
 
         try {
             const r = await fetch('/presupuestos/generar', {
                 method: 'POST',
-                headers: Object.assign({ 'Content-Type':'application/json' }, getAuthHeader()),
+                headers: { 'Content-Type':'application/json', ...getAuthHeader() },
                 body: JSON.stringify(payload)
             });
-            const j = await r.json().catch(function(){ return {}; });
+            const j = await r.json().catch(()=> ({}));
             if (!r.ok) throw new Error(j.message || 'No se pudo generar');
 
             const ok = document.getElementById('genOk');
             ok.classList.remove('d-none');
-            ok.textContent = 'Generado presupuesto #' + j.id + ' por ' + money(j.total) + '.';
+            ok.textContent = 'Generado presupuesto #'+j.id+' por '+money(j.total)+'.';
             document.getElementById('genErr').classList.add('d-none');
             cargar();
         } catch (err) {
@@ -342,8 +366,10 @@
         }
     });
 
-    cargar();
+    // Init
+    window.addEventListener('DOMContentLoaded', cargar);
 </script>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

@@ -57,6 +57,15 @@ public class Presupuesto {
     @Column(name = "sena_init_point")
     private String senaInitPoint;
 
+    @Column(name = "sena_payment_id")
+    private String senaPaymentId;
+
+    @Column(name = "sena_payment_status")
+    private String senaPaymentStatus;
+
+    @Column(name = "sena_paid_at")
+    private LocalDateTime senaPaidAt;
+
 
 
     @PrePersist

@@ -25,6 +25,7 @@ public class PresupuestoPagoService {
     private final PresupuestoRepository presupuestoRepo;
     private final MercadoPagoService mercadoPagoService;
 
+
     // Si querés parametrizar el porcentaje por config, podés inyectarlo con @Value
     private static final BigDecimal PORCENTAJE_SENA = new BigDecimal("0.30");
 
@@ -47,6 +48,7 @@ public class PresupuestoPagoService {
         Presupuesto p = presupuestoRepo.findById(presupuestoId)
                 .orElseThrow(() -> new EntityNotFoundException("No existe presupuesto: " + presupuestoId));
 
+        // ✅ Validaciones básicas
         if (!"APROBADO".equalsIgnoreCase(safe(p.getEstado()))) {
             throw new IllegalStateException("La seña solo se puede generar si el presupuesto está APROBADO.");
         }
@@ -54,12 +56,12 @@ public class PresupuestoPagoService {
             throw new IllegalStateException("El presupuesto no tiene un total válido para calcular la seña.");
         }
 
-        // 30% con 2 decimales
+        // ✅ Calcular 30% con 2 decimales
         BigDecimal montoSena = p.getTotal()
                 .multiply(PORCENTAJE_SENA)
                 .setScale(2, RoundingMode.HALF_UP);
 
-        // 1) Si ya hay una seña PENDIENTE con link guardado, reutilizar
+        // ✅ Si ya hay una seña pendiente con link guardado, reutilizar
         if ("PENDIENTE".equalsIgnoreCase(safe(p.getSenaEstado())) && notBlank(p.getSenaPreferenceId())) {
             if (notBlank(p.getSenaInitPoint())) {
                 return new LinkPagoDTO(
@@ -68,22 +70,18 @@ public class PresupuestoPagoService {
                         p.getSenaInitPoint()
                 );
             }
-            // 2) Si no tenemos el link guardado, intentar obtenerlo por preferenceId (si tu helper lo soporta)
+            // Intentar recuperar el link si no estaba guardado
             String urlPorId = mercadoPagoService.linkDePreferencia(p.getSenaPreferenceId());
             if (notBlank(urlPorId)) {
                 p.setSenaInitPoint(urlPorId);
                 if (p.getSenaMonto() == null) p.setSenaMonto(montoSena);
                 presupuestoRepo.save(p);
-                return new LinkPagoDTO(
-                        p.getId(),
-                        p.getSenaMonto(),
-                        urlPorId
-                );
+                return new LinkPagoDTO(p.getId(), p.getSenaMonto(), urlPorId);
             }
-            // 3) Si tampoco se puede recuperar, seguimos a regenerar la preferencia (evitarlo si no querés duplicados).
+            // Si no puede recuperarlo, se genera una nueva preferencia
         }
 
-        // 4) Crear preferencia nueva en Mercado Pago
+        // ✅ Crear preferencia nueva en Mercado Pago
         Preference pref = mercadoPagoService.crearPreferenciaSena(
                 p.getId(),
                 montoSena,
@@ -91,21 +89,28 @@ public class PresupuestoPagoService {
                 p.getClienteEmail()
         );
 
-        // URL utilizable (sandbox o prod)
-        String url = pref.getInitPoint() != null ? pref.getInitPoint() : pref.getSandboxInitPoint();
+        System.out.println("[MP PREF] id=" + pref.getId()
+                + " init=" + pref.getInitPoint()
+                + " sandbox=" + pref.getSandboxInitPoint());
 
-        // 5) Persistir datos de la seña (incluye el link)
+        // ⚠ USAR SIEMPRE SANDBOX PARA TESTEO
+        String url = (pref.getSandboxInitPoint() != null && !pref.getSandboxInitPoint().isBlank())
+                ? pref.getSandboxInitPoint()
+                : pref.getInitPoint();
+
+        if (url == null || url.isBlank()) {
+            throw new IllegalStateException("MercadoPago no devolvió ningún link válido para la preferencia " + pref.getId());
+        }
+
+        // ✅ Guardar datos de la seña en la entidad
         p.setSenaMonto(montoSena);
         p.setSenaPreferenceId(pref.getId());
         p.setSenaEstado("PENDIENTE");
-
-// Tomamos la URL utilizable (sandbox o init normal según modo)
-        String initPoint = pref.getInitPoint() != null ? pref.getInitPoint() : pref.getSandboxInitPoint();
-        p.setSenaInitPoint(initPoint); // <-- GUARDAR LINK
-
+        p.setSenaInitPoint(url);
         presupuestoRepo.save(p);
 
-        return new LinkPagoDTO(p.getId(), montoSena, initPoint);
+        // ✅ Devolver al front
+        return new LinkPagoDTO(p.getId(), montoSena, url);
     }
     /**
      * Marca la seña como ACREDITADA dado un preferenceId.

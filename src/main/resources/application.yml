@@ -47,6 +47,13 @@ server:
 
 # —— Mercado Pago ——————————————————————————————————————
 mp:
-  public-key: ${MP_PUBLIC_KEY}       # export MP_PUBLIC_KEY="APP_USR-..."
-  access-token: ${MP_ACCESS_TOKEN}   # export MP_ACCESS_TOKEN="APP_USR-..."
-  sena-percent: 0.30                 # 30% de seña
+  api:
+    public-key: TEST-57f55bd7-4769-45fe-8268-c776df0b3791
+    access-token: TEST-4873687935529088-103120-fe51dfbb79ff5e60c5cb340551bd4715-806147879
+  sena-percent: 0.30
+
+# —— Base URL para integraciones (HU11 webhook) —————————
+app:
+  base-url: ${APP_PUBLIC_BASE_URL:https://predependent-cindy-inbond.ngrok-free.dev}
+  public-base-url: ${APP_PUBLIC_BASE_URL:https://predependent-cindy-inbond.ngrok-free.dev}
+

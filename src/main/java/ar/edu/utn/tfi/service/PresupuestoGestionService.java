@@ -8,7 +8,10 @@ import ar.edu.utn.tfi.repository.PresupuestoItemRepository;
 import ar.edu.utn.tfi.repository.PresupuestoRepository;
 import ar.edu.utn.tfi.repository.ServicioTarifaRepository;
 import ar.edu.utn.tfi.repository.SolicitudPresupuestoRepository;
+import ar.edu.utn.tfi.service.Pagos.PaymentApiService;
+import ar.edu.utn.tfi.web.dto.PagoApiReq;
 import jakarta.persistence.EntityNotFoundException;
+import org.flywaydb.core.internal.util.StringUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,17 +27,20 @@ public class PresupuestoGestionService {
     private final PresupuestoRepository presupuestoRepo;
     private final PresupuestoItemRepository itemRepo;
     private final MailService mailService;
+    private final PaymentApiService paymentApiService;
 
     public PresupuestoGestionService(SolicitudPresupuestoRepository solicitudRepo,
                                      ServicioTarifaRepository tarifaRepo,
                                      PresupuestoRepository presupuestoRepo,
                                      PresupuestoItemRepository itemRepo,
-                                     MailService mailService) {
+                                     MailService mailService,
+                                     PaymentApiService paymentApiService) {
         this.solicitudRepo = solicitudRepo;
         this.tarifaRepo = tarifaRepo;
         this.presupuestoRepo = presupuestoRepo;
         this.itemRepo = itemRepo;
         this.mailService = mailService;
+        this.paymentApiService = paymentApiService;
     }
 
     @Transactional
@@ -105,9 +111,19 @@ public class PresupuestoGestionService {
 
     @Transactional(readOnly = true)
     public List<Presupuesto> listar(String estado, Long solicitudId) {
-        if (solicitudId != null) return presupuestoRepo.findBySolicitudIdOrderByCreadaEnDesc(solicitudId);
-        if (estado == null || estado.isBlank()) return presupuestoRepo.findAllByOrderByCreadaEnDesc();
-        return presupuestoRepo.findByEstadoOrderByCreadaEnDesc(estado.trim().toUpperCase());
+        boolean hasEstado = StringUtils.hasText(estado);
+        boolean hasSolicitud = (solicitudId != null);
+
+        if (hasEstado && hasSolicitud) {
+            return presupuestoRepo.findAllByEstadoAndSolicitudIdOrderByCreadaEnDesc(estado, solicitudId);
+        }
+        if (hasEstado) {
+            return presupuestoRepo.findAllByEstadoOrderByCreadaEnDesc(estado);
+        }
+        if (hasSolicitud) {
+            return presupuestoRepo.findAllBySolicitudIdOrderByCreadaEnDesc(solicitudId);
+        }
+        return presupuestoRepo.findAllByOrderByCreadaEnDesc();
     }
 
     @Transactional
@@ -140,5 +156,49 @@ public class PresupuestoGestionService {
 
         mailService.enviarDecisionPresupuesto(saved);
         return saved;
+    }
+    @Transactional
+    public Presupuesto cobrarSenaApi(Long presupuestoId, PagoApiReq req) {
+        Presupuesto p = presupuestoRepo.findById(presupuestoId)
+                .orElseThrow(() -> new EntityNotFoundException("No existe presupuesto: " + presupuestoId));
+
+        if (!"APROBADO".equalsIgnoreCase(p.getEstado())) {
+            throw new IllegalStateException("Solo se puede cobrar seña si el presupuesto está APROBADO.");
+        }
+
+        BigDecimal monto = p.getTotal()
+                .multiply(BigDecimal.valueOf(0.30))
+                .setScale(2, java.math.RoundingMode.HALF_UP);
+
+        Map<String, Object> resp = paymentApiService.crearPago(
+                monto,
+                "Seña presupuesto #" + p.getId(),
+                req.token(),
+                req.paymentMethodId(),
+                req.installments(),
+                req.issuerId(),
+                req.payerEmail()
+        );
+
+        String status = String.valueOf(resp.getOrDefault("status", ""));
+        String payId = String.valueOf(resp.getOrDefault("id", ""));
+        String dateApproved = String.valueOf(resp.get("date_approved"));
+
+        if ("approved".equalsIgnoreCase(status)) {
+            p.setSenaEstado("ACREDITADA");
+        } else {
+            p.setSenaEstado("PENDIENTE");
+        }
+
+        p.setSenaPaymentId(payId);
+        p.setSenaPaymentStatus(status);
+        if (dateApproved != null && !"null".equals(dateApproved)) {
+            try {
+                p.setSenaPaidAt(java.time.OffsetDateTime.parse(dateApproved).toLocalDateTime());
+            } catch (Exception ignored) {}
+        }
+        p.setSenaMonto(monto);
+
+        return presupuestoRepo.save(p);
     }
 }
