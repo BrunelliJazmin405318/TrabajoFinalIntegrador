@@ -1,7 +1,8 @@
-// src/main/java/ar/edu/utn/tfi/service/Pagos/WebhookPagoService.java
 package ar.edu.utn.tfi.service.Pagos;
 
+import ar.edu.utn.tfi.domain.MpEventLog;
 import ar.edu.utn.tfi.domain.Presupuesto;
+import ar.edu.utn.tfi.repository.MpEventLogRepository;
 import ar.edu.utn.tfi.repository.PresupuestoRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Value;
@@ -21,39 +22,48 @@ import java.util.Optional;
 public class WebhookPagoService {
 
     private final PresupuestoRepository presupuestoRepo;
+    private final MpEventLogRepository eventRepo;
     private final WebClient webClient;
 
     // ⚠ Usar la misma key que en PaymentApiService
     @Value("${mp.api.access-token}")
     private String accessToken;
 
-    public WebhookPagoService(PresupuestoRepository presupuestoRepo, WebClient.Builder builder) {
+    public WebhookPagoService(PresupuestoRepository presupuestoRepo,
+                              MpEventLogRepository eventRepo,
+                              WebClient.Builder builder) {
         this.presupuestoRepo = presupuestoRepo;
+        this.eventRepo = eventRepo;
         this.webClient = builder.baseUrl("https://api.mercadopago.com").build();
     }
 
     @Transactional
-    public void procesarNotificacion(String topic, String dataId) {
+    public void procesarNotificacion(String topic, String dataId, String xRequestId) {
         if (topic == null || topic.isBlank() || dataId == null || dataId.isBlank()) return;
 
-        Long paymentId      = null;
-        String paymentStatus= null;
-        LocalDateTime paidAt= null;
+        // ---- Idempotencia (si viene x-request-id lo usamos para no procesar duplicados) ----
+        if (xRequestId != null && !xRequestId.isBlank()) {
+            if (eventRepo.existsByRequestId(xRequestId)) {
+                System.out.println("[WEBHOOK] Duplicado ignorado: " + xRequestId);
+                return;
+            }
+            eventRepo.save(new MpEventLog(xRequestId, topic, dataId));
+        }
 
-        // Para mapear al presupuesto (sin preferenceId):
-        Long presupuestoId  = null;                   // ← target
-        String extRef       = null;                   // external_reference
+        Long paymentId       = null;
+        String paymentStatus = null;
+        LocalDateTime paidAt = null;
+
+        Long presupuestoId   = null;   // mapeo al presupuesto
+        String extRef        = null;   // external_reference
 
         if ("merchant_order".equalsIgnoreCase(topic)) {
-            // GET /merchant_orders/{id}
             Map<String, Object> mo = getJson("/merchant_orders/" + dataId);
             if (mo == null) return;
 
-            // MP incluye external_reference a nivel de orden
             extRef = getString(mo, "external_reference");
             presupuestoId = tryParsePresupuestoIdFromExternalRef(extRef);
 
-            // Tomamos primer pago (si existe) para status/fecha/id
             List<Map<String, Object>> payments = getListOfMaps(mo, "payments");
             if (payments != null && !payments.isEmpty()) {
                 Map<String, Object> primero = payments.get(0);
@@ -63,7 +73,6 @@ public class WebhookPagoService {
             }
 
         } else if ("payment".equalsIgnoreCase(topic)) {
-            // GET /v1/payments/{id}
             Map<String, Object> pr = getJson("/v1/payments/" + dataId);
             if (pr == null) return;
 
@@ -71,7 +80,6 @@ public class WebhookPagoService {
             paymentStatus = getString(pr, "status");
             paidAt        = toLocalDateTime(getString(pr, "date_approved"));
 
-            // 1) metadata.presupuesto_id (si lo mandamos al crear el pago)
             Map<String, Object> md = getMap(pr, "metadata");
             if (md != null) {
                 Object pid = md.get("presupuesto_id");
@@ -81,19 +89,17 @@ public class WebhookPagoService {
                     try { presupuestoId = Long.parseLong(String.valueOf(pid)); } catch (Exception ignored) {}
                 }
             }
-
-            // 2) external_reference = "PRESUPUESTO-123"
             if (presupuestoId == null) {
                 extRef = getString(pr, "external_reference");
                 presupuestoId = tryParsePresupuestoIdFromExternalRef(extRef);
             }
+
         } else {
             // Ignorar otros tópicos
             return;
         }
 
         if (presupuestoId == null) {
-            // No podemos mapear el pago al presupuesto: no romper (MP reintenta si fallamos)
             System.err.println("[WEBHOOK-MP] No se pudo resolver presupuestoId (extRef=" + extRef + ")");
             return;
         }
@@ -103,7 +109,7 @@ public class WebhookPagoService {
         Presupuesto p = presupuestoRepo.findById(pid)
                 .orElseThrow(() -> new EntityNotFoundException("No hay presupuesto id=" + pid));
 
-        // Idempotencia simple
+        // Idempotencia funcional: si ya quedó acreditada y el pago viene approved otra vez, no tocar
         if ("ACREDITADA".equalsIgnoreCase(Objects.toString(p.getSenaEstado(), "")) &&
                 "approved".equalsIgnoreCase(Optional.ofNullable(paymentStatus).orElse(""))) {
             return;

@@ -54,6 +54,6 @@ mp:
 
 # —— Base URL para integraciones (HU11 webhook) —————————
 app:
-  base-url: ${APP_PUBLIC_BASE_URL:https://predependent-cindy-inbond.ngrok-free.dev}
-  public-base-url: ${APP_PUBLIC_BASE_URL:https://predependent-cindy-inbond.ngrok-free.dev}
+  base-url: ${APP_PUBLIC_BASE_URL:https://predependent-cindy-inbond.ngrok-free.dev
+  public-base-url: ${APP_PUBLIC_BASE_URL:https://predependent-cindy-inbond.ngrok-free.dev
 

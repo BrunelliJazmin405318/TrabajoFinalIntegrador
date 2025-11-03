@@ -13,5 +13,8 @@ public interface PresupuestoRepository extends JpaRepository<Presupuesto, Long> 
     List<Presupuesto> findAllBySolicitudIdOrderByCreadaEnDesc(Long solicitudId);
     List<Presupuesto> findAllByEstadoAndSolicitudIdOrderByCreadaEnDesc(String estado, Long solicitudId);
 
+    Optional<Presupuesto> findFirstBySolicitudIdAndEstadoOrderByCreadaEnDesc(Long solicitudId, String estado);
+    Optional<Presupuesto> findFirstBySolicitudIdOrderByCreadaEnDesc(Long solicitudId);
+
 
 }

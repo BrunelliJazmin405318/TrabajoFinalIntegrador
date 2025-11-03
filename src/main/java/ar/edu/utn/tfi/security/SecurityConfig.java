@@ -22,35 +22,32 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.OPTIONS, "/").permitAll()
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                        // Páginas públicas y recursos
+                        // Archivos estáticos y páginas públicas
                         .requestMatchers(
                                 "/", "/index.html",
                                 "/login.html",
                                 "/consulta.html",
                                 "/historial.html",
-                                "/css/", "/js/", "/images/", "/favicon.ico",
-                                "/error", "/presupuesto.html",
+                                "/presupuesto.html",
                                 "/estado-solicitud.html",
                                 "/admin-solicitudes.html",
-                                "/admin-presupuestos.html"
+                                "/admin-presupuestos.html",
+                                "/swagger-ui.html", "/swagger-ui/**",
+                                "/v3/api-docs/**",
+                                "/favicon.ico",
+                                "/css/**", "/js/**", "/images/**"
                         ).permitAll()
 
-                        // Swagger
-                        .requestMatchers(
-                                "/swagger-ui.html", "/swagger-ui/",
-                                "/v3/api-docs/", "/v3/api-docs.yaml"
-                        ).permitAll()
+                        // ✅ APIs públicas (Checkout API cliente)
+                        .requestMatchers("/public/**").permitAll()
 
-                        // ✅ Endpoints públicos reales (Checkout API cliente)
-                        .requestMatchers("/public/").permitAll() // CAMBIO
+                        // ✅ Webhook Mercado Pago
+                        .requestMatchers("/pagos/webhook-mp/**").permitAll()
 
-                        // ✅ Webhook MP
-                        .requestMatchers("/pagos/webhook-mp").permitAll()
-
-                        // Zona admin
-                        .requestMatchers("/admin/").hasRole("ADMIN") // CAMBIO
+                        // Zona admin (APIs)
+                        .requestMatchers("/admin/**").hasRole("ADMIN")
 
                         // Resto autenticado
                         .anyRequest().authenticated()

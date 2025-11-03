@@ -19,11 +19,12 @@ public class PublicPagoController {
     private final PresupuestoGestionService gestionService;
 
     public PublicPagoController(PresupuestoRepository presupuestoRepo,
-                                 PresupuestoGestionService gestionService) {
+                                PresupuestoGestionService gestionService) {
         this.presupuestoRepo = presupuestoRepo;
         this.gestionService = gestionService;
     }
 
+    // Devuelve el DTO completo que espera el front (montoSena, clienteEmail, etc.)
     @GetMapping("/info-sena/{presupuestoId}")
     public ResponseEntity<?> infoSena(@PathVariable Long presupuestoId) {
         Presupuesto p = presupuestoRepo.findById(presupuestoId)
@@ -35,19 +36,20 @@ public class PublicPagoController {
             );
         }
 
-        BigDecimal monto = p.getTotal()
-                .multiply(new BigDecimal("0.30"))
-                .setScale(2, java.math.RoundingMode.HALF_UP);
-
-        return ResponseEntity.ok(
-                new PagoInfoDTO(p.getId(), monto, p.getClienteEmail(), new BigDecimal("0.30"))
-        );
+        // Usa la lógica centralizada que ya arma el PagoInfoDTO con 9 campos
+        PagoInfoDTO dto = gestionService.getPagoInfoPublico(presupuestoId);
+        return ResponseEntity.ok(dto);
     }
 
     @PostMapping("/cobrar-sena/{presupuestoId}")
     public ResponseEntity<?> cobrarSenaApi(@PathVariable Long presupuestoId,
                                            @RequestBody PagoApiReq req) {
         try {
+            System.out.println("[COBRAR-SENA] pid=" + presupuestoId +
+                    " pm=" + req.paymentMethodId() +
+                    " inst=" + req.installments() +
+                    " issuer=" + req.issuerId() +
+                    " email=" + req.payerEmail());
             Presupuesto p = gestionService.cobrarSenaApi(presupuestoId, req);
             return ResponseEntity.ok(new PayResp(
                     "ok",
@@ -56,6 +58,7 @@ public class PublicPagoController {
                     p.getSenaMonto()
             ));
         } catch (Exception e) {
+            e.printStackTrace(); // <- para ver stack en consola
             return ResponseEntity.badRequest().body(new Msg(e.getMessage()));
         }
     }

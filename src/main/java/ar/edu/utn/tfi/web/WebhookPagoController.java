@@ -25,9 +25,10 @@ public class WebhookPagoController {
             @RequestParam(value = "id", required = false) String id,
             @RequestParam(value = "data.id", required = false) String dataId,
             @RequestHeader(value = "x-signature", required = false) String signature,
+            @RequestHeader(value = "x-request-id", required = false) String requestId,
             @RequestBody(required = false) String body
     ) {
-        return procesar(type, topic, id, dataId, signature, body);
+        return procesar(type, topic, id, dataId, signature, requestId);
     }
 
     @GetMapping("/webhook-mp")
@@ -45,22 +46,19 @@ public class WebhookPagoController {
             String id,
             String dataId,
             String signature,
-            String body
+            String requestId
     ) {
-        // Normalizamos claves: a veces viene "type", otras "topic"; y "id" vs "data.id"
         String t = (topic != null && !topic.isBlank()) ? topic : type;
         String d = (dataId != null && !dataId.isBlank()) ? dataId : id;
 
-        // Log liviano para diagnóstico (no romper tiempos de respuesta)
-        System.out.println("[WEBHOOK-MP] topic=" + t + " id=" + d);
+        System.out.println("[WEBHOOK-MP] topic=" + t + " id=" + d + " x-request-id=" + requestId);
 
         try {
-            webhookPagoService.procesarNotificacion(t, d);
+            webhookPagoService.procesarNotificacion(t, d, requestId);
         } catch (Exception e) {
-            // Importante: devolver 200 para que MP no reintente eternamente
+            // Devolver 200 para que MP no reintente eternamente
             System.err.println("[WEBHOOK-MP][WARN] " + e.getMessage());
         }
-        // Devolvemos 200 SIEMPRE y rápido: MP reintenta si no
         return ResponseEntity.ok("ok");
     }
 }

@@ -1,3 +1,4 @@
+// src/main/java/ar/edu/utn/tfi/service/PresupuestoGestionService.java
 package ar.edu.utn.tfi.service;
 
 import ar.edu.utn.tfi.domain.Presupuesto;
@@ -10,16 +11,16 @@ import ar.edu.utn.tfi.repository.ServicioTarifaRepository;
 import ar.edu.utn.tfi.repository.SolicitudPresupuestoRepository;
 import ar.edu.utn.tfi.service.Pagos.PaymentApiService;
 import ar.edu.utn.tfi.web.dto.PagoApiReq;
+import ar.edu.utn.tfi.web.dto.PagoInfoDTO;
 import jakarta.persistence.EntityNotFoundException;
-import org.flywaydb.core.internal.util.StringUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ar.edu.utn.tfi.web.dto.PagoInfoDTO;
-import java.math.BigDecimal;
-import java.math.RoundingMode;
+import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.*;
 
 @Service
@@ -31,9 +32,6 @@ public class PresupuestoGestionService {
     private final PresupuestoItemRepository itemRepo;
     private final MailService mailService;
     private final PaymentApiService paymentApiService;
-    private static BigDecimal calcularSena(BigDecimal total) {
-        return total.multiply(BigDecimal.valueOf(0.30)).setScale(2, RoundingMode.HALF_UP);
-    }
 
     public PresupuestoGestionService(SolicitudPresupuestoRepository solicitudRepo,
                                      ServicioTarifaRepository tarifaRepo,
@@ -49,6 +47,12 @@ public class PresupuestoGestionService {
         this.paymentApiService = paymentApiService;
     }
 
+    private static BigDecimal calcularSena(BigDecimal total) {
+        return total.multiply(BigDecimal.valueOf(0.30)).setScale(2, RoundingMode.HALF_UP);
+    }
+
+    // ───────────────────────── Generación ─────────────────────────
+
     @Transactional
     public Presupuesto generarDesdeSolicitud(Long solicitudId, String vehiculoTipo, List<String> servicios) {
         if (solicitudId == null) throw new IllegalArgumentException("solicitudId es obligatorio");
@@ -57,20 +61,17 @@ public class PresupuestoGestionService {
         if (servicios == null || servicios.isEmpty())
             throw new IllegalArgumentException("Debe seleccionar al menos un servicio");
 
-        // El tipo de vehículo sí en mayúsculas (congruente con la V10)
         vehiculoTipo = vehiculoTipo.trim().toUpperCase();
 
-        // NO cambiar el casing de los nombres: deben coincidir 1:1 con la DB (tienen acentos y mayúsculas/minúsculas)
+        // Respetar nombres tal cual están en DB (acentos, mayúsculas/minúsculas)
         List<String> nombres = servicios.stream()
                 .map(s -> s == null ? null : s.trim())
                 .filter(s -> s != null && !s.isEmpty())
                 .toList();
 
-        // Traer solicitud
         SolicitudPresupuesto s = solicitudRepo.findById(solicitudId)
                 .orElseThrow(() -> new EntityNotFoundException("Solicitud no encontrada: " + solicitudId));
 
-        // Resolver tarifas exactas
         List<ServicioTarifa> tarifas = tarifaRepo.findByVehiculoTipoAndNombreServicioIn(vehiculoTipo, nombres);
         if (tarifas.size() != nombres.size()) {
             Set<String> hallados = new HashSet<>();
@@ -80,24 +81,19 @@ public class PresupuestoGestionService {
             throw new IllegalArgumentException("Servicios inexistentes para " + vehiculoTipo + ": " + String.join(", ", faltan));
         }
 
-        // Calcular total antes de guardar
         BigDecimal total = BigDecimal.ZERO;
-        for (ServicioTarifa t : tarifas) {
-            total = total.add(t.getPrecio());
-        }
+        for (ServicioTarifa t : tarifas) total = total.add(t.getPrecio());
 
-        // Encabezado en PENDIENTE
         Presupuesto p = new Presupuesto();
         p.setSolicitudId(s.getId());
         p.setClienteNombre(s.getClienteNombre());
         p.setClienteEmail(s.getClienteEmail());
         p.setVehiculoTipo(vehiculoTipo);
         p.setEstado("PENDIENTE");
-        p.setTotal(total);                 // total explícito para cumplir NOT NULL
+        p.setTotal(total);
 
-        p = presupuestoRepo.save(p);       // persistimos encabezado para tener ID
+        p = presupuestoRepo.save(p);
 
-        // Ítems
         for (ServicioTarifa t : tarifas) {
             PresupuestoItem it = new PresupuestoItem();
             it.setPresupuesto(p);
@@ -108,6 +104,8 @@ public class PresupuestoGestionService {
 
         return p;
     }
+
+    // ───────────────────────── Consultas ─────────────────────────
 
     @Transactional(readOnly = true)
     public Presupuesto getById(Long id) {
@@ -131,6 +129,8 @@ public class PresupuestoGestionService {
         }
         return presupuestoRepo.findAllByOrderByCreadaEnDesc();
     }
+
+    // ───────────────────────── Decisiones ─────────────────────────
 
     @Transactional
     public Presupuesto aprobar(Long id, String usuario, String nota) {
@@ -163,6 +163,9 @@ public class PresupuestoGestionService {
         mailService.enviarDecisionPresupuesto(saved);
         return saved;
     }
+
+    // ───────────────────────── Pagos (Checkout API) ─────────────────────────
+
     @Transactional
     public Presupuesto cobrarSenaApi(Long presupuestoId, PagoApiReq req) {
         Presupuesto p = presupuestoRepo.findById(presupuestoId)
@@ -172,19 +175,13 @@ public class PresupuestoGestionService {
             throw new IllegalStateException("Solo se puede cobrar seña si el presupuesto está APROBADO.");
         }
 
-        BigDecimal monto = p.getTotal()
-                .multiply(BigDecimal.valueOf(0.30))
-                .setScale(2, java.math.RoundingMode.HALF_UP);
+        BigDecimal monto = calcularSena(p.getTotal());
 
+        // Llamada con la firma NUEVA (3 parámetros)
         Map<String, Object> resp = paymentApiService.crearPago(
-                p.getId(),                     // <— NUEVO: presupuestoId
+                p.getId(),
                 monto,
-                "Seña presupuesto #" + p.getId(),
-                req.token(),
-                req.paymentMethodId(),
-                req.installments(),
-                req.issuerId(),
-                req.payerEmail()
+                req
         );
 
         String status = String.valueOf(resp.getOrDefault("status", ""));
@@ -193,7 +190,7 @@ public class PresupuestoGestionService {
 
         if ("approved".equalsIgnoreCase(status)) {
             p.setSenaEstado("ACREDITADA");
-        } else {
+        } else if (p.getSenaEstado() == null || p.getSenaEstado().isBlank()) {
             p.setSenaEstado("PENDIENTE");
         }
 
@@ -201,17 +198,18 @@ public class PresupuestoGestionService {
         p.setSenaPaymentStatus(status);
         if (dateApproved != null && !"null".equals(dateApproved)) {
             try {
-                p.setSenaPaidAt(java.time.OffsetDateTime.parse(dateApproved).toLocalDateTime());
+                p.setSenaPaidAt(OffsetDateTime.parse(dateApproved).toLocalDateTime());
             } catch (Exception ignored) {}
         }
         p.setSenaMonto(monto);
 
         return presupuestoRepo.save(p);
     }
+
     @Transactional(readOnly = true)
     public PagoInfoDTO getPagoInfoPublico(Long presupuestoId) {
         var p = presupuestoRepo.findById(presupuestoId)
-                .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException("No existe presupuesto: " + presupuestoId));
+                .orElseThrow(() -> new EntityNotFoundException("No existe presupuesto: " + presupuestoId));
 
         BigDecimal monto = calcularSena(p.getTotal());
         boolean puedePagar = "APROBADO".equalsIgnoreCase(p.getEstado())

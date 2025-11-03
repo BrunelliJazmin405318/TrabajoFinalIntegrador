@@ -7,26 +7,25 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="/css/styles.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <script src="https://sdk.mercadopago.com/js/v2"></script>
 </head>
 <body>
-<!-- NAV -->
 <nav class="navbar navbar-expand-lg navbar-dark">
     <div class="container">
         <a class="navbar-brand" href="/presupuesto.html"><i class="bi bi-gear-fill me-2"></i>Rectificadora</a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav" aria-label="Menu">
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav">
             <span class="navbar-toggler-icon"></span>
         </button>
         <div id="nav" class="collapse navbar-collapse">
             <ul class="navbar-nav ms-auto">
                 <li class="nav-item"><a class="nav-link" href="/presupuesto.html">Solicitar presupuesto</a></li>
                 <li class="nav-item"><a class="nav-link active" href="/estado-solicitud.html">Estado de solicitud</a></li>
-                <li class="nav-item"><a class="nav-link" href="/admin-solicitud.html">Admin</a></li>
+                <li class="nav-item"><a class="nav-link" href="/admin-solicitudes.html">Admin</a></li>
             </ul>
         </div>
     </div>
 </nav>
 
-<!-- CONTENT -->
 <main class="container page-wrap">
     <div class="page-title">
         <h1 class="m-0">Estado de tu solicitud</h1>
@@ -75,6 +74,29 @@
                     <div class="text-muted" id="dec_motivo">-</div>
                 </div>
             </div>
+
+            <hr class="my-4">
+            <div id="pagoBox" class="d-none">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <h6 class="m-0">Seña (30%)</h6>
+                    <span id="pagoEstado" class="badge bg-secondary">Pendiente</span>
+                </div>
+                <div class="small text-muted">Monto: <span id="pagoMonto">-</span></div>
+                <div class="small text-muted">Pago #: <span id="pagoId">-</span></div>
+
+                <div id="pagarActions" class="mt-3">
+                    <button id="btnPagar" class="btn btn-primary btn-sm">
+                        <i class="bi bi-credit-card"></i> Pagar seña (30%)
+                    </button>
+                </div>
+
+                <div id="mp-card-container" class="mt-3"></div>
+                <div id="mp-status" class="small mt-2 text-muted"></div>
+            </div>
+
+            <div id="pagoInfoNoDisponible" class="alert alert-info d-none mt-3">
+                Aún no hay un presupuesto aprobado asociado a esta solicitud, o la seña ya fue acreditada.
+            </div>
         </div>
     </div>
 </main>
@@ -87,19 +109,26 @@
 </footer>
 
 <script>
-    // helpers UI
     const fmt = s => s ? s.replace('T',' ').substring(0,19) : '-';
+    const money = n => new Intl.NumberFormat('es-AR',{style:'currency',currency:'ARS'}).format(Number(n||0));
+
     function paintStatus(el, estado) {
         el.classList.remove('ok','warn','stop');
         const label = el.querySelector('.label');
         const e = (estado||'').toUpperCase();
         if (e === 'APROBADO') el.classList.add('ok');
         else if (e === 'RECHAZADO') el.classList.add('stop');
-        else el.classList.add('warn'); // PENDIENTE u otro
+        else el.classList.add('warn');
         label.textContent = estado || '-';
     }
 
-    async function consultar(id) {
+    const MP_PUBLIC_KEY = 'TEST-57f55bd7-4769-45fe-8268-c776df0b3791';
+    const mp = new MercadoPago(MP_PUBLIC_KEY);
+    const bricksBuilder = mp.bricks();
+    let currentBrick = null;
+    let presupuestoIdForPay = null;
+
+    async function consultarSolicitud(id) {
         const card = document.getElementById('cardResultado');
         card.classList.add('d-none');
 
@@ -107,7 +136,6 @@
         const j = await r.json().catch(()=> ({}));
         if (!r.ok) { alert(j.message || 'No se encontró la solicitud'); return; }
 
-        // pintar
         document.getElementById('c_nombre').textContent = j.clienteNombre || '-';
         document.getElementById('c_tel').textContent    = j.clienteTelefono || '-';
         document.getElementById('c_mail').textContent   = j.clienteEmail || '-';
@@ -122,9 +150,137 @@
 
         card.classList.remove('d-none');
         card.scrollIntoView({behavior:'smooth', block:'start'});
+
+        if (j.presupuestoId) {
+            await cargarPagoInfo(j.presupuestoId);
+            return;
+        }
+
+        document.getElementById('pagoBox').classList.add('d-none');
+        document.getElementById('pagoInfoNoDisponible').classList.remove('d-none');
     }
 
-    // leer ?id= de la URL
+    async function cargarPagoInfo(presupuestoId) {
+        presupuestoIdForPay = null;
+        const box = document.getElementById('pagoBox');
+        const infoMsg = document.getElementById('pagoInfoNoDisponible');
+        box.classList.add('d-none');
+        infoMsg.classList.add('d-none');
+
+        const r = await fetch(`/public/pagos/api/info-sena/${encodeURIComponent(presupuestoId)}`);
+        const info = await r.json().catch(()=> ({}));
+        if (!r.ok) {
+            infoMsg.classList.remove('d-none');
+            return;
+        }
+
+        const monto = (info.montoSena ?? info.monto ?? 0);
+        const estadoPres = (info.presupuestoEstado || '').toUpperCase();
+        const senaEstado = (info.senaEstado || '').toUpperCase();
+
+        document.getElementById('pagoMonto').textContent  = money(monto);
+        document.getElementById('pagoId').textContent     = info.senaPaymentId || '-';
+        document.getElementById('pagoEstado').textContent = senaEstado || 'PENDIENTE';
+
+        const puedePagar = !!info.puedePagar && estadoPres === 'APROBADO' && senaEstado !== 'ACREDITADA';
+
+        if (puedePagar) {
+            presupuestoIdForPay = info.presupuestoId || presupuestoId;
+            document.getElementById('pagarActions').classList.remove('d-none');
+            box.classList.remove('d-none');
+        } else {
+            presupuestoIdForPay = null;
+            if (senaEstado === 'ACREDITADA') {
+                document.getElementById('pagoEstado').classList.replace('bg-secondary','bg-success');
+            }
+            infoMsg.classList.toggle('d-none', senaEstado === 'ACREDITADA');
+            box.classList.remove('d-none');
+        }
+    }
+
+    async function montarBrickYPagar() {
+        if (!presupuestoIdForPay) return;
+
+        const cont = document.getElementById('mp-card-container');
+        const statusEl = document.getElementById('mp-status');
+        cont.innerHTML = '';
+        statusEl.textContent = 'Complete los datos de tarjeta (MP Sandbox).';
+
+        if (currentBrick) { try { await currentBrick.unmount(); } catch (_) {} }
+
+        const rInfo = await fetch(`/public/pagos/api/info-sena/${encodeURIComponent(presupuestoIdForPay)}`);
+        const info  = await rInfo.json().catch(()=> ({}));
+        const monto = (info.montoSena ?? info.monto ?? 0);
+        const email = info.clienteEmail || info.emailSugerido || '';
+
+        currentBrick = await bricksBuilder.create('cardPayment', 'mp-card-container', {
+            initialization: {
+                amount: Number(monto),
+                payer: { email }
+            },
+            customization: { paymentMethods: { maxInstallments: 1 } },
+            callbacks: {
+                onReady: () => {},
+
+                onSubmit: async (formData) => {
+                    const box = document.getElementById('mp-status');
+                    if (box) { box.classList.remove('d-none'); box.textContent = 'Procesando pago…'; }
+
+                    console.log('[BRICK] formData:', formData);
+
+                    // Datos que entrega el Brick
+                    const payload = {
+                        token: formData.token,
+                        paymentMethodId: formData.payment_method_id,
+                        installments: (typeof formData.installments === 'number' && formData.installments > 0) ? formData.installments : 1,
+                        issuerId: formData.issuer_id ?? null,
+                        payerEmail: formData.payer?.email ?? '',
+                        payerDocType: formData.payer?.identification?.type ?? 'DNI',
+                        payerDocNumber: formData.payer?.identification?.number ?? ''
+                    };
+
+                    try {
+                        const res = await fetch(`/public/pagos/api/cobrar-sena/${encodeURIComponent(presupuestoIdForPay)}`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+
+                        const text = await res.text();
+                        let data; try { data = JSON.parse(text); } catch { data = { message: text }; }
+                        console.log('[BRICK] response:', res.status, data);
+
+                        if (!res.ok) {
+                            if (box) box.textContent = `No pudimos procesar el pago: ${data?.message || ('HTTP ' + res.status)}`;
+                            return;
+                        }
+
+                        if ((data.status || '').toLowerCase() !== 'approved') {
+                            if (box) box.textContent = `Pago en estado: ${data.status || '-'}`;
+                            return;
+                        }
+
+                        alert(`Seña acreditada. Pago #${data.paymentId || '-'}`);
+                        location.reload();
+                    } catch (err) {
+                        console.error(err);
+                        if (box) box.textContent = `Error: ${err?.message || err}`;
+                    }
+                },
+
+                onError: (error) => {
+                    const box = document.getElementById('mp-status');
+                    if (box) {
+                        box.classList.remove('d-none');
+                        box.textContent = `Error: ${error?.message || error}`;
+                    }
+                    console.error('[BRICK] onError', error);
+                }
+            }
+
+        });
+    }
+
     const q = new URLSearchParams(location.search);
     const idInput = document.getElementById('id');
     if (q.get('id')) idInput.value = q.get('id');
@@ -132,11 +288,17 @@
     document.getElementById('frm').addEventListener('submit', (e)=>{
         e.preventDefault();
         const id = idInput.value.trim();
-        if (id) consultar(id);
+        if (id) consultarSolicitud(id);
     });
 
-    if (idInput.value) consultar(idInput.value);
+    document.getElementById('btnPagar').addEventListener('click', async (e) => {
+        e.preventDefault();
+        await montarBrickYPagar();
+    });
+
+    if (idInput.value) consultarSolicitud(idInput.value);
 </script>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

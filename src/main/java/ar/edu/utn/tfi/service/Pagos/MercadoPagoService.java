@@ -21,17 +21,18 @@ import java.util.List;
 @Service
 public class MercadoPagoService {
 
-    @Value("${MP_ACCESS_TOKEN}")
+    @Value("${mp.api.access-token}")
     private String accessToken;
 
-    @Value("${app.base-url}")              // <- usa la pública (ya la definiste en application.yml)
+
+    @Value("${app.public-base-url}")  // << más coherente con tu yml
     private String baseUrl;
 
     private void init() {
         if (accessToken == null || accessToken.isBlank()) {
             throw new IllegalStateException("MP_ACCESS_TOKEN no configurado");
         }
-        com.mercadopago.MercadoPagoConfig.setAccessToken(accessToken);
+        MercadoPagoConfig.setAccessToken(accessToken);
     }
 
     public Preference crearPreferenciaSena(

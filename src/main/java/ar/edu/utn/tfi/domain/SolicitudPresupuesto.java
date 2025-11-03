@@ -47,6 +47,8 @@ public class SolicitudPresupuesto {
     @Column(name="decision_motivo")
     private String decisionMotivo;
 
+
+
     @PrePersist
     void pre() {
         if (creadaEn == null) creadaEn = LocalDateTime.now();
