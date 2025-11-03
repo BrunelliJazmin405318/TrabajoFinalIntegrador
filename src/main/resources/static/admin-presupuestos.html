@@ -3,7 +3,8 @@
 <head>
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Admin | Presupuestos</title>
+    <title>Admin | Presupuestos (Checkout API)</title>
+
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="/css/styles.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
@@ -23,9 +24,10 @@
 </nav>
 
 <main class="container page-wrap">
-    <div class="page-title">
+    <div class="page-title d-flex align-items-center gap-2 my-3">
         <h1 class="m-0">Presupuestos</h1>
         <span class="badge">Panel Admin</span>
+        <span class="badge text-bg-info">Checkout API</span>
     </div>
 
     <!-- Generación rápida -->
@@ -47,67 +49,43 @@
 
                 <div class="col-12">
                     <label class="form-label d-block">Servicios</label>
-
-                    <!-- Motor / Block -->
                     <div class="row g-2">
-                        <div class="col-md-6">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="srv_m001" name="servicios" value="Rectificación de cilindros">
-                                <label class="form-check-label" for="srv_m001">Rectificación de cilindros</label>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="srv_m002" name="servicios" value="Bruñido de cilindros">
-                                <label class="form-check-label" for="srv_m002">Bruñido de cilindros</label>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="srv_m003" name="servicios" value="Planeado de block">
-                                <label class="form-check-label" for="srv_m003">Planeado de block</label>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="srv_m004" name="servicios" value="Cambio de camisas">
-                                <label class="form-check-label" for="srv_m004">Cambio de camisas</label>
-                            </div>
-                        </div>
-
-                        <!-- Conjunto móvil -->
-                        <div class="col-md-6">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="srv_m005" name="servicios" value="Rectificación de cigüeñal">
-                                <label class="form-check-label" for="srv_m005">Rectificación de cigüeñal</label>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="srv_m006" name="servicios" value="Pulido de cigüeñal">
-                                <label class="form-check-label" for="srv_m006">Pulido de cigüeñal</label>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="srv_m007" name="servicios" value="Rectificación de bielas">
-                                <label class="form-check-label" for="srv_m007">Rectificación de bielas</label>
-                            </div>
-                        </div>
-
-                        <!-- General / Ensamble -->
-                        <div class="col-md-6">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="srv_m008" name="servicios" value="Limpieza de block y piezas">
-                                <label class="form-check-label" for="srv_m008">Limpieza de block y piezas</label>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="srv_m009" name="servicios" value="Armado de motor completo">
-                                <label class="form-check-label" for="srv_m009">Armado de motor completo</label>
-                            </div>
-                        </div>
+                        <div class="col-md-6"><div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="srv_m001" name="servicios" value="Rectificación de cilindros">
+                            <label class="form-check-label" for="srv_m001">Rectificación de cilindros</label>
+                        </div></div>
+                        <div class="col-md-6"><div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="srv_m002" name="servicios" value="Bruñido de cilindros">
+                            <label class="form-check-label" for="srv_m002">Bruñido de cilindros</label>
+                        </div></div>
+                        <div class="col-md-6"><div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="srv_m003" name="servicios" value="Planeado de block">
+                            <label class="form-check-label" for="srv_m003">Planeado de block</label>
+                        </div></div>
+                        <div class="col-md-6"><div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="srv_m004" name="servicios" value="Cambio de camisas">
+                            <label class="form-check-label" for="srv_m004">Cambio de camisas</label>
+                        </div></div>
+                        <div class="col-md-6"><div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="srv_m005" name="servicios" value="Rectificación de cigüeñal">
+                            <label class="form-check-label" for="srv_m005">Rectificación de cigüeñal</label>
+                        </div></div>
+                        <div class="col-md-6"><div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="srv_m006" name="servicios" value="Pulido de cigüeñal">
+                            <label class="form-check-label" for="srv_m006">Pulido de cigüeñal</label>
+                        </div></div>
+                        <div class="col-md-6"><div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="srv_m007" name="servicios" value="Rectificación de bielas">
+                            <label class="form-check-label" for="srv_m007">Rectificación de bielas</label>
+                        </div></div>
+                        <div class="col-md-6"><div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="srv_m008" name="servicios" value="Limpieza de block y piezas">
+                            <label class="form-check-label" for="srv_m008">Limpieza de block y piezas</label>
+                        </div></div>
+                        <div class="col-md-6"><div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="srv_m009" name="servicios" value="Armado de motor completo">
+                            <label class="form-check-label" for="srv_m009">Armado de motor completo</label>
+                        </div></div>
                     </div>
                 </div>
 
@@ -165,22 +143,12 @@
 <script type="module">
     import { getAuthHeader, isAuthenticated } from "/js/auth.js";
 
-    const badge = function(est){
-        return est === 'APROBADO' ? 'bg-success' : (est === 'RECHAZADO' ? 'bg-danger' : 'bg-secondary');
-    };
-    const fmt = function(s){
-        return s ? s.replace('T',' ').substring(0,19) : '-';
-    };
-    const money = function(n){
-        return new Intl.NumberFormat('es-AR', { style:'currency', currency:'ARS' }).format(n || 0);
-    };
+    const badge = (est) => est === 'APROBADO' ? 'bg-success' : (est === 'RECHAZADO' ? 'bg-danger' : 'bg-secondary');
+    const fmt   = (s) => s ? s.replace('T',' ').substring(0,19) : '-';
+    const money = (n) => new Intl.NumberFormat('es-AR', { style:'currency', currency:'ARS' }).format(n || 0);
 
     async function cargar () {
-        if (!isAuthenticated()) {
-            alert('Iniciá sesión admin.');
-            location.href = '/login.html';
-            return;
-        }
+        if (!isAuthenticated()) { alert('Iniciá sesión admin.'); location.href = '/login.html'; return; }
 
         const estado = document.getElementById('fEstado').value;
         const sid = document.getElementById('fSolicitud').value.trim();
@@ -189,57 +157,51 @@
         if (sid) qs.set('solicitudId', sid);
 
         const url = '/admin/presupuestos' + (qs.toString() ? ('?' + qs.toString()) : '');
-        const r = await fetch(url, { headers: Object.assign({}, getAuthHeader()) });
+        const r = await fetch(url, { headers: { ...getAuthHeader() } });
         const list = await r.json();
 
         const tb = document.getElementById('tbody');
         tb.innerHTML = '';
 
-        list.forEach(function (p) {
-            // Tomo un posible link guardado si tu API lo devuelve
-            // Tomo link guardado si el backend lo envía
-            var senaUrl = p.senaInitPoint || p.senaUrl || null;
+        list.forEach((p) => {
+            let acciones = '-';
 
-            var acciones = '-';
             if (p.estado === 'PENDIENTE') {
                 acciones =
-                    '<button class="btn btn-success btn-sm me-1" data-act="aprobar" data-id="' + p.id + '">' +
+                    '<button class="btn btn-success btn-sm me-1" data-act="aprobar" data-id="'+p.id+'">' +
                     '<i class="bi bi-check2"></i> Aprobar' +
                     '</button>' +
-                    '<button class="btn btn-danger btn-sm" data-act="rechazar" data-id="' + p.id + '">' +
+                    '<button class="btn btn-danger btn-sm" data-act="rechazar" data-id="'+p.id+'">' +
                     '<i class="bi bi-x-lg"></i> Rechazar' +
                     '</button>';
             } else if (p.estado === 'APROBADO') {
-                // si ya hay seña pendiente, bloquear "Generar" y ofrecer "Abrir link"
-                if (p.senaEstado === 'PENDIENTE' && p.senaPreferenceId) {
+                if (p.senaEstado === 'ACREDITADA') {
                     acciones =
-                        '<button class="btn btn-warning btn-sm disabled" disabled title="Ya existe una seña pendiente">' +
-                        '<i class="bi bi-cash-coin"></i> Generar link de seña' +
-                        '</button>' +
-                        (senaUrl
-                            ? ' <a class="btn btn-outline-primary btn-sm ms-1" href="' + senaUrl + '" target="_blank" rel="noopener">Abrir link</a>'
-                            : ' <span class="text-muted small ms-1">(link no guardado)</span>');
+                        '<span class="badge bg-success me-2">Seña acreditada</span>' +
+                        (p.senaPaymentId ? '<span class="text-muted">#' + p.senaPaymentId + '</span>' : '');
                 } else {
+                    // sin cobro en admin: solo guía al link público del cliente
+                    const urlCliente = '/estado-solicitud.html?id=' + (p.solicitudId ?? '');
                     acciones =
-                        '<button class="btn btn-warning btn-sm" data-act="sena" data-id="' + p.id + '">' +
-                        '<i class="bi bi-cash-coin"></i> Generar link de seña' +
-                        '</button>';
+                        '<span class="badge bg-warning text-dark me-2">Seña pendiente</span>' +
+                        '<a class="btn btn-outline-primary btn-sm" target="_blank" href="'+urlCliente+'">' +
+                        '<i class="bi bi-box-arrow-up-right"></i> Abrir página del cliente' +
+                        '</a>';
                 }
             }
 
-
-            var solicitudTxt = (p.solicitudId !== null && p.solicitudId !== undefined) ? p.solicitudId : '-';
+            const solicitudTxt = (p.solicitudId !== null && p.solicitudId !== undefined) ? p.solicitudId : '-';
 
             tb.insertAdjacentHTML('beforeend',
                 '<tr>' +
-                '<td>' + p.id + '</td>' +
-                '<td>' + solicitudTxt + '</td>' +
-                '<td>' + p.clienteNombre + '</td>' +
-                '<td>' + p.vehiculoTipo + '</td>' +
-                '<td>' + money(p.total) + '</td>' +
-                '<td><span class="badge ' + badge(p.estado) + '">' + p.estado + '</span></td>' +
-                '<td>' + fmt(p.creadaEn) + '</td>' +
-                '<td>' + acciones + '</td>' +
+                '<td>'+p.id+'</td>' +
+                '<td>'+solicitudTxt+'</td>' +
+                '<td>'+p.clienteNombre+'</td>' +
+                '<td>'+p.vehiculoTipo+'</td>' +
+                '<td>'+money(p.total)+'</td>' +
+                '<td><span class="badge '+badge(p.estado)+'">'+p.estado+'</span></td>' +
+                '<td>'+fmt(p.creadaEn)+'</td>' +
+                '<td>'+acciones+'</td>' +
                 '</tr>'
             );
         });
@@ -247,92 +209,51 @@
 
     document.getElementById('btnBuscar').addEventListener('click', cargar);
 
-    // Listener de acciones (aprobar / rechazar / seña)
-    document.getElementById('tbody').addEventListener('click', async function (e) {
-        var btn = e.target.closest('button[data-act]');
+    document.getElementById('tbody').addEventListener('click', async (e) => {
+        const btn = e.target.closest('button[data-act]');
         if (!btn) return;
 
-        // Evita clic si está deshabilitado visualmente
-        if (btn.classList.contains('disabled')) return;
+        const id  = btn.dataset.id;
+        const act = btn.dataset.act;
 
-        var id = btn.dataset.id;
-        var act = btn.dataset.act;
-
-        // ---- Aprobación / Rechazo ----
         if (act === 'aprobar' || act === 'rechazar') {
-            var titulo = act.toUpperCase() + ': nota/observación (opcional)';
-            var nota = prompt(titulo) || '';
-            var r = await fetch('/admin/presupuestos/' + id + '/' + act, {
+            const nota = prompt(act.toUpperCase()+': nota/observación (opcional)') || '';
+            const r = await fetch('/admin/presupuestos/'+id+'/'+act, {
                 method: 'PUT',
-                headers: Object.assign({ 'Content-Type': 'application/json' }, getAuthHeader()),
-                body: JSON.stringify({ nota: nota })
+                headers: { 'Content-Type':'application/json', ...getAuthHeader() },
+                body: JSON.stringify({ nota })
             });
-            var j = await r.json().catch(function(){ return {}; });
-            if (!r.ok) {
-                alert('Error: ' + (j.message || r.status));
-                return;
-            }
+            const j = await r.json().catch(()=> ({}));
+            if (!r.ok) { alert('Error: '+(j.message || r.status)); return; }
             alert('OK');
             await cargar();
-            return;
-        }
-
-        // ---- Generar link de seña ----
-        if (act === 'sena') {
-            var confirmar = confirm('¿Generar link de seña (30%) para el presupuesto #' + id + '?');
-            if (!confirmar) return;
-
-            var r2 = await fetch('/admin/pagos/link-sena/' + id, {
-                method: 'POST',
-                headers: Object.assign({}, getAuthHeader())
-            });
-            var j2 = await r2.json().catch(function(){ return {}; });
-            if (!r2.ok) {
-                alert('Error: ' + (j2.message || r2.status));
-                return;
-            }
-
-            // abrir primero (evita bloqueo de popups) y luego avisar
-            // Abrimos solo UNA pestaña
-            if (j2.url) {
-                window.open(j2.url, '_blank', 'noopener'); // abrir Mercado Pago
-            }
-
-            // Mostrar mensaje sin volver a abrir el link
-            alert('✅ Seña generada por ' + money(j2.monto) + '.');
-
-            await cargar();
-            return;
         }
     });
 
-
-    // Generar presupuesto rápido
-    document.getElementById('gen').addEventListener('submit', async function(e){
+    document.getElementById('gen').addEventListener('submit', async (e) => {
         e.preventDefault();
         const fd = new FormData(e.target);
-        const checkboxes = document.querySelectorAll('input[name="servicios"]:checked');
-        const servicios = [];
-        for (var i=0; i<checkboxes.length; i++) { servicios.push(checkboxes[i].value); }
+        const checks = document.querySelectorAll('input[name="servicios"]:checked');
+        const servicios = Array.from(checks).map(i => i.value);
 
         const payload = {
             solicitudId: Number(fd.get('solicitudId')),
             vehiculoTipo: fd.get('vehiculoTipo'),
-            servicios: servicios
+            servicios
         };
 
         try {
             const r = await fetch('/presupuestos/generar', {
                 method: 'POST',
-                headers: Object.assign({ 'Content-Type':'application/json' }, getAuthHeader()),
+                headers: { 'Content-Type':'application/json', ...getAuthHeader() },
                 body: JSON.stringify(payload)
             });
-            const j = await r.json().catch(function(){ return {}; });
+            const j = await r.json().catch(()=> ({}));
             if (!r.ok) throw new Error(j.message || 'No se pudo generar');
 
             const ok = document.getElementById('genOk');
             ok.classList.remove('d-none');
-            ok.textContent = 'Generado presupuesto #' + j.id + ' por ' + money(j.total) + '.';
+            ok.textContent = 'Generado presupuesto #'+j.id+' por '+money(j.total)+'.';
             document.getElementById('genErr').classList.add('d-none');
             cargar();
         } catch (err) {
@@ -342,8 +263,10 @@
         }
     });
 
-    cargar();
+    // Init
+    window.addEventListener('DOMContentLoaded', cargar);
 </script>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

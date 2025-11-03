@@ -9,12 +9,12 @@ public record SolicitudDTO(
         String clienteNombre,
         String clienteTelefono,
         String clienteEmail,
-        String tipoUnidad,
+        String tipoUnidad,     // MOTOR | TAPA
         String marca,
         String modelo,
         String nroMotor,
         String descripcion,
-        String estado,
+        String estado,         // PENDIENTE | APROBADO | RECHAZADO
         LocalDateTime creadaEn,
         String decisionUsuario,
         LocalDateTime decisionFecha,

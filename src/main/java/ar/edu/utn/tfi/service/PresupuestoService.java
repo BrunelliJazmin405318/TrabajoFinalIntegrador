@@ -1,5 +1,7 @@
 package ar.edu.utn.tfi.service;
+import ar.edu.utn.tfi.domain.Presupuesto;
 import ar.edu.utn.tfi.domain.SolicitudPresupuesto;
+import ar.edu.utn.tfi.repository.PresupuestoRepository;
 import ar.edu.utn.tfi.repository.SolicitudPresupuestoRepository;
 import ar.edu.utn.tfi.web.dto.SolicitudCreateDTO;
 import jakarta.persistence.EntityNotFoundException;
@@ -12,9 +14,11 @@ import java.util.List;
 @Service
 public class PresupuestoService {
     private final SolicitudPresupuestoRepository repo;
+    private final PresupuestoRepository repository;
 
-    public PresupuestoService(SolicitudPresupuestoRepository repo) {
+    public PresupuestoService(SolicitudPresupuestoRepository repo,  PresupuestoRepository repository) {
         this.repo = repo;
+        this.repository = repository;
     }
 
     // Público
@@ -92,5 +96,20 @@ public class PresupuestoService {
                 " - Tel: " + saved.getClienteTelefono());
 
         return saved;
+    }
+
+    public List<Presupuesto> listar(String estado, Long solicitudId) {
+        boolean tieneEstado = estado != null && !estado.isBlank();
+        boolean tieneSid = solicitudId != null;
+
+        if (tieneEstado && tieneSid) {
+            return repository.findAllByEstadoAndSolicitudIdOrderByCreadaEnDesc(estado, solicitudId);
+        } else if (tieneEstado) {
+            return repository.findAllByEstadoOrderByCreadaEnDesc(estado);
+        } else if (tieneSid) {
+            return repository.findAllBySolicitudIdOrderByCreadaEnDesc(solicitudId);
+        } else {
+            return repository.findAllByOrderByCreadaEnDesc();
+        }
     }
 }

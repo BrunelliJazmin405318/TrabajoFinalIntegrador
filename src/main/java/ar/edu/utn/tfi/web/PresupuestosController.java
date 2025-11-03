@@ -35,15 +35,27 @@ public class PresupuestosController {
     }
 
     @GetMapping("/admin/presupuestos")
-    public List<PresupuestoDTO> listar(@RequestParam(required = false) String estado,
-                                       @RequestParam(required = false) Long solicitudId) {
-        return service.listar(estado, solicitudId).stream().map(p -> {
-            List<PresupuestoItemDTO> items = itemRepo.findByPresupuestoId(p.getId())
-                    .stream()
-                    .map(it -> new PresupuestoItemDTO(it.getServicioNombre(), it.getPrecioUnitario()))
-                    .toList();
-            return PresupuestoDTO.from(p, items);
-        }).toList();
+    public List<PresupuestoListDTO> listar(@RequestParam(required = false) String estado,
+                                           @RequestParam(required = false) Long solicitudId) {
+        return service.listar(estado, solicitudId).stream()
+                .map(p -> new PresupuestoListDTO(
+                        p.getId(),
+                        p.getSolicitudId(),
+                        p.getClienteNombre(),
+                        p.getClienteEmail(),
+                        p.getVehiculoTipo(),
+                        p.getTotal(),
+                        p.getEstado(),
+                        p.getCreadaEn(),
+                        // —— Seña
+                        p.getSenaEstado(),
+
+                        p.getSenaMonto(),
+                        p.getSenaPaidAt(),
+                        p.getSenaPaymentId(),
+                        p.getSenaPaymentStatus()
+                ))
+                .toList();
     }
 
     @GetMapping("/admin/presupuestos/{id}")
@@ -88,5 +100,6 @@ public class PresupuestosController {
 
     record Msg(String message, Long id) {}
     record Err(String error, String message) {}
+
 }
 

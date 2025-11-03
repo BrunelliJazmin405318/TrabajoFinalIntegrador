@@ -9,10 +9,12 @@ import java.util.Optional;
 public interface PresupuestoRepository extends JpaRepository<Presupuesto, Long> {
 
     List<Presupuesto> findAllByOrderByCreadaEnDesc();
+    List<Presupuesto> findAllByEstadoOrderByCreadaEnDesc(String estado);
+    List<Presupuesto> findAllBySolicitudIdOrderByCreadaEnDesc(Long solicitudId);
+    List<Presupuesto> findAllByEstadoAndSolicitudIdOrderByCreadaEnDesc(String estado, Long solicitudId);
 
-    List<Presupuesto> findByEstadoOrderByCreadaEnDesc(String estado);
+    Optional<Presupuesto> findFirstBySolicitudIdAndEstadoOrderByCreadaEnDesc(Long solicitudId, String estado);
+    Optional<Presupuesto> findFirstBySolicitudIdOrderByCreadaEnDesc(Long solicitudId);
 
-    List<Presupuesto> findBySolicitudIdOrderByCreadaEnDesc(Long solicitudId);
 
-    Optional<Presupuesto> findBySenaPreferenceId(String senaPreferenceId);
 }

@@ -2,10 +2,10 @@
 package ar.edu.utn.tfi.service.Pagos;
 
 import com.mercadopago.MercadoPagoConfig;
+import com.mercadopago.client.preference.PreferenceBackUrlsRequest;
 import com.mercadopago.client.preference.PreferenceClient;
 import com.mercadopago.client.preference.PreferenceItemRequest;
 import com.mercadopago.client.preference.PreferencePayerRequest;
-import com.mercadopago.client.preference.PreferenceBackUrlsRequest;
 import com.mercadopago.client.preference.PreferenceRequest;
 import com.mercadopago.exceptions.MPApiException;
 import com.mercadopago.exceptions.MPException;
@@ -16,11 +16,17 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.util.List;
 
+
+// MercadoPagoService.java
 @Service
 public class MercadoPagoService {
 
-    @Value("${MP_ACCESS_TOKEN}")
+    @Value("${mp.api.access-token}")
     private String accessToken;
+
+
+    @Value("${app.public-base-url}")  // << más coherente con tu yml
+    private String baseUrl;
 
     private void init() {
         if (accessToken == null || accessToken.isBlank()) {
@@ -37,46 +43,44 @@ public class MercadoPagoService {
     ) throws Exception {
         init();
 
-        try {
-            PreferenceItemRequest item = PreferenceItemRequest.builder()
-                    .title(descripcion)
-                    .quantity(1)
-                    .currencyId("ARS")
-                    .unitPrice(montoSena)
-                    .build();
+        PreferenceItemRequest item = PreferenceItemRequest.builder()
+                .title(descripcion)
+                .quantity(1)
+                .currencyId("ARS")
+                .unitPrice(montoSena)
+                .build();
 
-            PreferenceBackUrlsRequest backUrls = PreferenceBackUrlsRequest.builder()
-                    .success("http://localhost:8080/estado-solicitud.html?id=" + presupuestoId)
-                    .failure("http://localhost:8080/estado-solicitud.html?id=" + presupuestoId)
-                    .pending("http://localhost:8080/estado-solicitud.html?id=" + presupuestoId)
-                    .build();
+        // usa SIEMPRE tu dominio público
+        String retUrl = baseUrl + "/estado-solicitud.html?id=" + presupuestoId;
 
-            PreferenceRequest.PreferenceRequestBuilder builder = PreferenceRequest.builder()
-                    .items(List.of(item))
-                    .externalReference("PRESUPUESTO-" + presupuestoId)
-                    .backUrls(backUrls);
-            // Si tenés webhook público, podés agregar:
-            // builder.notificationUrl("https://tu-dominio-o-ngrok/pagos/webhook-mp");
+        PreferenceBackUrlsRequest backUrls = PreferenceBackUrlsRequest.builder()
+                .success(retUrl)
+                .failure(retUrl)
+                .pending(retUrl)
+                .build();
 
-            if (emailCliente != null && !emailCliente.isBlank()) {
-                builder.payer(PreferencePayerRequest.builder().email(emailCliente.trim()).build());
-            }
+        PreferenceRequest.PreferenceRequestBuilder builder = PreferenceRequest.builder()
+                .items(List.of(item))
+                .externalReference("PRESUPUESTO-" + presupuestoId)
+                .backUrls(backUrls)
+        .notificationUrl(baseUrl + "/pagos/webhook-mp"); // si ya lo querés dejar activado
 
-            PreferenceClient client = new PreferenceClient();
-            return client.create(builder.build());
-
-        } catch (MPApiException apiEx) {
-            int status = apiEx.getStatusCode();
-            String body = apiEx.getApiResponse() != null ? apiEx.getApiResponse().getContent() : "(sin cuerpo)";
-            System.err.println("[MPApiException] status=" + status + " body=" + body);
-            throw new IllegalStateException("MercadoPago API error (status " + status + "): " + body);
-        } catch (MPException sdkEx) {
-            System.err.println("[MPException] " + sdkEx.getMessage());
-            throw new IllegalStateException("MercadoPago client error: " + sdkEx.getMessage());
+        if (emailCliente != null && !emailCliente.isBlank()) {
+            builder.payer(PreferencePayerRequest.builder().email(emailCliente.trim()).build());
         }
+
+        PreferenceClient client = new PreferenceClient();
+        Preference pref = client.create(builder.build());
+
+        // Log de diagnóstico por si vuelve null
+        System.out.println("[MP PREF] id=" + pref.getId()
+                + " init=" + pref.getInitPoint()
+                + " sandbox=" + pref.getSandboxInitPoint());
+
+        return pref;
     }
 
     public String linkDePreferencia(String preferenceId) {
-        return null; // por ahora no reusamos init_point por id
+        return null; // no reusamos por id
     }
 }
