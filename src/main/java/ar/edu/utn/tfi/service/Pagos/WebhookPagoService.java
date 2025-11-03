@@ -1,3 +1,4 @@
+// src/main/java/ar/edu/utn/tfi/service/Pagos/WebhookPagoService.java
 package ar.edu.utn.tfi.service.Pagos;
 
 import ar.edu.utn.tfi.domain.Presupuesto;
@@ -22,85 +23,117 @@ public class WebhookPagoService {
     private final PresupuestoRepository presupuestoRepo;
     private final WebClient webClient;
 
-    @Value("${MP_ACCESS_TOKEN}")
+    // ⚠ Usar la misma key que en PaymentApiService
+    @Value("${mp.api.access-token}")
     private String accessToken;
 
     public WebhookPagoService(PresupuestoRepository presupuestoRepo, WebClient.Builder builder) {
         this.presupuestoRepo = presupuestoRepo;
-        this.webClient = builder
-                .baseUrl("https://api.mercadopago.com")
-                .build();
+        this.webClient = builder.baseUrl("https://api.mercadopago.com").build();
     }
 
     @Transactional
     public void procesarNotificacion(String topic, String dataId) {
-        if (topic == null || dataId == null) return;
+        if (topic == null || topic.isBlank() || dataId == null || dataId.isBlank()) return;
 
-        String preferenceId = null;
-        Long paymentId = null;
-        String paymentStatus = null;
-        LocalDateTime paidAt = null;
+        Long paymentId      = null;
+        String paymentStatus= null;
+        LocalDateTime paidAt= null;
 
-        // ─── Caso merchant_order ────────────────────────
+        // Para mapear al presupuesto (sin preferenceId):
+        Long presupuestoId  = null;                   // ← target
+        String extRef       = null;                   // external_reference
+
         if ("merchant_order".equalsIgnoreCase(topic)) {
+            // GET /merchant_orders/{id}
             Map<String, Object> mo = getJson("/merchant_orders/" + dataId);
             if (mo == null) return;
 
-            preferenceId = getString(mo, "preference_id");
+            // MP incluye external_reference a nivel de orden
+            extRef = getString(mo, "external_reference");
+            presupuestoId = tryParsePresupuestoIdFromExternalRef(extRef);
 
+            // Tomamos primer pago (si existe) para status/fecha/id
             List<Map<String, Object>> payments = getListOfMaps(mo, "payments");
             if (payments != null && !payments.isEmpty()) {
                 Map<String, Object> primero = payments.get(0);
-                paymentId = getLong(primero, "id");
+                paymentId     = getLong(primero, "id");
                 paymentStatus = getString(primero, "status");
-                paidAt = toLocalDateTime(getString(primero, "date_approved"));
+                paidAt        = toLocalDateTime(getString(primero, "date_approved"));
             }
 
-            // ─── Caso payment ───────────────────────────────
         } else if ("payment".equalsIgnoreCase(topic)) {
+            // GET /v1/payments/{id}
             Map<String, Object> pr = getJson("/v1/payments/" + dataId);
             if (pr == null) return;
 
-            paymentId = getLong(pr, "id");
+            paymentId     = getLong(pr, "id");
             paymentStatus = getString(pr, "status");
-            paidAt = toLocalDateTime(getString(pr, "date_approved"));
+            paidAt        = toLocalDateTime(getString(pr, "date_approved"));
 
-            Map<String, Object> order = getMap(pr, "order");
-            if (order != null && order.get("id") != null) {
-                String orderId = String.valueOf(order.get("id"));
-                Map<String, Object> mo = getJson("/merchant_orders/" + orderId);
-                if (mo != null) {
-                    preferenceId = getString(mo, "preference_id");
+            // 1) metadata.presupuesto_id (si lo mandamos al crear el pago)
+            Map<String, Object> md = getMap(pr, "metadata");
+            if (md != null) {
+                Object pid = md.get("presupuesto_id");
+                if (pid instanceof Number n) {
+                    presupuestoId = n.longValue();
+                } else if (pid != null) {
+                    try { presupuestoId = Long.parseLong(String.valueOf(pid)); } catch (Exception ignored) {}
                 }
             }
+
+            // 2) external_reference = "PRESUPUESTO-123"
+            if (presupuestoId == null) {
+                extRef = getString(pr, "external_reference");
+                presupuestoId = tryParsePresupuestoIdFromExternalRef(extRef);
+            }
         } else {
-            // ignoramos otros tópicos
+            // Ignorar otros tópicos
             return;
         }
 
-        // ─── Si no hay preference, no procesamos ────────
-        if (preferenceId == null) return;
+        if (presupuestoId == null) {
+            // No podemos mapear el pago al presupuesto: no romper (MP reintenta si fallamos)
+            System.err.println("[WEBHOOK-MP] No se pudo resolver presupuestoId (extRef=" + extRef + ")");
+            return;
+        }
 
-        // Hacemos una copia final para usar dentro del lambda
-        final String prefId = preferenceId;
+        final Long pid = presupuestoId;
 
-        Presupuesto p = presupuestoRepo.findBySenaPreferenceId(prefId)
-                .orElseThrow(() -> new EntityNotFoundException("No hay presupuesto con preferencia: " + prefId));
+        Presupuesto p = presupuestoRepo.findById(pid)
+                .orElseThrow(() -> new EntityNotFoundException("No hay presupuesto id=" + pid));
 
-        // ─── Idempotencia ───────────────────────────────
-        if ("ACREDITADA".equalsIgnoreCase(Objects.toString(p.getSenaEstado(), ""))) return;
+        // Idempotencia simple
+        if ("ACREDITADA".equalsIgnoreCase(Objects.toString(p.getSenaEstado(), "")) &&
+                "approved".equalsIgnoreCase(Optional.ofNullable(paymentStatus).orElse(""))) {
+            return;
+        }
 
-        // ─── Acreditar ──────────────────────────────────
+        // Actualizar datos de pago
+        p.setSenaPaymentId(paymentId != null ? String.valueOf(paymentId) : null);
+        p.setSenaPaymentStatus(paymentStatus);
+        p.setSenaPaidAt(paidAt);
+
         if ("approved".equalsIgnoreCase(Optional.ofNullable(paymentStatus).orElse(""))) {
             p.setSenaEstado("ACREDITADA");
-            p.setSenaPaymentId(paymentId != null ? String.valueOf(paymentId) : null);
-            p.setSenaPaymentStatus(paymentStatus);
-            p.setSenaPaidAt(paidAt);
-            presupuestoRepo.save(p);
+        } else if (p.getSenaEstado() == null || p.getSenaEstado().isBlank()) {
+            p.setSenaEstado("PENDIENTE");
         }
+
+        presupuestoRepo.save(p);
     }
 
     // ───────────────────────── Helpers ─────────────────────────
+
+    private Long tryParsePresupuestoIdFromExternalRef(String extRef) {
+        if (extRef == null) return null;
+        if (!extRef.startsWith("PRESUPUESTO-")) return null;
+        try {
+            return Long.parseLong(extRef.substring("PRESUPUESTO-".length()));
+        } catch (Exception e) {
+            return null;
+        }
+    }
 
     private Map<String, Object> getJson(String path) {
         try {
@@ -134,14 +167,14 @@ public class WebhookPagoService {
 
     private String getString(Map<String, Object> src, String key) {
         Object o = src.get(key);
-        return o != null ? String.valueOf(o) : null;
+        return (o != null ? String.valueOf(o) : null);
     }
 
     private Long getLong(Map<String, Object> src, String key) {
         Object o = src.get(key);
         if (o instanceof Number n) return n.longValue();
         try {
-            return o != null ? Long.parseLong(String.valueOf(o)) : null;
+            return (o != null ? Long.parseLong(String.valueOf(o)) : null);
         } catch (NumberFormatException e) {
             return null;
         }

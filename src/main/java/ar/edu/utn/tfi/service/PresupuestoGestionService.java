@@ -14,6 +14,9 @@ import jakarta.persistence.EntityNotFoundException;
 import org.flywaydb.core.internal.util.StringUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ar.edu.utn.tfi.web.dto.PagoInfoDTO;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -28,6 +31,9 @@ public class PresupuestoGestionService {
     private final PresupuestoItemRepository itemRepo;
     private final MailService mailService;
     private final PaymentApiService paymentApiService;
+    private static BigDecimal calcularSena(BigDecimal total) {
+        return total.multiply(BigDecimal.valueOf(0.30)).setScale(2, RoundingMode.HALF_UP);
+    }
 
     public PresupuestoGestionService(SolicitudPresupuestoRepository solicitudRepo,
                                      ServicioTarifaRepository tarifaRepo,
@@ -171,6 +177,7 @@ public class PresupuestoGestionService {
                 .setScale(2, java.math.RoundingMode.HALF_UP);
 
         Map<String, Object> resp = paymentApiService.crearPago(
+                p.getId(),                     // <— NUEVO: presupuestoId
                 monto,
                 "Seña presupuesto #" + p.getId(),
                 req.token(),
@@ -200,5 +207,26 @@ public class PresupuestoGestionService {
         p.setSenaMonto(monto);
 
         return presupuestoRepo.save(p);
+    }
+    @Transactional(readOnly = true)
+    public PagoInfoDTO getPagoInfoPublico(Long presupuestoId) {
+        var p = presupuestoRepo.findById(presupuestoId)
+                .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException("No existe presupuesto: " + presupuestoId));
+
+        BigDecimal monto = calcularSena(p.getTotal());
+        boolean puedePagar = "APROBADO".equalsIgnoreCase(p.getEstado())
+                && !"ACREDITADA".equalsIgnoreCase(String.valueOf(p.getSenaEstado()));
+
+        return new PagoInfoDTO(
+                p.getId(),
+                monto,
+                p.getClienteEmail(),
+                p.getEstado(),
+                p.getSenaEstado(),
+                p.getSenaPaymentStatus(),
+                p.getSenaPaymentId(),
+                p.getSenaPaidAt(),
+                puedePagar
+        );
     }
 }

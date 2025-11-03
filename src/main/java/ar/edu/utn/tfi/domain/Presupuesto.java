@@ -45,8 +45,7 @@ public class Presupuesto {
     private String decisionMotivo;
 
     // Campos para manejar la seña (Mercado Pago)
-    @Column(name = "sena_preference_id")
-    private String senaPreferenceId;
+
 
     @Column(name = "sena_monto", precision = 12, scale = 2)
     private BigDecimal senaMonto;
@@ -54,8 +53,7 @@ public class Presupuesto {
     @Column(name = "sena_estado")
     private String senaEstado;
 
-    @Column(name = "sena_init_point")
-    private String senaInitPoint;
+
 
     @Column(name = "sena_payment_id")
     private String senaPaymentId;

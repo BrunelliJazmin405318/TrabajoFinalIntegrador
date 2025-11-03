@@ -49,8 +49,7 @@ public class PresupuestosController {
                         p.getCreadaEn(),
                         // —— Seña
                         p.getSenaEstado(),
-                        p.getSenaPreferenceId(),
-                        p.getSenaInitPoint(),
+
                         p.getSenaMonto(),
                         p.getSenaPaidAt(),
                         p.getSenaPaymentId(),
@@ -101,14 +100,6 @@ public class PresupuestosController {
 
     record Msg(String message, Long id) {}
     record Err(String error, String message) {}
-    @PostMapping("/admin/pagos/api/cobrar-sena/{id}")
-    public ResponseEntity<?> cobrarSenaApi(@PathVariable Long id, @RequestBody PagoApiReq req) {
-        try {
-            Presupuesto p = service.cobrarSenaApi(id, req);
-            return ResponseEntity.ok(new Msg("Pago procesado correctamente", p.getId()));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(new Err("BAD_REQUEST", e.getMessage()));
-        }
-    }
+
 }
 

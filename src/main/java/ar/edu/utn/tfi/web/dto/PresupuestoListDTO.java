@@ -15,8 +15,6 @@ public record PresupuestoListDTO(
 
         // --- Campos para mostrar estado y link de seña ---
         String senaEstado,
-        String senaPreferenceId,
-        String senaInitPoint,
         BigDecimal senaMonto,
         LocalDateTime senaPaidAt,
         String senaPaymentId,

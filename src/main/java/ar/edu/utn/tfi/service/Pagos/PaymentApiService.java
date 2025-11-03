@@ -9,6 +9,7 @@ import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Map;
 
+// src/main/java/ar/edu/utn/tfi/service/Pagos/PaymentApiService.java
 @Service
 public class PaymentApiService {
 
@@ -22,7 +23,8 @@ public class PaymentApiService {
     }
 
     @SuppressWarnings("unchecked")
-    public Map<String, Object> crearPago(BigDecimal amount,
+    public Map<String, Object> crearPago(Long presupuestoId,
+                                         BigDecimal amount,
                                          String description,
                                          String token,
                                          String paymentMethodId,
@@ -35,7 +37,7 @@ public class PaymentApiService {
         body.put("description", description);
         body.put("payment_method_id", paymentMethodId);
         body.put("token", token);
-        body.put("installments", installments == null ? 1 : installments);
+        body.put("installments", (installments == null ? 1 : installments));
 
         Map<String, Object> payer = new HashMap<>();
         payer.put("email", payerEmail);
@@ -44,6 +46,13 @@ public class PaymentApiService {
         if (issuerId != null && !issuerId.isBlank()) {
             body.put("issuer_id", issuerId);
         }
+
+        // ✨ CLAVE PARA EL WEBHOOK (API):
+        body.put("external_reference", "PRESUPUESTO-" + presupuestoId);
+
+        Map<String, Object> metadata = new HashMap<>();
+        metadata.put("presupuesto_id", presupuestoId);
+        body.put("metadata", metadata);
 
         return webClient.post()
                 .uri("/v1/payments")

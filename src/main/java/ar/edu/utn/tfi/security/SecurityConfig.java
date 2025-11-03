@@ -22,10 +22,9 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        // Preflight CORS
                         .requestMatchers(HttpMethod.OPTIONS, "/").permitAll()
 
-                        // Páginas públicas y recursos estáticos
+                        // Páginas públicas y recursos
                         .requestMatchers(
                                 "/", "/index.html",
                                 "/login.html",
@@ -38,22 +37,22 @@ public class SecurityConfig {
                                 "/admin-presupuestos.html"
                         ).permitAll()
 
-                        // Swagger abierto
+                        // Swagger
                         .requestMatchers(
                                 "/swagger-ui.html", "/swagger-ui/",
                                 "/v3/api-docs/", "/v3/api-docs.yaml"
                         ).permitAll()
 
-                        // API pública abierta
-                        .requestMatchers("/public/").permitAll()
+                        // ✅ Endpoints públicos reales (Checkout API cliente)
+                        .requestMatchers("/public/").permitAll() // CAMBIO
 
-                        // ✅ Webhook de Mercado Pago (permitido sin autenticación)
+                        // ✅ Webhook MP
                         .requestMatchers("/pagos/webhook-mp").permitAll()
 
                         // Zona admin
-                        .requestMatchers("/admin/").hasRole("ADMIN")
+                        .requestMatchers("/admin/").hasRole("ADMIN") // CAMBIO
 
-                        // Cualquier otra ruta autenticada
+                        // Resto autenticado
                         .anyRequest().authenticated()
                 )
                 .httpBasic(Customizer.withDefaults());
