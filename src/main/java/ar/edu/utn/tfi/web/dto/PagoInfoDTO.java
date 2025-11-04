@@ -1,3 +1,4 @@
+// src/main/java/ar/edu/utn/tfi/web/dto/PagoInfoDTO.java
 package ar.edu.utn.tfi.web.dto;
 
 import java.math.BigDecimal;
@@ -9,8 +10,19 @@ public record PagoInfoDTO(
         String clienteEmail,
         String presupuestoEstado,   // PENDIENTE | APROBADO | RECHAZADO
         String senaEstado,          // PENDIENTE | ACREDITADA | (null)
-        String senaPaymentStatus,   // approved | rejected | in_process | (null)
+        String senaPaymentStatus,   // approved | rejected | in_process | manual | (null)
         String senaPaymentId,
         LocalDateTime senaPaidAt,
-        boolean puedePagar          // true si presupuesto APROBADO y seña no acreditada
+
+        // 🆕 FINAL
+        String finalEstado,         // ACREDITADA | (null)
+        String finalPaymentStatus,  // manual | approved | ...
+        String finalPaymentId,
+        LocalDateTime finalPaidAt,
+
+        // 🆕 TOTALES
+        BigDecimal total,
+        BigDecimal saldoRestante,
+
+        boolean puedePagar          // true si queda saldo por pagar y corresponde mostrar botón
 ) {}

@@ -119,7 +119,7 @@ public class PresupuestoGestionService {
 
     @Transactional(readOnly = true)
     public List<Presupuesto> listar(String estado, Long solicitudId) {
-        boolean hasEstado = StringUtils.hasText(estado);
+        boolean hasEstado = (estado != null && !estado.isBlank());
         boolean hasSolicitud = (solicitudId != null);
 
         if (hasEstado && hasSolicitud) {
@@ -210,19 +210,33 @@ public class PresupuestoGestionService {
         var p = presupuestoRepo.findById(presupuestoId)
                 .orElseThrow(() -> new EntityNotFoundException("No existe presupuesto: " + presupuestoId));
 
-        BigDecimal monto = calcularSena(p.getTotal());
-        boolean puedePagar = "APROBADO".equalsIgnoreCase(p.getEstado())
-                && !"ACREDITADA".equalsIgnoreCase(String.valueOf(p.getSenaEstado()));
+        BigDecimal montoSena = calcularSena(p.getTotal());
+        BigDecimal sena = p.getSenaMonto() != null ? p.getSenaMonto() : BigDecimal.ZERO;
+        BigDecimal fin  = p.getFinalMonto() != null ? p.getFinalMonto() : BigDecimal.ZERO;
+        BigDecimal saldo = p.getTotal().subtract(sena).subtract(fin).setScale(2, RoundingMode.HALF_UP);
+
+        boolean puedePagar = "APROBADO".equalsIgnoreCase(p.getEstado()) && saldo.compareTo(BigDecimal.ZERO) > 0;
 
         return new PagoInfoDTO(
                 p.getId(),
-                monto,
+                montoSena,
                 p.getClienteEmail(),
                 p.getEstado(),
                 p.getSenaEstado(),
                 p.getSenaPaymentStatus(),
                 p.getSenaPaymentId(),
                 p.getSenaPaidAt(),
+
+                // FINAL
+                p.getFinalEstado(),
+                p.getFinalPaymentStatus(),
+                p.getFinalPaymentId(),
+                p.getFinalPaidAt(),
+
+                // totales
+                p.getTotal(),
+                saldo,
+
                 puedePagar
         );
     }
@@ -245,7 +259,9 @@ public class PresupuestoGestionService {
         final String tipo = req.tipo().toUpperCase().trim();
 
         // Convertimos LocalDate (opcional) a LocalDateTime
-        final LocalDateTime fechaPago = (req.fechaPago() != null) ? req.fechaPago().atStartOfDay() : LocalDateTime.now();
+        final LocalDateTime fechaPago = (req.fechaPago() != null)
+                ? req.fechaPago().atStartOfDay()
+                : LocalDateTime.now();
 
         if ("SENA".equals(tipo)) {
             if ("ACREDITADA".equalsIgnoreCase(String.valueOf(p.getSenaEstado()))) {
@@ -263,19 +279,20 @@ public class PresupuestoGestionService {
             presupuestoRepo.save(p);
 
         } else if ("FINAL".equals(tipo)) {
-            if (!"ACREDITADA".equalsIgnoreCase(String.valueOf(p.getSenaEstado()))) {
-                throw new IllegalStateException("Para registrar pago FINAL primero debe estar acreditada la seña.");
-            }
+            // ✅ Ya no exigimos seña previa: si no hay seña, el saldo es el total
             if ("ACREDITADA".equalsIgnoreCase(String.valueOf(p.getFinalEstado()))) {
                 throw new IllegalStateException("El pago FINAL ya está acreditado.");
             }
-            BigDecimal esperado = p.getTotal().subtract(
-                    p.getSenaMonto() != null ? p.getSenaMonto() : porcentaje(p.getTotal(), 0.30)
-            ).setScale(2, RoundingMode.HALF_UP);
+
+            BigDecimal senaAcreditada = (p.getSenaMonto() != null) ? p.getSenaMonto() : BigDecimal.ZERO;
+            BigDecimal esperado = p.getTotal()
+                    .subtract(senaAcreditada)
+                    .setScale(2, RoundingMode.HALF_UP);
 
             if (req.monto().setScale(2, RoundingMode.HALF_UP).compareTo(esperado) != 0) {
                 throw new IllegalArgumentException("Monto FINAL inválido. Esperado: " + esperado);
             }
+
             p.setFinalEstado("ACREDITADA");
             p.setFinalMonto(esperado);
             p.setFinalPaymentStatus("manual");
@@ -291,11 +308,11 @@ public class PresupuestoGestionService {
         PagoManual pm = new PagoManual();
         pm.setPresupuesto(p);
         pm.setTipo(tipo);
-        pm.setMedio(req.medio());
+        pm.setMedio(req.medio().trim());
         pm.setReferencia(req.referencia());
         pm.setMonto(req.monto().setScale(2, RoundingMode.HALF_UP));
         pm.setFechaPago(fechaPago);
-        pm.setUsuario(usuario != null ? usuario : "admin");
+        pm.setUsuario((usuario != null && !usuario.isBlank()) ? usuario : "admin");
         pm.setNota(req.nota());
 
         return pagoManualRepo.save(pm);

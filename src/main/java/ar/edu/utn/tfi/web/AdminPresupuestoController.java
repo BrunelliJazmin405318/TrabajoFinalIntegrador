@@ -3,7 +3,9 @@ package ar.edu.utn.tfi.web;
 import ar.edu.utn.tfi.domain.SolicitudPresupuesto;
 import ar.edu.utn.tfi.repository.SolicitudPresupuestoRepository;
 import ar.edu.utn.tfi.service.MailService;
-import ar.edu.utn.tfi.service.PresupuestoService;
+import ar.edu.utn.tfi.service.PresupuestoService;              // <-- tu servicio que lista SOLICITUDES
+import ar.edu.utn.tfi.service.PresupuestoGestionService;       // <-- servicio que lista PRESUPUESTOS
+import ar.edu.utn.tfi.web.dto.PresupuestoAdminDTO;
 import ar.edu.utn.tfi.web.dto.SolicitudDTO;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.http.ResponseEntity;
@@ -20,20 +22,28 @@ public class AdminPresupuestoController {
 
     private final SolicitudPresupuestoRepository repo;
     private final MailService mailService;
-    private final PresupuestoService service; // ⬅️ agregado para listar
+
+    // ⚠️ Este servicio es el que ya usabas para SOLICITUDES
+    private final PresupuestoService solicitudesService;
+
+    // ✅ Este es el nuevo servicio para PRESUPUESTOS (entidades Presupuesto)
+    private final PresupuestoGestionService presupuestosService;
 
     public AdminPresupuestoController(SolicitudPresupuestoRepository repo,
                                       MailService mailService,
-                                      PresupuestoService service) { // ⬅️ agregado para listar
+                                      PresupuestoService solicitudesService,
+                                      PresupuestoGestionService presupuestosService) {
         this.repo = repo;
         this.mailService = mailService;
-        this.service = service;
+        this.solicitudesService = solicitudesService;
+        this.presupuestosService = presupuestosService;
     }
 
-    // ⬇️ NUEVO: listado para la grilla de /admin-solicitudes.html
+    // ---------------- SOLICITUDES (lo que ya tenías) ----------------
+
     @GetMapping("/solicitudes")
-    public List<SolicitudDTO> listar(@RequestParam(required = false) String estado) {
-        return service.listar(estado)
+    public List<SolicitudDTO> listarSolicitudes(@RequestParam(required = false) String estado) {
+        return solicitudesService.listar(estado)
                 .stream()
                 .map(SolicitudDTO::from)
                 .toList();
@@ -61,9 +71,7 @@ public class AdminPresupuestoController {
         s.setDecisionMotivo(body == null ? null : body.nota());
         repo.save(s);
 
-        // ⬇️ Enviar email con MailHog
         mailService.enviarDecisionSolicitud(s);
-
         return ResponseEntity.ok(Map.of("message", "Aprobada", "id", s.getId()));
     }
 
@@ -87,9 +95,19 @@ public class AdminPresupuestoController {
         s.setDecisionMotivo(body == null ? null : body.nota());
         repo.save(s);
 
-        // ⬇️ Enviar email con MailHog
         mailService.enviarDecisionSolicitud(s);
-
         return ResponseEntity.ok(Map.of("message", "Rechazada", "id", s.getId()));
+    }
+
+    // ---------------- PRESUPUESTOS (nuevo endpoint) ----------------
+
+    @GetMapping
+    public List<PresupuestoAdminDTO> listar(@RequestParam(required = false) String estado,
+                                            @RequestParam(required = false) Long solicitudId) {
+        // 🔥 Ahora sí: esto devuelve List<Presupuesto>, por eso compila el map(PresupuestoAdminDTO::from)
+        return presupuestosService.listar(estado, solicitudId)
+                .stream()
+                .map(PresupuestoAdminDTO::from)
+                .toList();
     }
 }

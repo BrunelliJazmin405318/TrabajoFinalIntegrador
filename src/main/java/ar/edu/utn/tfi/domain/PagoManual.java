@@ -2,9 +2,12 @@
 package ar.edu.utn.tfi.domain;
 
 import jakarta.persistence.*;
+import lombok.Data;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+@Data
 @Entity
 @Table(name = "pago_manual")
 public class PagoManual {
@@ -40,24 +43,4 @@ public class PagoManual {
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
-    // getters/setters
-    public Long getId() { return id; }
-    public Presupuesto getPresupuesto() { return presupuesto; }
-    public void setPresupuesto(Presupuesto presupuesto) { this.presupuesto = presupuesto; }
-    public String getTipo() { return tipo; }
-    public void setTipo(String tipo) { this.tipo = tipo; }
-    public String getMedio() { return medio; }
-    public void setMedio(String medio) { this.medio = medio; }
-    public String getReferencia() { return referencia; }
-    public void setReferencia(String referencia) { this.referencia = referencia; }
-    public BigDecimal getMonto() { return monto; }
-    public void setMonto(BigDecimal monto) { this.monto = monto; }
-    public LocalDateTime getFechaPago() { return fechaPago; }
-    public void setFechaPago(LocalDateTime fechaPago) { this.fechaPago = fechaPago; }
-    public String getUsuario() { return usuario; }
-    public void setUsuario(String usuario) { this.usuario = usuario; }
-    public String getNota() { return nota; }
-    public void setNota(String nota) { this.nota = nota; }
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 }

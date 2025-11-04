@@ -34,29 +34,7 @@ public class PresupuestosController {
         return PresupuestoDTO.from(p, items);
     }
 
-    @GetMapping("/admin/presupuestos")
-    public List<PresupuestoListDTO> listar(@RequestParam(required = false) String estado,
-                                           @RequestParam(required = false) Long solicitudId) {
-        return service.listar(estado, solicitudId).stream()
-                .map(p -> new PresupuestoListDTO(
-                        p.getId(),
-                        p.getSolicitudId(),
-                        p.getClienteNombre(),
-                        p.getClienteEmail(),
-                        p.getVehiculoTipo(),
-                        p.getTotal(),
-                        p.getEstado(),
-                        p.getCreadaEn(),
-                        // —— Seña
-                        p.getSenaEstado(),
-
-                        p.getSenaMonto(),
-                        p.getSenaPaidAt(),
-                        p.getSenaPaymentId(),
-                        p.getSenaPaymentStatus()
-                ))
-                .toList();
-    }
+    // ⛔️ ELIMINADO: @GetMapping("/admin/presupuestos") para evitar conflicto
 
     @GetMapping("/admin/presupuestos/{id}")
     public PresupuestoDTO ver(@PathVariable Long id) {
@@ -100,6 +78,4 @@ public class PresupuestosController {
 
     record Msg(String message, Long id) {}
     record Err(String error, String message) {}
-
 }
-

@@ -162,10 +162,19 @@
 
     async function cargarPagoInfo(presupuestoId) {
         presupuestoIdForPay = null;
-        const box = document.getElementById('pagoBox');
-        const infoMsg = document.getElementById('pagoInfoNoDisponible');
+
+        const box          = document.getElementById('pagoBox');
+        const infoMsg      = document.getElementById('pagoInfoNoDisponible');
+        const pagarActions = document.getElementById('pagarActions');
+        const estadoBadge  = document.getElementById('pagoEstado');
+
+        // reset visual
         box.classList.add('d-none');
         infoMsg.classList.add('d-none');
+        pagarActions.classList.remove('d-none');
+        estadoBadge.className = 'badge bg-secondary';
+        estadoBadge.textContent = 'Pendiente';
+        document.getElementById('mp-status').textContent = '';
 
         const r = await fetch(`/public/pagos/api/info-sena/${encodeURIComponent(presupuestoId)}`);
         const info = await r.json().catch(()=> ({}));
@@ -174,27 +183,44 @@
             return;
         }
 
-        const monto = (info.montoSena ?? info.monto ?? 0);
-        const estadoPres = (info.presupuestoEstado || '').toUpperCase();
-        const senaEstado = (info.senaEstado || '').toUpperCase();
+        const monto        = Number(info.montoSena ?? info.monto ?? 0);
+        const estadoPres   = (info.presupuestoEstado || '').toUpperCase();
+        const senaEstado   = (info.senaEstado || '').toUpperCase();
+        const finalEstado  = (info.finalEstado || '').toUpperCase();
+        const saldo        = Number(info.saldoRestante ?? 0); // puede venir del back, si no queda 0
 
-        document.getElementById('pagoMonto').textContent  = money(monto);
-        document.getElementById('pagoId').textContent     = info.senaPaymentId || '-';
-        document.getElementById('pagoEstado').textContent = senaEstado || 'PENDIENTE';
+        document.getElementById('pagoMonto').textContent = money(monto);
+        document.getElementById('pagoId').textContent    = info.senaPaymentId || '-';
 
-        const puedePagar = !!info.puedePagar && estadoPres === 'APROBADO' && senaEstado !== 'ACREDITADA';
+        // 🟢 Caso 1: pago completo
+        if (finalEstado === 'ACREDITADA' || saldo <= 0) {
+            estadoBadge.textContent = 'Pago completo';
+            estadoBadge.className   = 'badge bg-success';
+            pagarActions.classList.add('d-none');
+            document.getElementById('mp-card-container').innerHTML = '';
+            document.getElementById('mp-status').textContent = '';
+            box.classList.remove('d-none');
+            return;
+        }
 
-        if (puedePagar) {
-            presupuestoIdForPay = info.presupuestoId || presupuestoId;
-            document.getElementById('pagarActions').classList.remove('d-none');
+        // 🟢 Caso 2: seña acreditada (aún falta el final, pero acá no se cobra)
+        if (senaEstado === 'ACREDITADA') {
+            estadoBadge.textContent = 'Seña acreditada';
+            estadoBadge.className   = 'badge bg-success';
+            pagarActions.classList.add('d-none');
+            box.classList.remove('d-none');
+            return;
+        }
+
+        // 🟡 Caso 3: puede pagar seña (presupuesto aprobado y seña no acreditada)
+        if (info.puedePagar && estadoPres === 'APROBADO') {
+            estadoBadge.textContent = 'Pendiente';
+            estadoBadge.className   = 'badge bg-warning text-dark';
+            presupuestoIdForPay     = info.presupuestoId || presupuestoId;
             box.classList.remove('d-none');
         } else {
-            presupuestoIdForPay = null;
-            if (senaEstado === 'ACREDITADA') {
-                document.getElementById('pagoEstado').classList.replace('bg-secondary','bg-success');
-            }
-            infoMsg.classList.toggle('d-none', senaEstado === 'ACREDITADA');
-            box.classList.remove('d-none');
+            // 🔵 No hay pago habilitado (no aprobado o ya pagado todo)
+            infoMsg.classList.remove('d-none');
         }
     }
 
@@ -210,7 +236,7 @@
 
         const rInfo = await fetch(`/public/pagos/api/info-sena/${encodeURIComponent(presupuestoIdForPay)}`);
         const info  = await rInfo.json().catch(()=> ({}));
-        const monto = (info.montoSena ?? info.monto ?? 0);
+        const monto = Number(info.montoSena ?? info.monto ?? 0);
         const email = info.clienteEmail || info.emailSugerido || '';
 
         currentBrick = await bricksBuilder.create('cardPayment', 'mp-card-container', {
@@ -221,14 +247,10 @@
             customization: { paymentMethods: { maxInstallments: 1 } },
             callbacks: {
                 onReady: () => {},
-
                 onSubmit: async (formData) => {
                     const box = document.getElementById('mp-status');
                     if (box) { box.classList.remove('d-none'); box.textContent = 'Procesando pago…'; }
 
-                    console.log('[BRICK] formData:', formData);
-
-                    // Datos que entrega el Brick
                     const payload = {
                         token: formData.token,
                         paymentMethodId: formData.payment_method_id,
@@ -248,7 +270,6 @@
 
                         const text = await res.text();
                         let data; try { data = JSON.parse(text); } catch { data = { message: text }; }
-                        console.log('[BRICK] response:', res.status, data);
 
                         if (!res.ok) {
                             if (box) box.textContent = `No pudimos procesar el pago: ${data?.message || ('HTTP ' + res.status)}`;
@@ -267,7 +288,6 @@
                         if (box) box.textContent = `Error: ${err?.message || err}`;
                     }
                 },
-
                 onError: (error) => {
                     const box = document.getElementById('mp-status');
                     if (box) {
@@ -277,7 +297,6 @@
                     console.error('[BRICK] onError', error);
                 }
             }
-
         });
     }
 

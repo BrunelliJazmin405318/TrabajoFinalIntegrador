@@ -144,7 +144,7 @@
     import { getAuthHeader, isAuthenticated } from "/js/auth.js";
 
     // ======= Config =======
-    const ENDPOINT_PM = '/admin/pagos-manuales/registrar'; // Cambiá esto si tu back usa otro path
+    const ENDPOINT_PM = '/admin/pagos-manuales/registrar';
 
     // ======= Utils =======
     const badge = (est) => est === 'APROBADO' ? 'bg-success' : (est === 'RECHAZADO' ? 'bg-danger' : 'bg-secondary');
@@ -177,35 +177,38 @@
                     '<i class="bi bi-check2"></i> Aprobar</button>' +
                     '<button type="button" class="btn btn-danger btn-sm" data-act="rechazar" data-id="'+p.id+'">' +
                     '<i class="bi bi-x-lg"></i> Rechazar</button>';
+
             } else if (p.estado === 'APROBADO') {
-                const senaOK  = (p.senaEstado || '').toUpperCase() === 'ACREDITADA';
-                const finalOK = ((p.finalEstado || '')).toUpperCase() === 'ACREDITADA';
+                const senaOK  = (p.senaEstado  || '').toUpperCase() === 'ACREDITADA';
+                const finalOK = (p.finalEstado || '').toUpperCase() === 'ACREDITADA';
 
                 if (finalOK) {
+                    // Pago final ya acreditado: mostrar chip + link al cliente (sin botón manual)
                     acciones =
                         '<span class="badge bg-success me-2">Monto total pagado</span>' +
-                        (p.finalPaymentId ? '<span class="text-muted">#' + p.finalPaymentId + '</span>' : '');
-                } else if (senaOK) {
+                        (p.finalPaymentId ? '<span class="text-muted">#' + p.finalPaymentId + '</span>' : '') +
+                        '<a class="btn btn-outline-primary btn-sm ms-2" target="_blank" href="/estado-solicitud.html?id='+(p.solicitudId??'')+'">' +
+                        '<i class="bi bi-box-arrow-up-right"></i> Página del cliente</a>';
+                } else {
+                    // Aún no está el pago final: seña acreditada o pendiente
+                    const chip = senaOK
+                        ? '<span class="badge bg-success me-2">Seña acreditada</span>' + (p.senaPaymentId ? '<span class="text-muted me-2">#'+p.senaPaymentId+'</span>' : '')
+                        : '<span class="badge bg-warning text-dark me-2">Seña pendiente</span>';
+
                     acciones =
-                        '<span class="badge bg-success me-2">Seña acreditada</span>' +
-                        (p.senaPaymentId ? '<span class="text-muted me-2">#' + p.senaPaymentId + '</span>' : '') +
-                        // SOLO si el FINAL NO está acreditado, muestro botón
+                        chip +
+                        '<a class="btn btn-outline-primary btn-sm me-2" target="_blank" href="/estado-solicitud.html?id='+(p.solicitudId??'')+'">' +
+                        '<i class="bi bi-box-arrow-up-right"></i> Página del cliente</a>' +
+                        // Permitir registrar pago manual (SENA o FINAL) mientras no esté todo pagado
                         '<button type="button" class="btn btn-outline-primary btn-sm" data-act="pago-manual" data-id="'+p.id+'">' +
                         '<i class="bi bi-cash-coin"></i> Registrar pago manual</button>';
-                } else {
-                    // Seña pendiente: llevo a la página del cliente
-                    const urlCliente = '/estado-solicitud.html?id=' + (p.solicitudId ?? '');
-                    acciones =
-                        '<span class="badge bg-warning text-dark me-2">Seña pendiente</span>' +
-                        '<a class="btn btn-outline-primary btn-sm" target="_blank" href="'+urlCliente+'">' +
-                        '<i class="bi bi-box-arrow-up-right"></i> Abrir página del cliente</a>';
                 }
             }
 
             const solicitudTxt = (p.solicitudId !== null && p.solicitudId !== undefined) ? p.solicitudId : '-';
 
             tb.insertAdjacentHTML('beforeend',
-                '<tr>' +
+                '<tr data-row-id="'+p.id+'">' +
                 '<td>'+p.id+'</td>' +
                 '<td>'+solicitudTxt+'</td>' +
                 '<td>'+p.clienteNombre+'</td>' +
@@ -246,29 +249,28 @@
             return;
         }
 
-        // Registrar pago FINAL manual
+        // Registrar pago manual (SENA o FINAL)
         if (act === 'pago-manual') {
-            // Confirmación inicial
-            if (!confirm('Vas a registrar el PAGO FINAL manual. ¿Continuar?')) return;
+            const tipo = prompt('Tipo de pago manual (SENA o FINAL):', 'FINAL');
+            if (!tipo) return;
+            const T = tipo.trim().toUpperCase();
+            if (T !== 'SENA' && T !== 'FINAL') { alert('Tipo inválido. Usá SENA o FINAL.'); return; }
 
-            // Pido datos (si cancela, no hago nada)
             const referencia = prompt('Referencia (opcional — ej: recibo/transferencia)') ?? null;
             const fechaStr   = prompt('Fecha (opcional, formato YYYY-MM-DD). Dejar vacío = hoy') ?? null;
             const nota       = prompt('Nota (opcional)') ?? null;
 
-            // monto y medio obligatorios
-            const montoStr = prompt('Monto FINAL exacto (en ARS, ej: 12345.67)');
-            if (montoStr === null) return; // canceló
-            const medio = prompt('Medio (efectivo/transferencia/…):');
-            if (medio === null) return; // canceló
+            const montoStr = prompt(`Monto ${T} exacto (ARS, ej: 12345.67)`);
+            if (montoStr === null) return;
+            const medio = prompt('Medio (EFECTIVO/TRANSFERENCIA/TARJETA/OTRO):', 'EFECTIVO');
+            if (medio === null) return;
 
-            const monto = Number(montoStr.replace(',', '.'));
+            const monto = Number(String(montoStr).replace(',', '.'));
             if (!(monto > 0)) { alert('Monto inválido'); return; }
 
-            // Si escribió fecha, valido formato simple YYYY-MM-DD (el back lo parsea a LocalDate)
-            let fecha = null;
+            let fechaPago = null;
             if (fechaStr && /^\d{4}-\d{2}-\d{2}$/.test(fechaStr)) {
-                fecha = fechaStr;
+                fechaPago = fechaStr;
             } else if (fechaStr && fechaStr.trim() !== '') {
                 alert('Fecha inválida. Usá YYYY-MM-DD o dejalo vacío.');
                 return;
@@ -276,15 +278,14 @@
 
             const payload = {
                 presupuestoId: Number(id),
-                tipo: 'FINAL',
-                medio: (medio || '').trim(),
+                tipo: T,
+                medio: (medio || '').trim().toUpperCase(),
                 referencia: (referencia || '').trim(),
                 monto: monto,
-                fecha: fecha || null,   // LocalDate en el back
+                fechaPago: fechaPago || null,  // ← coincide con el DTO
                 nota: (nota || '').trim()
             };
 
-            // Deshabilito para evitar dobles clics
             btn.disabled = true;
             try {
                 const r = await fetch(ENDPOINT_PM, {
@@ -302,9 +303,10 @@
                     return;
                 }
 
-                // OK
-                alert('Pago FINAL manual registrado correctamente.');
-                await cargar(); // al recargar ya no se muestra el botón (final acreditado)
+                // OK → deshabilitar y recargar (si quedó FINAL acreditado, el botón ya no vuelve)
+                alert(`Pago ${T} manual registrado correctamente.`);
+                btn.classList.add('disabled');
+                await cargar();
             } catch (err) {
                 btn.disabled = false;
                 alert('Error de red: ' + (err?.message || err));
