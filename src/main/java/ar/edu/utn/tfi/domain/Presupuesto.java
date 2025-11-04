@@ -2,6 +2,7 @@ package ar.edu.utn.tfi.domain;
 
 import jakarta.persistence.*;
 import lombok.Data;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
@@ -44,16 +45,14 @@ public class Presupuesto {
     @Column(name = "decision_motivo")
     private String decisionMotivo;
 
-    // Campos para manejar la seña (Mercado Pago)
-
+    // ───────────── Campos de SEÑA (Checkout API / manual) ─────────────
 
     @Column(name = "sena_monto", precision = 12, scale = 2)
     private BigDecimal senaMonto;
 
+    // PENDIENTE | ACREDITADA | CANCELADA
     @Column(name = "sena_estado")
     private String senaEstado;
-
-
 
     @Column(name = "sena_payment_id")
     private String senaPaymentId;
@@ -64,12 +63,37 @@ public class Presupuesto {
     @Column(name = "sena_paid_at")
     private LocalDateTime senaPaidAt;
 
+    // ───────────── Campos de PAGO FINAL (manual o futuro online) ─────────────
 
+    @Column(name = "final_monto", precision = 12, scale = 2)
+    private BigDecimal finalMonto;
+
+    // PENDIENTE | ACREDITADO | CANCELADO
+    @Column(name = "final_estado")
+    private String finalEstado;
+
+    // Referencia/comprobante/ID de operación (si aplica)
+    @Column(name = "final_payment_id")
+    private String finalPaymentId;
+
+    // Estado del pago: approved/authorized/rejected/etc. (si aplica)
+    @Column(name = "final_payment_status")
+    private String finalPaymentStatus;
+
+    // Fecha/hora de acreditación
+    @Column(name = "final_paid_at")
+    private LocalDateTime finalPaidAt;
+
+    // ─────────────────────────────────────────────────────────────────────────
 
     @PrePersist
     void prePersist() {
         if (creadaEn == null) creadaEn = LocalDateTime.now();
         if (estado == null) estado = "PENDIENTE";
         if (total == null) total = BigDecimal.ZERO;
+
+        // Defaults “suaves” por si los usás en validaciones
+        if (senaEstado == null || senaEstado.isBlank()) senaEstado = "PENDIENTE";
+        if (finalEstado == null || finalEstado.isBlank()) finalEstado = "PENDIENTE";
     }
 }
