@@ -1,10 +1,12 @@
+// src/main/java/ar/edu/utn/tfi/web/AdminPresupuestoController.java
 package ar.edu.utn.tfi.web;
 
 import ar.edu.utn.tfi.domain.SolicitudPresupuesto;
 import ar.edu.utn.tfi.repository.SolicitudPresupuestoRepository;
+import ar.edu.utn.tfi.repository.FacturaMockRepository;     // ⬅️ NUEVO
 import ar.edu.utn.tfi.service.MailService;
-import ar.edu.utn.tfi.service.PresupuestoService;              // <-- tu servicio que lista SOLICITUDES
-import ar.edu.utn.tfi.service.PresupuestoGestionService;       // <-- servicio que lista PRESUPUESTOS
+import ar.edu.utn.tfi.service.PresupuestoService;            // SOLICITUDES
+import ar.edu.utn.tfi.service.PresupuestoGestionService;     // PRESUPUESTOS
 import ar.edu.utn.tfi.web.dto.PresupuestoAdminDTO;
 import ar.edu.utn.tfi.web.dto.SolicitudDTO;
 import jakarta.persistence.EntityNotFoundException;
@@ -15,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/admin/presupuestos")
@@ -23,23 +26,24 @@ public class AdminPresupuestoController {
     private final SolicitudPresupuestoRepository repo;
     private final MailService mailService;
 
-    // ⚠️ Este servicio es el que ya usabas para SOLICITUDES
-    private final PresupuestoService solicitudesService;
+    private final PresupuestoService solicitudesService;       // lista SOLICITUDES
+    private final PresupuestoGestionService presupuestosService; // lista PRESUPUESTOS
 
-    // ✅ Este es el nuevo servicio para PRESUPUESTOS (entidades Presupuesto)
-    private final PresupuestoGestionService presupuestosService;
+    private final FacturaMockRepository facturaRepo;           // ⬅️ NUEVO
 
     public AdminPresupuestoController(SolicitudPresupuestoRepository repo,
                                       MailService mailService,
                                       PresupuestoService solicitudesService,
-                                      PresupuestoGestionService presupuestosService) {
+                                      PresupuestoGestionService presupuestosService,
+                                      FacturaMockRepository facturaRepo) {   // ⬅️ NUEVO en ctor
         this.repo = repo;
         this.mailService = mailService;
         this.solicitudesService = solicitudesService;
         this.presupuestosService = presupuestosService;
+        this.facturaRepo = facturaRepo;                         // ⬅️ NUEVO
     }
 
-    // ---------------- SOLICITUDES (lo que ya tenías) ----------------
+    // ---------------- SOLICITUDES ----------------
 
     @GetMapping("/solicitudes")
     public List<SolicitudDTO> listarSolicitudes(@RequestParam(required = false) String estado) {
@@ -99,15 +103,34 @@ public class AdminPresupuestoController {
         return ResponseEntity.ok(Map.of("message", "Rechazada", "id", s.getId()));
     }
 
-    // ---------------- PRESUPUESTOS (nuevo endpoint) ----------------
+    // ---------------- PRESUPUESTOS (grilla admin) ----------------
 
     @GetMapping
     public List<PresupuestoAdminDTO> listar(@RequestParam(required = false) String estado,
                                             @RequestParam(required = false) Long solicitudId) {
-        // 🔥 Ahora sí: esto devuelve List<Presupuesto>, por eso compila el map(PresupuestoAdminDTO::from)
-        return presupuestosService.listar(estado, solicitudId)
-                .stream()
-                .map(PresupuestoAdminDTO::from)
+
+        var presupuestos = presupuestosService.listar(estado, solicitudId);
+
+        // si la lista viene vacía, evitamos query inútil
+        if (presupuestos.isEmpty()) {
+            return List.of();
+        }
+
+        var ids = presupuestos.stream().map(p -> p.getId()).toList();
+
+        // repo de facturas inyectado en el service o controller (elegí dónde lo tengas)
+        var facturas = facturaRepo.findByPresupuestoIdIn(ids).stream()
+                .collect(Collectors.toMap(f -> f.getPresupuesto().getId(), f -> f));
+
+        return presupuestos.stream()
+                .map(p -> {
+                    var f = facturas.get(p.getId());
+                    return PresupuestoAdminDTO.from(
+                            p,
+                            (f == null ? null : f.getNumero()),
+                            (f == null ? null : f.getTipo())
+                    );
+                })
                 .toList();
     }
 }

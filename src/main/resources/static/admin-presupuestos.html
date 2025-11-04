@@ -145,9 +145,14 @@
 
     // ======= Config =======
     const ENDPOINT_PM = '/admin/pagos-manuales/registrar';
+    const ENDPOINT_PDF_BY_PRES = (id, tipo='B') =>
+        `/admin/facturas/pdf/by-presupuesto/${id}?tipo=${encodeURIComponent(tipo)}`;
+    const ENDPOINT_FACTURAR = (id) => `/admin/facturas/generar/${id}`;
 
     // ======= Utils =======
-    const badge = (est) => est === 'APROBADO' ? 'bg-success' : (est === 'RECHAZADO' ? 'bg-danger' : 'bg-secondary');
+    const badge = (est) =>
+        est === 'APROBADO' ? 'bg-success' :
+            (est === 'RECHAZADO' ? 'bg-danger' : 'bg-secondary');
     const fmt   = (s) => s ? s.replace('T',' ').substring(0,19) : '-';
     const money = (n) => new Intl.NumberFormat('es-AR', { style:'currency', currency:'ARS' }).format(n || 0);
 
@@ -183,14 +188,30 @@
                 const finalOK = (p.finalEstado || '').toUpperCase() === 'ACREDITADA';
 
                 if (finalOK) {
-                    // Pago final ya acreditado: mostrar chip + link al cliente (sin botón manual)
-                    acciones =
-                        '<span class="badge bg-success me-2">Monto total pagado</span>' +
-                        (p.finalPaymentId ? '<span class="text-muted">#' + p.finalPaymentId + '</span>' : '') +
-                        '<a class="btn btn-outline-primary btn-sm ms-2" target="_blank" href="/estado-solicitud.html?id='+(p.solicitudId??'')+'">' +
-                        '<i class="bi bi-box-arrow-up-right"></i> Página del cliente</a>';
+                    // ✅ Pago total acreditado
+                    const tieneFactura = !!p.facturaNumero;
+                    if (tieneFactura) {
+                        acciones =
+                            '<span class="badge bg-success me-2">Monto total pagado</span>' +
+                            (p.finalPaymentId ? '<span class="text-muted">#' + p.finalPaymentId + '</span>' : '') +
+                            '<button type="button" class="btn btn-success btn-sm ms-2" ' +
+                            'data-act="descargar-factura" data-id="'+p.id+'" data-tipo="'+(p.facturaTipo || 'B')+'">' +
+                            '<i class="bi bi-download"></i> Descargar factura '+ (p.facturaTipo || 'B') +'</button>' +
+                            '<span class="text-muted ms-2">'+ p.facturaNumero +'</span>' +
+                            '<a class="btn btn-outline-primary btn-sm ms-2" target="_blank" href="/estado-solicitud.html?id='+(p.solicitudId??'')+'">' +
+                            '<i class="bi bi-box-arrow-up-right"></i> Página del cliente</a>';
+                    } else {
+                        acciones =
+                            '<span class="badge bg-success me-2">Monto total pagado</span>' +
+                            (p.finalPaymentId ? '<span class="text-muted">#' + p.finalPaymentId + '</span>' : '') +
+                            '<button type="button" class="btn btn-outline-success btn-sm ms-2" ' +
+                            'data-act="facturar" data-id="'+p.id+'">' +
+                            '<i class="bi bi-receipt"></i> Generar factura (A/B)</button>' +
+                            '<a class="btn btn-outline-primary btn-sm ms-2" target="_blank" href="/estado-solicitud.html?id='+(p.solicitudId??'')+'">' +
+                            '<i class="bi bi-box-arrow-up-right"></i> Página del cliente</a>';
+                    }
                 } else {
-                    // Aún no está el pago final: seña acreditada o pendiente
+                    // Aún no pago final
                     const chip = senaOK
                         ? '<span class="badge bg-success me-2">Seña acreditada</span>' + (p.senaPaymentId ? '<span class="text-muted me-2">#'+p.senaPaymentId+'</span>' : '')
                         : '<span class="badge bg-warning text-dark me-2">Seña pendiente</span>';
@@ -199,7 +220,6 @@
                         chip +
                         '<a class="btn btn-outline-primary btn-sm me-2" target="_blank" href="/estado-solicitud.html?id=' + (p.solicitudId ?? '') + '">' +
                         '<i class="bi bi-box-arrow-up-right"></i> Página del cliente</a>' +
-                        // 👇 botón con data-* para autocompletar
                         '<button type="button" class="btn btn-outline-primary btn-sm" ' +
                         'data-act="pago-manual" ' +
                         'data-id="' + p.id + '" ' +
@@ -232,7 +252,7 @@
 
     document.getElementById('btnBuscar').addEventListener('click', cargar);
 
-    // ======= Acciones =======
+    // ======= Acciones (un único listener) =======
     document.getElementById('tbody').addEventListener('click', async (e) => {
         const btn = e.target.closest('button[data-act]');
         if (!btn) return;
@@ -242,7 +262,7 @@
         // Aprobar / Rechazar
         if (act === 'aprobar' || act === 'rechazar') {
             const nota = prompt(act.toUpperCase()+': nota/observación (opcional)') ?? null;
-            if (nota === null) return; // canceló
+            if (nota === null) return;
             btn.disabled = true;
             const r = await fetch('/admin/presupuestos/'+id+'/'+act, {
                 method: 'PUT',
@@ -257,136 +277,159 @@
             return;
         }
 
-        // Registrar pago manual (SENA o FINAL)
-        // ======= Acciones =======
-        document.getElementById('tbody').addEventListener('click', async (e) => {
-            const btn = e.target.closest('button[data-act]');
-            if (!btn) return;
-            const id  = btn.dataset.id;
-            const act = btn.dataset.act;
+        // Generar factura (elige A/B)
+        if (act === 'facturar') {
+            let tipo = prompt('Tipo de factura (A o B):', 'B');
+            if (!tipo) return;
+            tipo = tipo.trim().toUpperCase();
+            if (tipo !== 'A' && tipo !== 'B') { alert('Tipo inválido. Usá A o B.'); return; }
 
-            // Aprobar / Rechazar
-            if (act === 'aprobar' || act === 'rechazar') {
-                const nota = prompt(act.toUpperCase()+': nota/observación (opcional)') ?? null;
-                if (nota === null) return; // canceló
+            try {
                 btn.disabled = true;
-                const r = await fetch('/admin/presupuestos/'+id+'/'+act, {
-                    method: 'PUT',
-                    headers: { 'Content-Type':'application/json', ...getAuthHeader() },
-                    body: JSON.stringify({ nota })
+                const r = await fetch(ENDPOINT_FACTURAR(id), {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+                    body: JSON.stringify({ tipo })
                 });
+                const text = await r.text();
+                let j; try { j = JSON.parse(text); } catch { j = { message: text }; }
+                if (!r.ok) {
+                    alert('No se pudo generar la factura: ' + (j.message || `HTTP ${r.status}`));
+                    btn.disabled = false;
+                    return;
+                }
+                alert('Factura generada: ' + (j.numero || 'OK'));
+                await cargar(); // ahora debería aparecer "Descargar factura"
+            } catch (err) {
                 btn.disabled = false;
-                const j = await r.json().catch(()=> ({}));
-                if (!r.ok) { alert('Error: '+(j.message || r.status)); return; }
-                alert('OK');
-                await cargar();
+                alert('Error de red: ' + (err?.message || err));
+            }
+            return;
+        }
+
+        // Descargar factura (PDF) — usa fetch con headers y descarga vía blob
+        if (act === 'descargar-factura') {
+            const tipo = (btn.dataset.tipo || 'B').toUpperCase();
+            const url = ENDPOINT_PDF_BY_PRES(id, tipo);
+            try {
+                btn.disabled = true;
+                const r = await fetch(url, { headers: { ...getAuthHeader() } });
+                if (!r.ok) {
+                    const txt = await r.text();
+                    alert('No se pudo descargar la factura: ' + (txt || `HTTP ${r.status}`));
+                    btn.disabled = false;
+                    return;
+                }
+                const blob = await r.blob();
+                const href = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = href;
+                a.download = `factura-presupuesto-${id}.pdf`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                URL.revokeObjectURL(href);
+                btn.disabled = false;
+            } catch (err) {
+                btn.disabled = false;
+                alert('Error de red al descargar: ' + (err?.message || err));
+            }
+            return;
+        }
+
+        // Registrar pago manual (SENA o FINAL)
+        if (act === 'pago-manual') {
+            const rowBtn = btn;
+            const total = Number(rowBtn.dataset.total || 0);
+            const senaMontoDato = rowBtn.dataset.senaMonto;
+            const senaEstado = (rowBtn.dataset.senaEstado || '').toUpperCase();
+            const finalEstado = (rowBtn.dataset.finalEstado || '').toUpperCase();
+            const senaMonto = senaMontoDato === '' ? null : Number(senaMontoDato);
+
+            if (finalEstado === 'ACREDITADA') { alert('Este presupuesto ya tiene el pago FINAL acreditado.'); return; }
+
+            const tipoDefault = senaEstado === 'ACREDITADA' ? 'FINAL' : 'SENA';
+            const tipo = prompt('Tipo de pago manual (SENA o FINAL):', tipoDefault);
+            if (!tipo) return;
+            const T = tipo.trim().toUpperCase();
+            if (T !== 'SENA' && T !== 'FINAL') { alert('Tipo inválido. Usá SENA o FINAL.'); return; }
+
+            const round2 = (n) => Math.round((Number(n) + Number.EPSILON) * 100) / 100;
+            const senaEsperada = round2(total * 0.30);
+            const finalEsperado = round2(total - (senaMonto != null ? senaMonto : senaEsperada));
+
+            if (T === 'FINAL' && senaEstado !== 'ACREDITADA') {
+                alert('Para registrar pago FINAL primero debe estar acreditada la seña.');
                 return;
             }
 
-            // ✅ Registrar pago manual (SENA o FINAL)
-            if (act === 'pago-manual') {
-                const rowBtn = btn; // el botón clickeado
-                const total = Number(rowBtn.dataset.total || 0);
-                const senaMontoDato = rowBtn.dataset.senaMonto;
-                const senaEstado = (rowBtn.dataset.senaEstado || '').toUpperCase();
-                const finalEstado = (rowBtn.dataset.finalEstado || '').toUpperCase();
-                const senaMonto = senaMontoDato === '' ? null : Number(senaMontoDato);
-
-                // Si ya está pago completo, no permitir
-                if (finalEstado === 'ACREDITADA') {
-                    alert('Este presupuesto ya tiene el pago FINAL acreditado.');
-                    return;
-                }
-
-                // Elegir tipo (default FINAL si ya hay seña acreditada, sino SENA)
-                const tipoDefault = senaEstado === 'ACREDITADA' ? 'FINAL' : 'SENA';
-                const tipo = prompt('Tipo de pago manual (SENA o FINAL):', tipoDefault);
-                if (!tipo) return;
-                const T = tipo.trim().toUpperCase();
-                if (T !== 'SENA' && T !== 'FINAL') { alert('Tipo inválido. Usá SENA o FINAL.'); return; }
-
-                // Calcular montos esperados (redondeo a 2 decimales)
-                const round2 = (n) => Math.round((Number(n) + Number.EPSILON) * 100) / 100;
-                const senaEsperada = round2(total * 0.30);
-                const finalEsperado = round2(total - (senaMonto != null ? senaMonto : senaEsperada));
-
-                // Si intenta FINAL sin seña acreditada, avisar (regla de negocio)
-                if (T === 'FINAL' && senaEstado !== 'ACREDITADA') {
-                    alert('Para registrar pago FINAL primero debe estar acreditada la seña.');
-                    return;
-                }
-
-                // 🔹 Referencia OBLIGATORIA
-                let referencia = null;
-                while (true) {
-                    const r = prompt('Referencia (OBLIGATORIA — ej: recibo/transferencia):');
-                    if (r === null) return; // canceló
-                    if (r.trim().length > 0) { referencia = r.trim(); break; }
-                    alert('La referencia es obligatoria.');
-                }
-
-                // Defaults “inteligentes”
-                const hoy = new Date().toISOString().slice(0,10);
-                const montoSugerido = (T === 'SENA') ? senaEsperada : finalEsperado;
-
-                const fechaStr = prompt('Fecha (opcional, formato YYYY-MM-DD). Dejar vacío = hoy', hoy) ?? null;
-                const nota     = prompt('Nota (opcional)') ?? null;
-
-                const montoStr = prompt(`Monto ${T} exacto (ARS)`, montoSugerido.toFixed(2));
-                if (montoStr === null) return;
-
-                const medio = prompt('Medio (EFECTIVO/TRANSFERENCIA/TARJETA/OTRO):', 'EFECTIVO');
-                if (medio === null) return;
-
-                const monto = Number(String(montoStr).replace(',', '.'));
-                if (!(monto > 0)) { alert('Monto inválido'); return; }
-
-                let fechaPago = null;
-                if (fechaStr && /^\d{4}-\d{2}-\d{2}$/.test(fechaStr)) {
-                    fechaPago = fechaStr;
-                } else if (fechaStr && fechaStr.trim() !== '') {
-                    alert('Fecha inválida. Usá YYYY-MM-DD o dejalo vacío.');
-                    return;
-                }
-
-                // Armamos payload
-                const payload = {
-                    presupuestoId: Number(id),
-                    tipo: T,
-                    medio: (medio || '').trim().toUpperCase(),
-                    referencia: referencia,
-                    monto: monto,
-                    fechaPago: fechaPago || null, // coincide con el DTO
-                    nota: (nota || '').trim()
-                };
-
-                // Enviar
-                btn.disabled = true;
-                try {
-                    const r = await fetch(ENDPOINT_PM, {
-                        method: 'POST',
-                        headers: { 'Content-Type':'application/json', ...getAuthHeader() },
-                        body: JSON.stringify(payload)
-                    });
-
-                    const text = await r.text();
-                    let j; try { j = JSON.parse(text); } catch { j = { message: text }; }
-
-                    if (!r.ok) {
-                        btn.disabled = false;
-                        alert('Error al registrar: ' + (j.message || r.status));
-                        return;
-                    }
-
-                    alert(`Pago ${T} manual registrado correctamente.`);
-                    btn.classList.add('disabled'); // visual
-                    await cargar();                // al recargar, si quedó FINAL acreditado el botón ya no aparece
-                } catch (err) {
-                    btn.disabled = false;
-                    alert('Error de red: ' + (err?.message || err));
-                }
+            let referencia = null;
+            while (true) {
+                const r = prompt('Referencia (OBLIGATORIA — ej: recibo/transferencia):');
+                if (r === null) return;
+                if (r.trim().length > 0) { referencia = r.trim(); break; }
+                alert('La referencia es obligatoria.');
             }
-        });
+
+            const hoy = new Date().toISOString().slice(0,10);
+            const montoSugerido = (T === 'SENA') ? senaEsperada : finalEsperado;
+
+            const fechaStr = prompt('Fecha (opcional, formato YYYY-MM-DD). Dejar vacío = hoy', hoy) ?? null;
+            const nota     = prompt('Nota (opcional)') ?? null;
+
+            const montoStr = prompt(`Monto ${T} exacto (ARS)`, montoSugerido.toFixed(2));
+            if (montoStr === null) return;
+
+            const medio = prompt('Medio (EFECTIVO/TRANSFERENCIA/TARJETA/OTRO):', 'EFECTIVO');
+            if (medio === null) return;
+
+            const monto = Number(String(montoStr).replace(',', '.'));
+            if (!(monto > 0)) { alert('Monto inválido'); return; }
+
+            let fechaPago = null;
+            if (fechaStr && /^\d{4}-\d{2}-\d{2}$/.test(fechaStr)) {
+                fechaPago = fechaStr;
+            } else if (fechaStr && fechaStr.trim() !== '') {
+                alert('Fecha inválida. Usá YYYY-MM-DD o dejalo vacío.');
+                return;
+            }
+
+            const payload = {
+                presupuestoId: Number(id),
+                tipo: T,
+                medio: (medio || '').trim().toUpperCase(),
+                referencia: referencia,
+                monto: monto,
+                fechaPago: fechaPago || null,
+                nota: (nota || '').trim()
+            };
+
+            btn.disabled = true;
+            try {
+                const r = await fetch(ENDPOINT_PM, {
+                    method: 'POST',
+                    headers: { 'Content-Type':'application/json', ...getAuthHeader() },
+                    body: JSON.stringify(payload)
+                });
+
+                const text = await r.text();
+                let j; try { j = JSON.parse(text); } catch { j = { message: text }; }
+
+                if (!r.ok) {
+                    btn.disabled = false;
+                    alert('Error al registrar: ' + (j.message || r.status));
+                    return;
+                }
+
+                alert(`Pago ${T} manual registrado correctamente.`);
+                btn.classList.add('disabled');
+                await cargar();
+            } catch (err) {
+                btn.disabled = false;
+                alert('Error de red: ' + (err?.message || err));
+            }
+            return;
+        }
     });
 
     // ======= Generar presupuesto rápido =======
