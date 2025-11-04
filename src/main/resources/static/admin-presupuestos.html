@@ -135,7 +135,7 @@
 
 <footer class="site-footer">
     <div class="container d-flex justify-content-between">
-        <span>© Rectificadora — demo académica</span>
+        <span>©️ Rectificadora — demo académica</span>
         <span class="muted">Negro/Gris/Blanco + Rojo</span>
     </div>
 </footer>
@@ -143,10 +143,15 @@
 <script type="module">
     import { getAuthHeader, isAuthenticated } from "/js/auth.js";
 
+    // ======= Config =======
+    const ENDPOINT_PM = '/admin/pagos-manuales/registrar';
+
+    // ======= Utils =======
     const badge = (est) => est === 'APROBADO' ? 'bg-success' : (est === 'RECHAZADO' ? 'bg-danger' : 'bg-secondary');
     const fmt   = (s) => s ? s.replace('T',' ').substring(0,19) : '-';
     const money = (n) => new Intl.NumberFormat('es-AR', { style:'currency', currency:'ARS' }).format(n || 0);
 
+    // ======= Carga de grilla =======
     async function cargar () {
         if (!isAuthenticated()) { alert('Iniciá sesión admin.'); location.href = '/login.html'; return; }
 
@@ -168,32 +173,50 @@
 
             if (p.estado === 'PENDIENTE') {
                 acciones =
-                    '<button class="btn btn-success btn-sm me-1" data-act="aprobar" data-id="'+p.id+'">' +
-                    '<i class="bi bi-check2"></i> Aprobar' +
-                    '</button>' +
-                    '<button class="btn btn-danger btn-sm" data-act="rechazar" data-id="'+p.id+'">' +
-                    '<i class="bi bi-x-lg"></i> Rechazar' +
-                    '</button>';
+                    '<button type="button" class="btn btn-success btn-sm me-1" data-act="aprobar" data-id="'+p.id+'">' +
+                    '<i class="bi bi-check2"></i> Aprobar</button>' +
+                    '<button type="button" class="btn btn-danger btn-sm" data-act="rechazar" data-id="'+p.id+'">' +
+                    '<i class="bi bi-x-lg"></i> Rechazar</button>';
+
             } else if (p.estado === 'APROBADO') {
-                if (p.senaEstado === 'ACREDITADA') {
+                const senaOK  = (p.senaEstado  || '').toUpperCase() === 'ACREDITADA';
+                const finalOK = (p.finalEstado || '').toUpperCase() === 'ACREDITADA';
+
+                if (finalOK) {
+                    // Pago final ya acreditado: mostrar chip + link al cliente (sin botón manual)
                     acciones =
-                        '<span class="badge bg-success me-2">Seña acreditada</span>' +
-                        (p.senaPaymentId ? '<span class="text-muted">#' + p.senaPaymentId + '</span>' : '');
+                        '<span class="badge bg-success me-2">Monto total pagado</span>' +
+                        (p.finalPaymentId ? '<span class="text-muted">#' + p.finalPaymentId + '</span>' : '') +
+                        '<a class="btn btn-outline-primary btn-sm ms-2" target="_blank" href="/estado-solicitud.html?id='+(p.solicitudId??'')+'">' +
+                        '<i class="bi bi-box-arrow-up-right"></i> Página del cliente</a>';
                 } else {
-                    // sin cobro en admin: solo guía al link público del cliente
-                    const urlCliente = '/estado-solicitud.html?id=' + (p.solicitudId ?? '');
+                    // Aún no está el pago final: seña acreditada o pendiente
+                    const chip = senaOK
+                        ? '<span class="badge bg-success me-2">Seña acreditada</span>' + (p.senaPaymentId ? '<span class="text-muted me-2">#'+p.senaPaymentId+'</span>' : '')
+                        : '<span class="badge bg-warning text-dark me-2">Seña pendiente</span>';
+
                     acciones =
-                        '<span class="badge bg-warning text-dark me-2">Seña pendiente</span>' +
-                        '<a class="btn btn-outline-primary btn-sm" target="_blank" href="'+urlCliente+'">' +
-                        '<i class="bi bi-box-arrow-up-right"></i> Abrir página del cliente' +
-                        '</a>';
+                        chip +
+                        '<a class="btn btn-outline-primary btn-sm me-2" target="_blank" href="/estado-solicitud.html?id=' + (p.solicitudId ?? '') + '">' +
+                        '<i class="bi bi-box-arrow-up-right"></i> Página del cliente</a>' +
+                        // 👇 botón con data-* para autocompletar
+                        '<button type="button" class="btn btn-outline-primary btn-sm" ' +
+                        'data-act="pago-manual" ' +
+                        'data-id="' + p.id + '" ' +
+                        'data-total="' + (p.total ?? 0) + '" ' +
+                        'data-sena-monto="' + (p.senaMonto ?? '') + '" ' +
+                        'data-sena-estado="' + (p.senaEstado ?? '') + '" ' +
+                        'data-final-estado="' + (p.finalEstado ?? '') + '"' +
+                        '>' +
+                        '<i class="bi bi-cash-coin"></i> Registrar pago manual' +
+                        '</button>';
                 }
             }
 
             const solicitudTxt = (p.solicitudId !== null && p.solicitudId !== undefined) ? p.solicitudId : '-';
 
             tb.insertAdjacentHTML('beforeend',
-                '<tr>' +
+                '<tr data-row-id="'+p.id+'">' +
                 '<td>'+p.id+'</td>' +
                 '<td>'+solicitudTxt+'</td>' +
                 '<td>'+p.clienteNombre+'</td>' +
@@ -209,27 +232,164 @@
 
     document.getElementById('btnBuscar').addEventListener('click', cargar);
 
+    // ======= Acciones =======
     document.getElementById('tbody').addEventListener('click', async (e) => {
         const btn = e.target.closest('button[data-act]');
         if (!btn) return;
-
         const id  = btn.dataset.id;
         const act = btn.dataset.act;
 
+        // Aprobar / Rechazar
         if (act === 'aprobar' || act === 'rechazar') {
-            const nota = prompt(act.toUpperCase()+': nota/observación (opcional)') || '';
+            const nota = prompt(act.toUpperCase()+': nota/observación (opcional)') ?? null;
+            if (nota === null) return; // canceló
+            btn.disabled = true;
             const r = await fetch('/admin/presupuestos/'+id+'/'+act, {
                 method: 'PUT',
                 headers: { 'Content-Type':'application/json', ...getAuthHeader() },
                 body: JSON.stringify({ nota })
             });
+            btn.disabled = false;
             const j = await r.json().catch(()=> ({}));
             if (!r.ok) { alert('Error: '+(j.message || r.status)); return; }
             alert('OK');
             await cargar();
+            return;
         }
+
+        // Registrar pago manual (SENA o FINAL)
+        // ======= Acciones =======
+        document.getElementById('tbody').addEventListener('click', async (e) => {
+            const btn = e.target.closest('button[data-act]');
+            if (!btn) return;
+            const id  = btn.dataset.id;
+            const act = btn.dataset.act;
+
+            // Aprobar / Rechazar
+            if (act === 'aprobar' || act === 'rechazar') {
+                const nota = prompt(act.toUpperCase()+': nota/observación (opcional)') ?? null;
+                if (nota === null) return; // canceló
+                btn.disabled = true;
+                const r = await fetch('/admin/presupuestos/'+id+'/'+act, {
+                    method: 'PUT',
+                    headers: { 'Content-Type':'application/json', ...getAuthHeader() },
+                    body: JSON.stringify({ nota })
+                });
+                btn.disabled = false;
+                const j = await r.json().catch(()=> ({}));
+                if (!r.ok) { alert('Error: '+(j.message || r.status)); return; }
+                alert('OK');
+                await cargar();
+                return;
+            }
+
+            // ✅ Registrar pago manual (SENA o FINAL)
+            if (act === 'pago-manual') {
+                const rowBtn = btn; // el botón clickeado
+                const total = Number(rowBtn.dataset.total || 0);
+                const senaMontoDato = rowBtn.dataset.senaMonto;
+                const senaEstado = (rowBtn.dataset.senaEstado || '').toUpperCase();
+                const finalEstado = (rowBtn.dataset.finalEstado || '').toUpperCase();
+                const senaMonto = senaMontoDato === '' ? null : Number(senaMontoDato);
+
+                // Si ya está pago completo, no permitir
+                if (finalEstado === 'ACREDITADA') {
+                    alert('Este presupuesto ya tiene el pago FINAL acreditado.');
+                    return;
+                }
+
+                // Elegir tipo (default FINAL si ya hay seña acreditada, sino SENA)
+                const tipoDefault = senaEstado === 'ACREDITADA' ? 'FINAL' : 'SENA';
+                const tipo = prompt('Tipo de pago manual (SENA o FINAL):', tipoDefault);
+                if (!tipo) return;
+                const T = tipo.trim().toUpperCase();
+                if (T !== 'SENA' && T !== 'FINAL') { alert('Tipo inválido. Usá SENA o FINAL.'); return; }
+
+                // Calcular montos esperados (redondeo a 2 decimales)
+                const round2 = (n) => Math.round((Number(n) + Number.EPSILON) * 100) / 100;
+                const senaEsperada = round2(total * 0.30);
+                const finalEsperado = round2(total - (senaMonto != null ? senaMonto : senaEsperada));
+
+                // Si intenta FINAL sin seña acreditada, avisar (regla de negocio)
+                if (T === 'FINAL' && senaEstado !== 'ACREDITADA') {
+                    alert('Para registrar pago FINAL primero debe estar acreditada la seña.');
+                    return;
+                }
+
+                // 🔹 Referencia OBLIGATORIA
+                let referencia = null;
+                while (true) {
+                    const r = prompt('Referencia (OBLIGATORIA — ej: recibo/transferencia):');
+                    if (r === null) return; // canceló
+                    if (r.trim().length > 0) { referencia = r.trim(); break; }
+                    alert('La referencia es obligatoria.');
+                }
+
+                // Defaults “inteligentes”
+                const hoy = new Date().toISOString().slice(0,10);
+                const montoSugerido = (T === 'SENA') ? senaEsperada : finalEsperado;
+
+                const fechaStr = prompt('Fecha (opcional, formato YYYY-MM-DD). Dejar vacío = hoy', hoy) ?? null;
+                const nota     = prompt('Nota (opcional)') ?? null;
+
+                const montoStr = prompt(`Monto ${T} exacto (ARS)`, montoSugerido.toFixed(2));
+                if (montoStr === null) return;
+
+                const medio = prompt('Medio (EFECTIVO/TRANSFERENCIA/TARJETA/OTRO):', 'EFECTIVO');
+                if (medio === null) return;
+
+                const monto = Number(String(montoStr).replace(',', '.'));
+                if (!(monto > 0)) { alert('Monto inválido'); return; }
+
+                let fechaPago = null;
+                if (fechaStr && /^\d{4}-\d{2}-\d{2}$/.test(fechaStr)) {
+                    fechaPago = fechaStr;
+                } else if (fechaStr && fechaStr.trim() !== '') {
+                    alert('Fecha inválida. Usá YYYY-MM-DD o dejalo vacío.');
+                    return;
+                }
+
+                // Armamos payload
+                const payload = {
+                    presupuestoId: Number(id),
+                    tipo: T,
+                    medio: (medio || '').trim().toUpperCase(),
+                    referencia: referencia,
+                    monto: monto,
+                    fechaPago: fechaPago || null, // coincide con el DTO
+                    nota: (nota || '').trim()
+                };
+
+                // Enviar
+                btn.disabled = true;
+                try {
+                    const r = await fetch(ENDPOINT_PM, {
+                        method: 'POST',
+                        headers: { 'Content-Type':'application/json', ...getAuthHeader() },
+                        body: JSON.stringify(payload)
+                    });
+
+                    const text = await r.text();
+                    let j; try { j = JSON.parse(text); } catch { j = { message: text }; }
+
+                    if (!r.ok) {
+                        btn.disabled = false;
+                        alert('Error al registrar: ' + (j.message || r.status));
+                        return;
+                    }
+
+                    alert(`Pago ${T} manual registrado correctamente.`);
+                    btn.classList.add('disabled'); // visual
+                    await cargar();                // al recargar, si quedó FINAL acreditado el botón ya no aparece
+                } catch (err) {
+                    btn.disabled = false;
+                    alert('Error de red: ' + (err?.message || err));
+                }
+            }
+        });
     });
 
+    // ======= Generar presupuesto rápido =======
     document.getElementById('gen').addEventListener('submit', async (e) => {
         e.preventDefault();
         const fd = new FormData(e.target);
