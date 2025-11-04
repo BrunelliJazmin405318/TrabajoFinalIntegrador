@@ -29,13 +29,16 @@ public class FacturaMockService {
     private final PresupuestoRepository presupuestoRepo;
     private final FacturaMockRepository facturaRepo;
     private final PresupuestoItemRepository itemRepo;
+    private final MailService mailService;
 
     public FacturaMockService(PresupuestoRepository presupuestoRepo,
                               FacturaMockRepository facturaRepo,
-                              PresupuestoItemRepository itemRepo) {
+                              PresupuestoItemRepository itemRepo,
+                              MailService mailService) {
         this.presupuestoRepo = presupuestoRepo;
         this.facturaRepo = facturaRepo;
         this.itemRepo = itemRepo;
+        this.mailService = mailService;
     }
 
     /**
@@ -51,28 +54,31 @@ public class FacturaMockService {
             throw new IllegalStateException("Solo se puede facturar si el pago FINAL está acreditado.");
         }
 
-        // Idempotencia: si ya existe, devolvés la misma
-        var existing = facturaRepo.findByPresupuestoId(presupuestoId);
-        if (existing.isPresent()) return existing.get();
+        if (facturaRepo.findByPresupuestoId(presupuestoId).isPresent()) {
+            throw new IllegalStateException("Ya existe una factura para este presupuesto.");
+        }
 
-        String t = (tipo == null || tipo.isBlank()) ? "B" : tipo.trim().toUpperCase();
-        if (!t.equals("A") && !t.equals("B")) t = "B";
-
-        // Número mock FA-000001 / FB-000001
-        String prefijo = t.equals("A") ? "FA-" : "FB-";
+        // Generar número mock (FA-000001 / FB-000001)
+        String prefijo = tipo.equalsIgnoreCase("A") ? "FA-" : "FB-";
         long count = facturaRepo.count() + 1;
         String numero = String.format("%s%06d", prefijo, count);
 
         FacturaMock f = new FacturaMock();
         f.setPresupuesto(p);
-        f.setTipo(t);
+        f.setTipo(tipo.toUpperCase());
         f.setNumero(numero);
         f.setFechaEmision(LocalDateTime.now());
         f.setTotal(p.getTotal());
         f.setClienteNombre(p.getClienteNombre());
         f.setClienteEmail(p.getClienteEmail());
 
-        return facturaRepo.save(f);
+        // ✅ Guardamos la factura
+        f = facturaRepo.save(f);
+
+        // ✅ Enviamos notificación por correo
+        mailService.enviarFacturaEmitida(f);
+
+        return f;
     }
 
     /** Devuelve la factura si existe; si no, la crea (tipo por defecto). */
@@ -201,5 +207,19 @@ public class FacturaMockService {
         String raw = String.format("%,.2f", n);
         // Usa coma para decimales y punto para miles
         return "$ " + raw.replace(',', 'X').replace('.', ',').replace('X', '.');
+    }
+    // FacturaMockService.java (agregar)
+    @Transactional
+    public byte[] renderPdfBySolicitud(Long solicitudId, String tipoDefault) {
+        // Trae el último presupuesto APROBADO de la solicitud
+        Presupuesto p = presupuestoRepo
+                .findFirstBySolicitudIdAndEstadoOrderByCreadaEnDesc(solicitudId, "APROBADO")
+                .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException(
+                        "No hay presupuesto APROBADO para la solicitud " + solicitudId));
+
+        // Asegura factura (si no existe la crea con el tipo por defecto) y genera el PDF
+        FacturaMock f = getOrCreateByPresupuesto(p.getId(), (tipoDefault == null ? "B" : tipoDefault));
+        List<PresupuestoItem> items = itemRepo.findByPresupuestoId(p.getId());
+        return buildPdf(f, p, items);
     }
 }

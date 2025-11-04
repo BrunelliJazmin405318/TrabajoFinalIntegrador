@@ -35,7 +35,7 @@
     <form id="frm" class="row g-3 mb-3">
         <div class="col-lg-6">
             <label class="form-label">N° de solicitud</label>
-            <input class="form-control form-control-lg" name="id" id="id" placeholder="Ej: 4">
+            <input type="number" min="1" class="form-control form-control-lg" name="id" id="id" placeholder="Ej: 4">
         </div>
         <div class="col-lg-3 d-grid align-items-end">
             <button class="btn btn-primary btn-lg" type="submit">Consultar</button>
@@ -92,6 +92,13 @@
 
                 <div id="mp-card-container" class="mt-3"></div>
                 <div id="mp-status" class="small mt-2 text-muted"></div>
+
+                <!-- NUEVO: botón de factura para el cliente -->
+                <div id="facturaActions" class="mt-3 d-none">
+                    <button id="btnFactura" class="btn btn-outline-success btn-sm">
+                        <i class="bi bi-download"></i> Descargar factura
+                    </button>
+                </div>
             </div>
 
             <div id="pagoInfoNoDisponible" class="alert alert-info d-none mt-3">
@@ -127,6 +134,7 @@
     const bricksBuilder = mp.bricks();
     let currentBrick = null;
     let presupuestoIdForPay = null;
+    let currentSolicitudId = null; // NUEVO
 
     async function consultarSolicitud(id) {
         const card = document.getElementById('cardResultado');
@@ -135,6 +143,9 @@
         const r = await fetch(`/public/presupuestos/solicitud/${encodeURIComponent(id)}`);
         const j = await r.json().catch(()=> ({}));
         if (!r.ok) { alert(j.message || 'No se encontró la solicitud'); return; }
+
+        // guardamos solicitudId para descarga de factura
+        currentSolicitudId = Number(j.id ?? id);
 
         document.getElementById('c_nombre').textContent = j.clienteNombre || '-';
         document.getElementById('c_tel').textContent    = j.clienteTelefono || '-';
@@ -167,11 +178,13 @@
         const infoMsg      = document.getElementById('pagoInfoNoDisponible');
         const pagarActions = document.getElementById('pagarActions');
         const estadoBadge  = document.getElementById('pagoEstado');
+        const facturaBox   = document.getElementById('facturaActions');
 
         // reset visual
         box.classList.add('d-none');
         infoMsg.classList.add('d-none');
         pagarActions.classList.remove('d-none');
+        facturaBox.classList.add('d-none');
         estadoBadge.className = 'badge bg-secondary';
         estadoBadge.textContent = 'Pendiente';
         document.getElementById('mp-status').textContent = '';
@@ -187,12 +200,12 @@
         const estadoPres   = (info.presupuestoEstado || '').toUpperCase();
         const senaEstado   = (info.senaEstado || '').toUpperCase();
         const finalEstado  = (info.finalEstado || '').toUpperCase();
-        const saldo        = Number(info.saldoRestante ?? 0); // puede venir del back, si no queda 0
+        const saldo        = Number(info.saldoRestante ?? 0);
 
         document.getElementById('pagoMonto').textContent = money(monto);
         document.getElementById('pagoId').textContent    = info.senaPaymentId || '-';
 
-        // 🟢 Caso 1: pago completo
+        // Caso 1: pago completo => mostrar botón de factura para cliente
         if (finalEstado === 'ACREDITADA' || saldo <= 0) {
             estadoBadge.textContent = 'Pago completo';
             estadoBadge.className   = 'badge bg-success';
@@ -200,10 +213,36 @@
             document.getElementById('mp-card-container').innerHTML = '';
             document.getElementById('mp-status').textContent = '';
             box.classList.remove('d-none');
+
+            // mostrar botón de factura
+            facturaBox.classList.remove('d-none');
+            const btnFactura = document.getElementById('btnFactura');
+            btnFactura.onclick = async () => {
+                try {
+                    const url = `/public/facturas/pdf/by-solicitud/${encodeURIComponent(currentSolicitudId)}`;
+                    const r = await fetch(url);
+                    if (!r.ok) {
+                        const txt = await r.text();
+                        alert('No se pudo descargar la factura: ' + (txt || `HTTP ${r.status}`));
+                        return;
+                    }
+                    const blob = await r.blob();
+                    const href = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = href;
+                    a.download = `factura-solicitud-${currentSolicitudId}.pdf`;
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    URL.revokeObjectURL(href);
+                } catch (err) {
+                    alert('Error de red al descargar: ' + (err?.message || err));
+                }
+            };
             return;
         }
 
-        // 🟢 Caso 2: seña acreditada (aún falta el final, pero acá no se cobra)
+        // Caso 2: seña acreditada (aún falta el final)
         if (senaEstado === 'ACREDITADA') {
             estadoBadge.textContent = 'Seña acreditada';
             estadoBadge.className   = 'badge bg-success';
@@ -212,14 +251,13 @@
             return;
         }
 
-        // 🟡 Caso 3: puede pagar seña (presupuesto aprobado y seña no acreditada)
+        // Caso 3: puede pagar seña
         if (info.puedePagar && estadoPres === 'APROBADO') {
             estadoBadge.textContent = 'Pendiente';
             estadoBadge.className   = 'badge bg-warning text-dark';
             presupuestoIdForPay     = info.presupuestoId || presupuestoId;
             box.classList.remove('d-none');
         } else {
-            // 🔵 No hay pago habilitado (no aprobado o ya pagado todo)
             infoMsg.classList.remove('d-none');
         }
     }
