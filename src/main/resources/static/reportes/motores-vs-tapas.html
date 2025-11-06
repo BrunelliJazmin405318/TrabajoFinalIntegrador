@@ -1,0 +1,372 @@
+<!doctype html>
+<html lang="es" data-bs-theme="dark">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Admin | Reporte Motores vs Tapas</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body { background: #121417; }
+        .navbar { background: #1b1f24; }
+        .page-title { display:flex; align-items:center; gap:.75rem; margin:2rem 0 1rem; }
+        .page-title h1 { font-size: clamp(1.25rem, 2vw, 1.6rem); margin:0; }
+        .badge-theme { background:#ef233c; }
+        .kpi-card {
+            background: linear-gradient(180deg, #1b1f24 0%, #14181c 100%);
+            border: 1px solid #232a31; border-radius: 1rem; padding: 1rem;
+        }
+        .kpi-value { font-size: 1.8rem; font-weight: 700; }
+        .kpi-label { color:#9aa4af; font-size:.9rem; }
+        .kpi-chip { font-size:.8rem; padding:.2rem .5rem; border-radius:.5rem; background:#232a31; }
+        .card-panel { background:#0f1317; border:1px solid #232a31; border-radius:1rem; }
+        .muted { color:#8b97a3; }
+        .divider { height:1px; background:#232a31; margin:1rem 0; }
+        .btn-outline-light { border-color:#3a444e; }
+        /* Colores de series */
+        :root {
+            --c-motor: #ff4757; /* rojo */
+            --c-tapa:  #4dabf7; /* celeste */
+        }
+        .legend-dot { width:.75rem; height:.75rem; border-radius:50%; display:inline-block; margin-right:.4rem; }
+        .legend-dot.motor { background: var(--c-motor); }
+        .legend-dot.tapa  { background: var(--c-tapa); }
+    </style>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark">
+    <div class="container">
+        <a class="navbar-brand" href="/admin-presupuestos.html"><i class="bi bi-gear-fill me-2"></i>Rectificadora</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div id="nav" class="collapse navbar-collapse">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item"><a class="nav-link" href="/admin-solicitud.html">Solicitudes</a></li>
+                <li class="nav-item"><a class="nav-link" href="/admin-presupuestos.html">Presupuestos</a></li>
+                <li class="nav-item"><a class="nav-link active" href="#">Reportes</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<main class="container">
+    <div class="page-title">
+        <h1 class="m-0">Motores vs Tapas</h1>
+        <span class="badge badge-theme">Reporte HU19</span>
+        <span id="lastRefresh" class="muted ms-auto small"></span>
+    </div>
+
+    <!-- Controles -->
+    <div class="d-flex flex-wrap gap-2 mb-3">
+        <div class="d-flex flex-wrap gap-2 align-items-center mb-3">
+            <div class="btn-group" role="group" aria-label="rangos">
+                <button id="r7"    class="btn btn-outline-secondary btn-sm">Últimos 7 días</button>
+                <button id="rMes"  class="btn btn-outline-secondary btn-sm">Mes actual</button>
+                <button id="rAnno" class="btn btn-outline-secondary btn-sm">Año actual</button>
+            </div>
+
+            <div class="ms-2 d-flex align-items-center gap-2">
+                <input type="date" id="fFrom" class="form-control form-control-sm" style="width: 160px;">
+                <span>→</span>
+                <input type="date" id="fTo"   class="form-control form-control-sm" style="width: 160px;">
+                <button id="btnAplicar" class="btn btn-primary btn-sm">
+                    <i class="bi bi-funnel"></i> Aplicar
+                </button>
+            </div>
+        </div>
+        <button id="btnRefresh" class="btn btn-primary"><i class="bi bi-arrow-clockwise me-1"></i>Actualizar</button>
+        <button id="btnPng" class="btn btn-outline-light"><i class="bi bi-image me-1"></i>Exportar PNG</button>
+        <button id="btnCsv" class="btn btn-outline-light"><i class="bi bi-filetype-csv me-1"></i>Exportar CSV</button>
+        <span class="ms-auto muted small d-flex align-items-center gap-3">
+      <span><span class="legend-dot motor"></span>Motores</span>
+      <span><span class="legend-dot tapa"></span>Tapas</span>
+    </span>
+    </div>
+
+    <!-- KPIs -->
+    <div class="row g-3 mb-3">
+        <div class="col-6 col-lg-3">
+            <div class="kpi-card h-100">
+                <div class="kpi-label mb-1">Motores</div>
+                <div class="d-flex justify-content-between align-items-end">
+                    <div id="kpiMotores" class="kpi-value">-</div>
+                    <span id="kpiMotoresPct" class="kpi-chip">-</span>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="kpi-card h-100">
+                <div class="kpi-label mb-1">Tapas</div>
+                <div class="d-flex justify-content-between align-items-end">
+                    <div id="kpiTapas" class="kpi-value">-</div>
+                    <span id="kpiTapasPct" class="kpi-chip">-</span>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="kpi-card h-100">
+                <div class="kpi-label mb-1">Total órdenes</div>
+                <div id="kpiTotal" class="kpi-value">-</div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="kpi-card h-100">
+                <div class="kpi-label mb-1">Ratio M/T</div>
+                <div id="kpiRatio" class="kpi-value">-</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="row g-3">
+        <div class="col-lg-5">
+            <div class="card-panel p-3 h-100">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h6 class="m-0">Distribución</h6>
+                    <span class="muted small">Doughnut</span>
+                </div>
+                <canvas id="chartDonut" height="260"></canvas>
+            </div>
+        </div>
+        <div class="col-lg-7">
+            <div class="card-panel p-3 h-100">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h6 class="m-0">Comparativa</h6>
+                    <span class="muted small">Barras</span>
+                </div>
+                <canvas id="chartBar" height="260"></canvas>
+                <div class="divider"></div>
+                <div class="small muted">
+                    Tip: pasá el mouse por las series; podés ocultar una clickeando la leyenda.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla resumen -->
+    <div class="card-panel p-3 mt-3">
+        <h6 class="mb-2">Resumen</h6>
+        <div class="table-responsive">
+            <table class="table table-sm table-borderless align-middle mb-0">
+                <thead class="muted">
+                <tr><th>Tipo</th><th class="text-end">Cantidad</th><th class="text-end">Porcentaje</th></tr>
+                </thead>
+                <tbody>
+                <tr><td><span class="legend-dot motor"></span>Motores</td><td id="tMotores" class="text-end">-</td><td id="pMotores" class="text-end">-</td></tr>
+                <tr><td><span class="legend-dot tapa"></span>Tapas</td><td id="tTapas" class="text-end">-</td><td id="pTapas" class="text-end">-</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="py-4 small muted">© Rectificadora — Negro/Gris/Blanco + Rojo</div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script type="module">
+    import { getAuthHeader } from "/js/auth.js";
+
+    // 👉 Si tu backend quedó en /admin/... cambiá esta constante
+    const ENDPOINT = "/api/reportes/motores-vs-tapas";
+
+    // Fallback demo por si el fetch falla
+    const DEMO = { motores: 2, tapas: 1 };
+
+    let donut, bar;
+
+    const $ = (id) => document.getElementById(id);
+    const cssVar = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+
+    // ---------- Rangos ----------
+    const fmtISO = (d) => d.toISOString().slice(0,10); // YYYY-MM-DD
+
+    function setRange(fromDate, toDate) {
+        const f = $("fFrom"), t = $("fTo");
+        if (f) f.value = fmtISO(fromDate);
+        if (t) t.value = fmtISO(toDate);
+    }
+
+    function rangoUlt7() {
+        const to = new Date();
+        const from = new Date();
+        from.setDate(to.getDate() - 6);
+        setRange(from, to);
+    }
+
+    function rangoMesActual() {
+        const now = new Date();
+        const from = new Date(now.getFullYear(), now.getMonth(), 1);
+        const to   = new Date(now.getFullYear(), now.getMonth()+1, 0);
+        setRange(from, to);
+    }
+
+    function rangoAnnoActual() {
+        const now = new Date();
+        setRange(new Date(now.getFullYear(),0,1), new Date(now.getFullYear(),11,31));
+    }
+
+    function getRangeQS() {
+        const f = $("fFrom")?.value;
+        const t = $("fTo")?.value;
+        if (f && t) return `?from=${encodeURIComponent(f)}&to=${encodeURIComponent(t)}`;
+        return "";
+    }
+
+    // ---------- KPIs / Charts ----------
+    function fmtPct(n){
+        const v = Number.isFinite(n) ? n : 0;
+        return (v*100).toFixed(1) + "%";
+    }
+
+    function setKPIs(m, t){
+        const total = m + t;
+        const pm = total ? m/total : 0;
+        const pt = total ? t/total : 0;
+        const ratio = t ? (m/t).toFixed(2) : (m ? "∞" : "0");
+
+        $("kpiMotores").textContent = m;
+        $("kpiTapas").textContent   = t;
+        $("kpiTotal").textContent   = total;
+        $("kpiRatio").textContent   = ratio;
+
+        $("kpiMotoresPct").textContent = fmtPct(pm);
+        $("kpiTapasPct").textContent   = fmtPct(pt);
+
+        // si tenés una tablita de detalle:
+        $("tMotores") && ( $("tMotores").textContent = m );
+        $("tTapas")   && ( $("tTapas").textContent   = t );
+        $("pMotores") && ( $("pMotores").textContent = fmtPct(pm) );
+        $("pTapas")   && ( $("pTapas").textContent   = fmtPct(pt) );
+    }
+
+    function renderCharts(m, t){
+        const donutCtx = $("chartDonut");
+        const barCtx   = $("chartBar");
+
+        const labels = ["Motores", "Tapas"];
+        const data = [m, t];
+        const colors = [cssVar('--c-motor') || '#4e79a7', cssVar('--c-tapa') || '#e15759'];
+
+        // limpiar instancias previas
+        donut?.destroy(); bar?.destroy();
+
+        donut = new Chart(donutCtx, {
+            type: "doughnut",
+            data: { labels, datasets: [{ data, backgroundColor: colors, borderWidth: 0 }] },
+            options: {
+                plugins: {
+                    legend: { position: "bottom", labels: { boxWidth: 10 } },
+                    tooltip: { callbacks: { label: (ctx)=> `${ctx.label}: ${ctx.formattedValue}` } }
+                },
+                cutout: "60%"
+            }
+        });
+
+        bar = new Chart(barCtx, {
+            type: "bar",
+            data: {
+                labels,
+                datasets: [{
+                    label: "Órdenes",
+                    data,
+                    backgroundColor: colors,
+                    borderRadius: 8
+                }]
+            },
+            options: {
+                scales: {
+                    x: { grid: { color:"#20262c" } },
+                    y: { grid: { color:"#20262c" }, ticks: { precision:0, stepSize:1 } }
+                },
+                plugins: { legend: { display:false } }
+            }
+        });
+    }
+
+    // ---------- Exportaciones ----------
+    function currentRangeSuffix() {
+        const f = $("fFrom")?.value || "NA";
+        const t = $("fTo")?.value || "NA";
+        return `${f}_${t}`;
+    }
+
+    function exportCSV(m, t){
+        const total = m + t;
+        const csv = [
+            "tipo,cantidad,porcentaje",
+            `MOTORES,${m},${ total ? ((m/total)*100).toFixed(2) : 0 }`,
+            `TAPAS,${t},${ total ? ((t/total)*100).toFixed(2) : 0 }`
+        ].join("\n");
+        const blob = new Blob([csv], {type:"text/csv;charset=utf-8"});
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = `reporte-motores-vs-tapas_${currentRangeSuffix()}.csv`;
+        a.click();
+        URL.revokeObjectURL(a.href);
+    }
+
+    function exportPNG(){
+        const c1 = $("chartDonut");
+        const c2 = $("chartBar");
+        const combo = document.createElement("canvas");
+        combo.width = Math.max(c1.width, c2.width);
+        combo.height = c1.height + c2.height + 20;
+        const ctx = combo.getContext("2d");
+        ctx.drawImage(c1, 0, 0);
+        ctx.drawImage(c2, 0, c1.height + 20);
+        const a = document.createElement("a");
+        a.href = combo.toDataURL("image/png");
+        a.download = `motores-vs-tapas_${currentRangeSuffix()}.png`;
+        a.click();
+    }
+
+    // ---------- Carga ----------
+    async function load(){
+        const qs = getRangeQS();
+        try {
+            const r = await fetch(ENDPOINT + qs, { headers: { "Content-Type":"application/json", ...getAuthHeader?.() }});
+            if (!r.ok) throw new Error("HTTP " + r.status);
+            const j = await r.json();
+
+            // Soporta tanto {motores,tapas} como {motores,tapas,total,ratio}
+            const m = Number(j.motores ?? 0);
+            const t = Number(j.tapas   ?? 0);
+
+            setKPIs(m, t);
+            renderCharts(m, t);
+        } catch (e){
+            console.warn("Fetch falló, usando DEMO:", e);
+            setKPIs(DEMO.motores, DEMO.tapas);
+            renderCharts(DEMO.motores, DEMO.tapas);
+        } finally {
+            $("lastRefresh") && ( $("lastRefresh").textContent = "Actualizado: " + new Date().toLocaleString() );
+        }
+    }
+
+    // ---------- Eventos ----------
+    $("btnRefresh")?.addEventListener("click", load);
+    $("btnCsv")?.addEventListener("click", ()=>{
+        const m = Number($("kpiMotores")?.textContent || 0);
+        const t = Number($("kpiTapas")?.textContent || 0);
+        exportCSV(m, t);
+    });
+    $("btnPng")?.addEventListener("click", exportPNG);
+
+    // presets de rango (si existen los botones en el HTML)
+    $("r7")?.addEventListener("click",   ()=>{ rangoUlt7(); load(); });
+    $("rMes")?.addEventListener("click", ()=>{ rangoMesActual(); load(); });
+    $("rAnno")?.addEventListener("click",()=>{ rangoAnnoActual(); load(); });
+    $("btnAplicar")?.addEventListener("click", load);
+
+    // ---------- Primera carga ----------
+    // Si tenés inputs de fecha, arrancamos con Mes actual; si no, el backend decide por defecto.
+    if ($("fFrom") && $("fTo")) rangoMesActual();
+    load();
+</script>
+
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
