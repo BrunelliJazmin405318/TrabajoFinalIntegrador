@@ -1,61 +1,98 @@
-<!doctype html>
-<html lang="es" data-bs-theme="dark">
+<!DOCTYPE html>
+<html lang="es">
 <head>
-    <meta charset="utf-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Admin | Reporte Motores vs Tapas</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>Reporte - Motores vs Tapas</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
     <style>
-        body { background: #121417; }
-        .navbar { background: #1b1f24; }
-        .page-title { display:flex; align-items:center; gap:.75rem; margin:2rem 0 1rem; }
-        .page-title h1 { font-size: clamp(1.25rem, 2vw, 1.6rem); margin:0; }
-        .badge-theme { background:#ef233c; }
-        .kpi-card {
-            background: linear-gradient(180deg, #1b1f24 0%, #14181c 100%);
-            border: 1px solid #232a31; border-radius: 1rem; padding: 1rem;
+        :root{
+            --c-bg:#0d1117;
+            --c-card:#1a2230;      /* +claro que #161b22 */
+            --c-soft:#2a3442;      /* +claro para contenedores/pills */
+            --c-text:#f4f7fb;      /* texto principal +luminoso */
+            --c-muted:#cbd6e2;     /* secundarios */
+            --c-acc:#2f81f7;
+            --c-motor:#4e79a7;
+            --c-tapa:#e15759;
         }
-        .kpi-value { font-size: 1.8rem; font-weight: 700; }
-        .kpi-label { color:#9aa4af; font-size:.9rem; }
-        .kpi-chip { font-size:.8rem; padding:.2rem .5rem; border-radius:.5rem; background:#232a31; }
-        .card-panel { background:#0f1317; border:1px solid #232a31; border-radius:1rem; }
-        .muted { color:#8b97a3; }
-        .divider { height:1px; background:#232a31; margin:1rem 0; }
-        .btn-outline-light { border-color:#3a444e; }
-        /* Colores de series */
-        :root {
-            --c-motor: #ff4757; /* rojo */
-            --c-tapa:  #4dabf7; /* celeste */
+
+        body{
+            background:var(--c-bg);
+            color:var(--c-text);
+            font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
         }
-        .legend-dot { width:.75rem; height:.75rem; border-radius:50%; display:inline-block; margin-right:.4rem; }
-        .legend-dot.motor { background: var(--c-motor); }
-        .legend-dot.tapa  { background: var(--c-tapa); }
+
+        .navbar{ background:#0b0f14; }
+
+        .card{
+            background:var(--c-card);
+            border:none;
+            border-radius:1rem;
+            box-shadow:0 10px 30px rgba(0,0,0,.28);
+        }
+
+        .kpi{
+            min-height:110px;
+            display:flex; align-items:center; justify-content:space-between;
+            padding:1rem 1.25rem;
+        }
+        .kpi h2{ margin:0; font-weight:800; letter-spacing:.5px; color:#ffffff; }
+        .kpi .sub{ font-size:.9rem; color:var(--c-muted); }
+
+        /* pills de % con más contraste */
+        .pill{
+            background:rgba(255,255,255,.14);
+            color:#f4f7fb;
+            border-radius:999px;
+            padding:.25rem .6rem;
+            font-size:.85rem;
+            box-shadow: inset 0 0 0 1px rgba(255,255,255,.06);
+        }
+
+        .toolbar .btn{ border-radius:.75rem }
+
+        /* leyenda */
+        .legend-dot{ display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:.35rem; }
+        .legend-dot.motor{ background:var(--c-motor); }
+        .legend-dot.tapa{  background:var(--c-tapa);  }
+
+        .chart-wrap{ padding:1rem }
+
+        .badge{ font-size:.8rem; letter-spacing:.5px; vertical-align:middle; }
+
+        /* animación suave de aparición */
+        .fade-in{ animation:fade .4s ease-out; }
+        @keyframes fade{ from{opacity:0; transform:translateY(2px)} to{opacity:1; transform:none} }
     </style>
 </head>
 <body>
-<nav class="navbar navbar-expand-lg navbar-dark">
+<nav class="navbar navbar-expand-lg navbar-dark mb-4">
     <div class="container">
-        <a class="navbar-brand" href="/admin-presupuestos.html"><i class="bi bi-gear-fill me-2"></i>Rectificadora</a>
+        <a class="navbar-brand" href="#"><i class="bi bi-gear-fill me-2"></i>Rectificadora</a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav">
             <span class="navbar-toggler-icon"></span>
         </button>
         <div id="nav" class="collapse navbar-collapse">
             <ul class="navbar-nav ms-auto">
-                <li class="nav-item"><a class="nav-link" href="/admin-solicitud.html">Solicitudes</a></li>
-                <li class="nav-item"><a class="nav-link" href="/admin-presupuestos.html">Presupuestos</a></li>
-                <li class="nav-item"><a class="nav-link active" href="#">Reportes</a></li>
+                <li class="nav-item"><a class="nav-link" href="/reportes/motores-por-etapa.html">Motores por etapa</a></li>
+                <li class="nav-item"><a class="nav-link active" href="/reportes/motores-vs-tapas.html">Motores vs Tapas</a></li>
+                <li class="nav-item"><a class="nav-link" href="/swagger-ui.html" target="_blank">API Docs</a></li>
             </ul>
         </div>
     </div>
 </nav>
 
 <main class="container">
-    <div class="page-title">
-        <h1 class="m-0">Motores vs Tapas</h1>
-        <span class="badge badge-theme">Reporte HU19</span>
-        <span id="lastRefresh" class="muted ms-auto small"></span>
-    </div>
+    <h2 class="mb-2">
+        Motores vs Tapas <span class="badge bg-danger">Dashboard</span>
+    </h2>
+    <p id="rangoActivo" class="text-secondary small mb-3"></p>
 
     <!-- Controles -->
     <div class="d-flex flex-wrap gap-2 mb-3">
@@ -75,9 +112,11 @@
                 </button>
             </div>
         </div>
+
         <button id="btnRefresh" class="btn btn-primary"><i class="bi bi-arrow-clockwise me-1"></i>Actualizar</button>
         <button id="btnPng" class="btn btn-outline-light"><i class="bi bi-image me-1"></i>Exportar PNG</button>
         <button id="btnCsv" class="btn btn-outline-light"><i class="bi bi-filetype-csv me-1"></i>Exportar CSV</button>
+
         <span class="ms-auto muted small d-flex align-items-center gap-3">
       <span><span class="legend-dot motor"></span>Motores</span>
       <span><span class="legend-dot tapa"></span>Tapas</span>
@@ -86,140 +125,95 @@
 
     <!-- KPIs -->
     <div class="row g-3 mb-3">
-        <div class="col-6 col-lg-3">
-            <div class="kpi-card h-100">
-                <div class="kpi-label mb-1">Motores</div>
-                <div class="d-flex justify-content-between align-items-end">
-                    <div id="kpiMotores" class="kpi-value">-</div>
-                    <span id="kpiMotoresPct" class="kpi-chip">-</span>
+        <div class="col-sm-6 col-lg-3">
+            <div class="card kpi shadow-soft">
+                <div>
+                    <div class="sub">Motores</div>
+                    <h2 id="kpiMotores">0</h2>
                 </div>
+                <span id="kpiMotoresPct" class="pill">0.0%</span>
             </div>
         </div>
-        <div class="col-6 col-lg-3">
-            <div class="kpi-card h-100">
-                <div class="kpi-label mb-1">Tapas</div>
-                <div class="d-flex justify-content-between align-items-end">
-                    <div id="kpiTapas" class="kpi-value">-</div>
-                    <span id="kpiTapasPct" class="kpi-chip">-</span>
+        <div class="col-sm-6 col-lg-3">
+            <div class="card kpi shadow-soft">
+                <div>
+                    <div class="sub">Tapas</div>
+                    <h2 id="kpiTapas">0</h2>
                 </div>
+                <span id="kpiTapasPct" class="pill">0.0%</span>
             </div>
         </div>
-        <div class="col-6 col-lg-3">
-            <div class="kpi-card h-100">
-                <div class="kpi-label mb-1">Total órdenes</div>
-                <div id="kpiTotal" class="kpi-value">-</div>
+        <div class="col-sm-6 col-lg-3">
+            <div class="card kpi shadow-soft">
+                <div>
+                    <div class="sub">Total</div>
+                    <h2 id="kpiTotal">0</h2>
+                </div>
+                <span class="pill">100%</span>
             </div>
         </div>
-        <div class="col-6 col-lg-3">
-            <div class="kpi-card h-100">
-                <div class="kpi-label mb-1">Ratio M/T</div>
-                <div id="kpiRatio" class="kpi-value">-</div>
+        <div class="col-sm-6 col-lg-3">
+            <div class="card kpi shadow-soft">
+                <div>
+                    <div class="sub">Ratio M/T</div>
+                    <h2 id="kpiRatio">0</h2>
+                </div>
+                <span class="pill">motores/tapas</span>
             </div>
         </div>
     </div>
 
-    <!-- Charts -->
+    <!-- Gráficos -->
     <div class="row g-3">
         <div class="col-lg-5">
-            <div class="card-panel p-3 h-100">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <h6 class="m-0">Distribución</h6>
-                    <span class="muted small">Doughnut</span>
-                </div>
+            <div class="card shadow-soft chart-wrap">
+                <h6 class="mb-3 text-secondary">Distribución</h6>
                 <canvas id="chartDonut" height="260"></canvas>
             </div>
         </div>
         <div class="col-lg-7">
-            <div class="card-panel p-3 h-100">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <h6 class="m-0">Comparativa</h6>
-                    <span class="muted small">Barras</span>
-                </div>
+            <div class="card shadow-soft chart-wrap">
+                <h6 class="mb-3 text-secondary">Comparativa</h6>
                 <canvas id="chartBar" height="260"></canvas>
-                <div class="divider"></div>
-                <div class="small muted">
-                    Tip: pasá el mouse por las series; podés ocultar una clickeando la leyenda.
-                </div>
             </div>
         </div>
     </div>
 
-    <!-- Tabla resumen -->
-    <div class="card-panel p-3 mt-3">
-        <h6 class="mb-2">Resumen</h6>
-        <div class="table-responsive">
-            <table class="table table-sm table-borderless align-middle mb-0">
-                <thead class="muted">
-                <tr><th>Tipo</th><th class="text-end">Cantidad</th><th class="text-end">Porcentaje</th></tr>
-                </thead>
-                <tbody>
-                <tr><td><span class="legend-dot motor"></span>Motores</td><td id="tMotores" class="text-end">-</td><td id="pMotores" class="text-end">-</td></tr>
-                <tr><td><span class="legend-dot tapa"></span>Tapas</td><td id="tTapas" class="text-end">-</td><td id="pTapas" class="text-end">-</td></tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-    <div class="py-4 small muted">© Rectificadora — Negro/Gris/Blanco + Rojo</div>
+    <p id="lastRefresh" class="text-secondary small mt-3"></p>
 </main>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script type="module">
     import { getAuthHeader } from "/js/auth.js";
 
-    // 👉 Si tu backend quedó en /admin/... cambiá esta constante
-    const ENDPOINT = "/api/reportes/motores-vs-tapas";
-
-    // Fallback demo por si el fetch falla
+    // ===== Config =====
+    const ENDPOINT = "/api/reportes/motores-vs-tapas"; // espera {motores,tapas} (+ total, ratio opcional)
     const DEMO = { motores: 2, tapas: 1 };
 
-    let donut, bar;
+    // ===== Helpers =====
+    const $ = (id)=>document.getElementById(id);
+    const cssVar = (name)=>getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    const fmtISO = d => d ? d.toISOString().slice(0,10) : "";
+    const fmtPct = n => (isFinite(n) ? (n*100).toFixed(1) : "0.0") + "%";
 
-    const $ = (id) => document.getElementById(id);
-    const cssVar = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
-
-    // ---------- Rangos ----------
-    const fmtISO = (d) => d.toISOString().slice(0,10); // YYYY-MM-DD
-
-    function setRange(fromDate, toDate) {
-        const f = $("fFrom"), t = $("fTo");
-        if (f) f.value = fmtISO(fromDate);
-        if (t) t.value = fmtISO(toDate);
-    }
-
-    function rangoUlt7() {
+    function setDefaultRange(){
         const to = new Date();
-        const from = new Date();
-        from.setDate(to.getDate() - 6);
-        setRange(from, to);
+        const from = new Date(); from.setDate(to.getDate()-30);
+        $("fFrom").value = fmtISO(from);
+        $("fTo").value   = fmtISO(to);
     }
 
-    function rangoMesActual() {
-        const now = new Date();
-        const from = new Date(now.getFullYear(), now.getMonth(), 1);
-        const to   = new Date(now.getFullYear(), now.getMonth()+1, 0);
-        setRange(from, to);
+    function getRangeQS(){
+        const from = $("fFrom").value;
+        const to   = $("fTo").value;
+        const p = new URLSearchParams();
+        if (from) p.set("from", from);
+        if (to)   p.set("to", to);
+        $("rangoActivo").textContent = `Período: ${from || "-"} → ${to || "-"}`;
+        const qs = p.toString();
+        return qs ? "?"+qs : "";
     }
 
-    function rangoAnnoActual() {
-        const now = new Date();
-        setRange(new Date(now.getFullYear(),0,1), new Date(now.getFullYear(),11,31));
-    }
-
-    function getRangeQS() {
-        const f = $("fFrom")?.value;
-        const t = $("fTo")?.value;
-        if (f && t) return `?from=${encodeURIComponent(f)}&to=${encodeURIComponent(t)}`;
-        return "";
-    }
-
-    // ---------- KPIs / Charts ----------
-    function fmtPct(n){
-        const v = Number.isFinite(n) ? n : 0;
-        return (v*100).toFixed(1) + "%";
-    }
-
+    // ===== KPIs =====
     function setKPIs(m, t){
         const total = m + t;
         const pm = total ? m/total : 0;
@@ -233,13 +227,10 @@
 
         $("kpiMotoresPct").textContent = fmtPct(pm);
         $("kpiTapasPct").textContent   = fmtPct(pt);
-
-        // si tenés una tablita de detalle:
-        $("tMotores") && ( $("tMotores").textContent = m );
-        $("tTapas")   && ( $("tTapas").textContent   = t );
-        $("pMotores") && ( $("pMotores").textContent = fmtPct(pm) );
-        $("pTapas")   && ( $("pTapas").textContent   = fmtPct(pt) );
     }
+
+    // ===== Charts =====
+    let donut, bar;
 
     function renderCharts(m, t){
         const donutCtx = $("chartDonut");
@@ -249,13 +240,13 @@
         const data = [m, t];
         const colors = [cssVar('--c-motor') || '#4e79a7', cssVar('--c-tapa') || '#e15759'];
 
-        // limpiar instancias previas
         donut?.destroy(); bar?.destroy();
 
         donut = new Chart(donutCtx, {
             type: "doughnut",
             data: { labels, datasets: [{ data, backgroundColor: colors, borderWidth: 0 }] },
             options: {
+                animation: { animateRotate:true, animateScale:true, duration: 700 },
                 plugins: {
                     legend: { position: "bottom", labels: { boxWidth: 10 } },
                     tooltip: { callbacks: { label: (ctx)=> `${ctx.label}: ${ctx.formattedValue}` } }
@@ -276,33 +267,28 @@
                 }]
             },
             options: {
+                animation: { duration: 700 },
                 scales: {
                     x: { grid: { color:"#20262c" } },
-                    y: { grid: { color:"#20262c" }, ticks: { precision:0, stepSize:1 } }
+                    y: { grid: { color:"#20262c" }, ticks: { precision:0, stepSize:1 }, beginAtZero:true }
                 },
                 plugins: { legend: { display:false } }
             }
         });
     }
 
-    // ---------- Exportaciones ----------
-    function currentRangeSuffix() {
-        const f = $("fFrom")?.value || "NA";
-        const t = $("fTo")?.value || "NA";
-        return `${f}_${t}`;
-    }
-
+    // ===== Export =====
     function exportCSV(m, t){
         const total = m + t;
         const csv = [
             "tipo,cantidad,porcentaje",
-            `MOTORES,${m},${ total ? ((m/total)*100).toFixed(2) : 0 }`,
-            `TAPAS,${t},${ total ? ((t/total)*100).toFixed(2) : 0 }`
+            `MOTORES,${m},${total?((m/total)*100).toFixed(2):0}`,
+            `TAPAS,${t},${total?((t/total)*100).toFixed(2):0}`
         ].join("\n");
         const blob = new Blob([csv], {type:"text/csv;charset=utf-8"});
         const a = document.createElement("a");
         a.href = URL.createObjectURL(blob);
-        a.download = `reporte-motores-vs-tapas_${currentRangeSuffix()}.csv`;
+        a.download = "reporte-motores-vs-tapas.csv";
         a.click();
         URL.revokeObjectURL(a.href);
     }
@@ -318,22 +304,19 @@
         ctx.drawImage(c2, 0, c1.height + 20);
         const a = document.createElement("a");
         a.href = combo.toDataURL("image/png");
-        a.download = `motores-vs-tapas_${currentRangeSuffix()}.png`;
+        a.download = "motores-vs-tapas.png";
         a.click();
     }
 
-    // ---------- Carga ----------
+    // ===== Carga =====
     async function load(){
         const qs = getRangeQS();
         try {
-            const r = await fetch(ENDPOINT + qs, { headers: { "Content-Type":"application/json", ...getAuthHeader?.() }});
+            const r = await fetch(ENDPOINT + qs, { headers: { "Accept":"application/json", ...getAuthHeader?.() }});
             if (!r.ok) throw new Error("HTTP " + r.status);
             const j = await r.json();
-
-            // Soporta tanto {motores,tapas} como {motores,tapas,total,ratio}
             const m = Number(j.motores ?? 0);
             const t = Number(j.tapas   ?? 0);
-
             setKPIs(m, t);
             renderCharts(m, t);
         } catch (e){
@@ -341,31 +324,39 @@
             setKPIs(DEMO.motores, DEMO.tapas);
             renderCharts(DEMO.motores, DEMO.tapas);
         } finally {
-            $("lastRefresh") && ( $("lastRefresh").textContent = "Actualizado: " + new Date().toLocaleString() );
+            $("lastRefresh").textContent = "Actualizado: " + new Date().toLocaleString();
         }
     }
 
-    // ---------- Eventos ----------
-    $("btnRefresh")?.addEventListener("click", load);
-    $("btnCsv")?.addEventListener("click", ()=>{
-        const m = Number($("kpiMotores")?.textContent || 0);
-        const t = Number($("kpiTapas")?.textContent || 0);
+    // ===== Eventos =====
+    $("btnRefresh").addEventListener("click", load);
+    $("btnCsv").addEventListener("click", ()=>{
+        const m = Number($("kpiMotores").textContent || 0);
+        const t = Number($("kpiTapas").textContent || 0);
         exportCSV(m, t);
     });
-    $("btnPng")?.addEventListener("click", exportPNG);
+    $("btnPng").addEventListener("click", exportPNG);
 
-    // presets de rango (si existen los botones en el HTML)
-    $("r7")?.addEventListener("click",   ()=>{ rangoUlt7(); load(); });
-    $("rMes")?.addEventListener("click", ()=>{ rangoMesActual(); load(); });
-    $("rAnno")?.addEventListener("click",()=>{ rangoAnnoActual(); load(); });
-    $("btnAplicar")?.addEventListener("click", load);
+    // quick ranges
+    $("r7").addEventListener("click", ()=>{
+        const to = new Date(); const from = new Date(); from.setDate(to.getDate()-7);
+        $("fFrom").value = fmtISO(from); $("fTo").value = fmtISO(to); load();
+    });
+    $("rMes").addEventListener("click", ()=>{
+        const now = new Date(); const from = new Date(now.getFullYear(), now.getMonth(), 1);
+        const to   = new Date(now.getFullYear(), now.getMonth()+1, 0);
+        $("fFrom").value = fmtISO(from); $("fTo").value = fmtISO(to); load();
+    });
+    $("rAnno").addEventListener("click", ()=>{
+        const now = new Date(); const from = new Date(now.getFullYear(),0,1);
+        $("fFrom").value = fmtISO(from); $("fTo").value = fmtISO(now); load();
+    });
+    $("btnAplicar").addEventListener("click", load);
 
-    // ---------- Primera carga ----------
-    // Si tenés inputs de fecha, arrancamos con Mes actual; si no, el backend decide por defecto.
-    if ($("fFrom") && $("fTo")) rangoMesActual();
+    // Init
+    setDefaultRange();
     load();
 </script>
-
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
