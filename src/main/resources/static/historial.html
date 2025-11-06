@@ -135,7 +135,7 @@
 
         const e = (estadoActual || "").toUpperCase();
         const esIrreparable = e.includes("PIEZA_IRREPARABLE");
-        const esFinal = e.includes("LISTO_RETIRAR") || e.includes("ENTREGADO");
+        const esFinal = e.includes("ENTREGADO");
 
         if (!esIrreparable && !esFinal) btnAvanzar.classList.remove("d-none");
         if (e === "DIAGNOSTICO") btnIrreparable.classList.remove("d-none");

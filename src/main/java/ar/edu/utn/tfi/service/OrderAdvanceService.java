@@ -11,6 +11,7 @@ import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 
 @Service
 public class OrderAdvanceService {
@@ -27,6 +28,11 @@ public class OrderAdvanceService {
         this.historialRepo = historialRepo;
         this.etapaRepo = etapaRepo;
         this.auditoria = auditoria;
+    }
+
+    // ✅ Agregá este helper acá mismo:
+    private LocalDateTime nowUtc() {
+        return LocalDateTime.now(ZoneOffset.UTC);
     }
 
     @Transactional
@@ -47,24 +53,36 @@ public class OrderAdvanceService {
 
         // 4) Actualizar estado de la OT
         String nuevoEstado = siguiente.getCodigo();
-        if (nuevoEstado.equals(etapaActual)) {
-            // No hay cambio; evitamos ruido de auditoría e historial
-            return;
-        }
+        if (nuevoEstado.equals(etapaActual)) return;
+
         orden.setEstadoActual(nuevoEstado);
         ordenRepo.save(orden);
 
-        // 5) Insertar nueva fila en historial (apertura de la etapa siguiente)
+        // ✅ Si llega a ENTREGADO, registrar garantía automática
+        if ("ENTREGADO".equalsIgnoreCase(nuevoEstado)) {
+            orden.setGarantiaDesde(java.time.LocalDate.now());
+            orden.setGarantiaHasta(java.time.LocalDate.now().plusDays(90));
+            ordenRepo.save(orden);
+
+            auditoria.registrarCambio(orden.getId(), "garantia_desde", null,
+                    orden.getGarantiaDesde().toString(), usuario);
+            auditoria.registrarCambio(orden.getId(), "garantia_hasta", null,
+                    orden.getGarantiaHasta().toString(), usuario);
+
+            System.out.println("🧾 Garantía registrada: desde " + orden.getGarantiaDesde() +
+                    " hasta " + orden.getGarantiaHasta());
+        }
+
+        // 5) Insertar nueva fila en historial
         OrdenEtapaHistorial nuevoHist = new OrdenEtapaHistorial();
         nuevoHist.setOrdenId(orden.getId());
         nuevoHist.setEtapaCodigo(nuevoEstado);
-        nuevoHist.setFechaInicio(LocalDateTime.now());
-        nuevoHist.setFechaFin(null);
+        nuevoHist.setFechaInicio(nowUtc());
         nuevoHist.setObservacion("Avance automático");
         nuevoHist.setUsuario(usuario);
         historialRepo.save(nuevoHist);
 
-        // 6) AUDITORÍA DE CAMBIO (estado_actual)
+        // 6) Auditoría cambio de estado
         auditoria.registrarCambio(
                 orden.getId(),
                 "estado_actual",
@@ -73,7 +91,7 @@ public class OrderAdvanceService {
                 usuario
         );
 
-        // 7) Notificación (mock) si llega a LISTO_RETIRAR
+        // 7) Notificación mock
         if ("LISTO_RETIRAR".equals(nuevoEstado)) {
             System.out.println("🔔 Notificación: orden " + orden.getNroOrden() + " lista para retirar.");
         }

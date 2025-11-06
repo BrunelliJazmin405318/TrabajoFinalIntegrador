@@ -1,4 +1,5 @@
 package ar.edu.utn.tfi.service;
+
 import ar.edu.utn.tfi.domain.OrdenTrabajo;
 import ar.edu.utn.tfi.repository.OrdenEtapaHistorialRepository;
 import ar.edu.utn.tfi.repository.OrdenTrabajoRepository;
@@ -13,6 +14,7 @@ import java.util.List;
 
 @Service
 public class OrderQueryService {
+
     private final OrdenTrabajoRepository ordenRepo;
     private final OrdenEtapaHistorialRepository histRepo;
 
@@ -35,7 +37,8 @@ public class OrderQueryService {
                 orden.getCreadaEn()
         );
 
-        var historial = histRepo.findByOrdenIdOrderByFechaInicioAsc(orden.getId())
+        // ✅ Cambiado: usa el método nuevo que ordena por catálogo
+        var historial = histRepo.findByOrdenIdOrdenadoPorCatalogo(orden.getId())
                 .stream()
                 .map(h -> new OrderStageDTO(
                         h.getEtapaCodigo(),
@@ -54,7 +57,8 @@ public class OrderQueryService {
         var orden = ordenRepo.findByNroOrden(nroOrden)
                 .orElseThrow(() -> new EntityNotFoundException("Orden no encontrada"));
 
-        return histRepo.findByOrdenIdOrderByFechaInicioAsc(orden.getId())
+        // ✅ Cambiado: usa también el método nuevo
+        return histRepo.findByOrdenIdOrdenadoPorCatalogo(orden.getId())
                 .stream()
                 .map(h -> new OrderStageDTO(
                         h.getEtapaCodigo(),
