@@ -1,0 +1,2 @@
+ALTER TABLE presupuesto
+ADD COLUMN IF NOT EXISTS pieza_tipo VARCHAR(20);

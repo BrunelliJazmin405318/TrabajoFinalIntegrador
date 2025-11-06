@@ -73,7 +73,11 @@
 <script type="module">
     import { getAuthHeader, isAuthenticated } from "/js/auth.js";
 
-    function badge(est){ return est==='APROBADO'?'bg-success':(est==='RECHAZADO'?'bg-danger':'bg-secondary'); }
+    function badge(est){
+        return est==='APROBADO' ? 'bg-success'
+            : est==='RECHAZADO'? 'bg-danger'
+                : 'bg-secondary';
+    }
 
     async function cargar() {
         if (!isAuthenticated()) {
@@ -81,6 +85,7 @@
             location.href = "/login.html";
             return;
         }
+
         const estado = document.getElementById('filtro').value;
         const url = '/admin/presupuestos/solicitudes' + (estado ? `?estado=${encodeURIComponent(estado)}` : '');
         const r = await fetch(url, { headers: { ...getAuthHeader() }});
@@ -88,27 +93,42 @@
 
         const tb = document.getElementById('tbody');
         tb.innerHTML = '';
+
         list.forEach(s => {
+            // s.presupuestoGenerado debe venir del backend (boolean)
+            const puedeGenerar = (s.estado === 'APROBADO') && (s.presupuestoGenerado !== true);
+
+            const accionesHtml = `
+                ${s.estado === 'PENDIENTE' ? `
+                    <button class="btn btn-success btn-sm me-1" data-act="aprobar" data-id="${s.id}">
+                      <i class="bi bi-check2"></i> Aprobar
+                    </button>
+                    <button class="btn btn-danger btn-sm me-2" data-act="rechazar" data-id="${s.id}">
+                      <i class="bi bi-x-lg"></i> Rechazar
+                    </button>
+                ` : ''}
+
+                ${s.estado === 'APROBADO' ? (
+                puedeGenerar
+                    ? `<a class="btn btn-outline-primary btn-sm"
+                            href="/admin-presupuestos.html?sid=${s.id}">
+                            <i class="bi bi-clipboard-plus"></i> Generar presupuesto
+                         </a>`
+                    : `<span class="badge bg-success">Presupuesto generado</span>`
+            ) : ''}
+            `;
+
             tb.insertAdjacentHTML('beforeend', `
-        <tr>
-          <td>${s.id}</td>
-          <td>${s.clienteNombre}</td>
-          <td>${s.clienteTelefono || '-'}</td>
-          <td>${s.tipoUnidad} ${s.marca || ''} ${s.modelo || ''}</td>
-          <td><span class="badge ${badge(s.estado)}">${s.estado}</span></td>
-          <td>${(s.creadaEn || '').replace('T',' ').substring(0,19)}</td>
-          <td>
-            ${s.estado === 'PENDIENTE' ? `
-              <button class="btn btn-success btn-sm me-1" data-act="aprobar" data-id="${s.id}">
-                <i class="bi bi-check2"></i> Aprobar
-              </button>
-              <button class="btn btn-danger btn-sm" data-act="rechazar" data-id="${s.id}">
-                <i class="bi bi-x-lg"></i> Rechazar
-              </button>
-            ` : '-'}
-          </td>
-        </tr>
-      `);
+                <tr>
+                  <td>${s.id}</td>
+                  <td>${s.clienteNombre}</td>
+                  <td>${s.clienteTelefono || '-'}</td>
+                  <td>${s.tipoUnidad} ${s.marca || ''} ${s.modelo || ''}</td>
+                  <td><span class="badge ${badge(s.estado)}">${s.estado}</span></td>
+                  <td>${(s.creadaEn || '').replace('T',' ').substring(0,19)}</td>
+                  <td>${accionesHtml}</td>
+                </tr>
+            `);
         });
     }
 
@@ -131,7 +151,7 @@
             return;
         }
         alert('OK');
-        cargar();
+        cargar(); // refrescar la grilla y que cambie lo de “Generar presupuesto”/“Presupuesto generado”
     });
 
     // primera carga

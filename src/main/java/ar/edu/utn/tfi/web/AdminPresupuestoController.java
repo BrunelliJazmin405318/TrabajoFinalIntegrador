@@ -2,6 +2,7 @@
 package ar.edu.utn.tfi.web;
 
 import ar.edu.utn.tfi.domain.SolicitudPresupuesto;
+import ar.edu.utn.tfi.repository.PresupuestoRepository;
 import ar.edu.utn.tfi.repository.SolicitudPresupuestoRepository;
 import ar.edu.utn.tfi.repository.FacturaMockRepository;     // ⬅️ NUEVO
 import ar.edu.utn.tfi.service.MailService;
@@ -25,7 +26,7 @@ public class AdminPresupuestoController {
 
     private final SolicitudPresupuestoRepository repo;
     private final MailService mailService;
-
+    private final PresupuestoRepository presupuestoRepo;
     private final PresupuestoService solicitudesService;       // lista SOLICITUDES
     private final PresupuestoGestionService presupuestosService; // lista PRESUPUESTOS
 
@@ -35,21 +36,25 @@ public class AdminPresupuestoController {
                                       MailService mailService,
                                       PresupuestoService solicitudesService,
                                       PresupuestoGestionService presupuestosService,
-                                      FacturaMockRepository facturaRepo) {   // ⬅️ NUEVO en ctor
+                                      FacturaMockRepository facturaRepo,
+                                      PresupuestoRepository presupuestoRepo) {   // ⬅️ NUEVO en ctor
         this.repo = repo;
         this.mailService = mailService;
         this.solicitudesService = solicitudesService;
         this.presupuestosService = presupuestosService;
-        this.facturaRepo = facturaRepo;                         // ⬅️ NUEVO
+        this.facturaRepo = facturaRepo;
+        this.presupuestoRepo = presupuestoRepo;// ⬅️ NUEVO
     }
 
     // ---------------- SOLICITUDES ----------------
 
     @GetMapping("/solicitudes")
     public List<SolicitudDTO> listarSolicitudes(@RequestParam(required = false) String estado) {
-        return solicitudesService.listar(estado)
-                .stream()
-                .map(SolicitudDTO::from)
+        return solicitudesService.listar(estado).stream()
+                .map(s -> SolicitudDTO.from(
+                        s,
+                        presupuestoRepo.existsBySolicitudId(s.getId()) // ⬅️ flag
+                ))
                 .toList();
     }
 
@@ -132,5 +137,14 @@ public class AdminPresupuestoController {
                     );
                 })
                 .toList();
+    }
+    // Obtener una solicitud por id (ADMIN) para autocompletar en admin-presupuestos.html
+    @GetMapping("/solicitudes/{id}")
+    public SolicitudDTO getSolicitudById(@PathVariable Long id) {
+        SolicitudPresupuesto s = repo.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Solicitud no encontrada: " + id));
+
+        boolean generado = presupuestoRepo.existsBySolicitudId(s.getId());
+        return SolicitudDTO.from(s, generado);
     }
 }

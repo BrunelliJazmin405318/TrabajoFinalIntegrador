@@ -26,7 +26,13 @@ public class PresupuestosController {
     // Requiere autenticación (no está bajo /public)
     @PostMapping("/presupuestos/generar")
     public PresupuestoDTO generar(@RequestBody PresupuestoGenerarReq req) {
-        Presupuesto p = service.generarDesdeSolicitud(req.solicitudId(), req.vehiculoTipo(), req.servicios());
+        Presupuesto p = service.generarDesdeSolicitud(
+                req.solicitudId(),
+                req.vehiculoTipo(),
+                req.piezaTipo(),         // se guarda en presupuesto para reportes
+                req.servicios(),
+                req.extras()             // NUEVO
+        );
         List<PresupuestoItemDTO> items = itemRepo.findByPresupuestoId(p.getId())
                 .stream()
                 .map(it -> new PresupuestoItemDTO(it.getServicioNombre(), it.getPrecioUnitario()))

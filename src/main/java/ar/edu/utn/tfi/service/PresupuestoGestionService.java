@@ -11,6 +11,7 @@ import ar.edu.utn.tfi.repository.PresupuestoRepository;
 import ar.edu.utn.tfi.repository.ServicioTarifaRepository;
 import ar.edu.utn.tfi.repository.SolicitudPresupuestoRepository;
 import ar.edu.utn.tfi.service.Pagos.PaymentApiService;
+import ar.edu.utn.tfi.web.dto.ExtraItemReq;
 import ar.edu.utn.tfi.web.dto.PagoApiReq;
 import ar.edu.utn.tfi.web.dto.PagoInfoDTO;
 import ar.edu.utn.tfi.web.dto.PagoManualReq;
@@ -24,6 +25,7 @@ import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class PresupuestoGestionService {
@@ -59,56 +61,98 @@ public class PresupuestoGestionService {
     private static BigDecimal porcentaje(BigDecimal total, double pct){
         return total.multiply(BigDecimal.valueOf(pct)).setScale(2, RoundingMode.HALF_UP);
     }
-
     // ─────────── Generación ───────────
     @Transactional
-    public Presupuesto generarDesdeSolicitud(Long solicitudId, String vehiculoTipo, List<String> servicios) {
+    public Presupuesto generarDesdeSolicitud(Long solicitudId,
+                                             String vehiculoTipo,
+                                             String piezaTipo,     // MOTOR | TAPA (se guarda para reportes)
+                                             List<String> servicios,
+                                             List<ExtraItemReq> extras) {
         if (solicitudId == null) throw new IllegalArgumentException("solicitudId es obligatorio");
         if (vehiculoTipo == null || vehiculoTipo.isBlank())
             throw new IllegalArgumentException("vehiculoTipo es obligatorio");
         if (servicios == null || servicios.isEmpty())
             throw new IllegalArgumentException("Debe seleccionar al menos un servicio");
 
-        vehiculoTipo = vehiculoTipo.trim().toUpperCase();
-
-        List<String> nombres = servicios.stream()
-                .map(s -> s == null ? null : s.trim())
-                .filter(s -> s != null && !s.isEmpty())
-                .toList();
-
         SolicitudPresupuesto s = solicitudRepo.findById(solicitudId)
                 .orElseThrow(() -> new EntityNotFoundException("Solicitud no encontrada: " + solicitudId));
 
-        var tarifas = tarifaRepo.findByVehiculoTipoAndNombreServicioIn(vehiculoTipo, nombres);
-        if (tarifas.size() != nombres.size()) {
-            Set<String> hallados = new HashSet<>();
-            tarifas.forEach(t -> hallados.add(t.getNombreServicio()));
-            List<String> faltan = new ArrayList<>();
-            for (String n : nombres) if (!hallados.contains(n)) faltan.add(n);
-            throw new IllegalArgumentException("Servicios inexistentes para " + vehiculoTipo + ": " + String.join(", ", faltan));
+        // normalizar nombres
+        List<String> nombres = servicios.stream()
+                .map(v -> v == null ? null : v.trim())
+                .filter(v -> v != null && !v.isEmpty())
+                .toList();
+
+        String vt = vehiculoTipo.trim().toUpperCase();
+
+        // buscar tarifas para (vehiculoTipo + nombreServicio)
+        List<ServicioTarifa> tarifas = tarifaRepo.findByVehiculoTipoAndNombreServicioIn(vt, nombres);
+
+        // validar faltantes
+        Set<String> hallados = tarifas.stream()
+                .map(ServicioTarifa::getNombreServicio)
+                .collect(Collectors.toSet());
+        List<String> faltan = new ArrayList<>();
+        for (String n : nombres) if (!hallados.contains(n)) faltan.add(n);
+        if (!faltan.isEmpty()) {
+            throw new IllegalArgumentException("Servicios sin tarifa para " + vt + ": " + String.join(", ", faltan));
         }
 
-        BigDecimal total = BigDecimal.ZERO;
-        for (var t : tarifas) total = total.add(t.getPrecio());
+        // total base (tarifas existentes)
+        BigDecimal total = tarifas.stream()
+                .map(ServicioTarifa::getPrecio)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
 
+        // sumar extras (si vienen)
+        if (extras != null && !extras.isEmpty()) {
+            for (ExtraItemReq ex : extras) {
+                if (ex == null || ex.nombre() == null || ex.nombre().isBlank())
+                    throw new IllegalArgumentException("Extra sin nombre");
+                if (ex.precio() == null || ex.precio().setScale(2, RoundingMode.HALF_UP).signum() <= 0)
+                    throw new IllegalArgumentException("El extra '" + ex.nombre() + "' debe tener precio > 0");
+                total = total.add(ex.precio().setScale(2, RoundingMode.HALF_UP));
+            }
+        }
+
+        // crear presupuesto
         Presupuesto p = new Presupuesto();
         p.setSolicitudId(s.getId());
         p.setClienteNombre(s.getClienteNombre());
         p.setClienteEmail(s.getClienteEmail());
-        p.setVehiculoTipo(vehiculoTipo);
+        p.setVehiculoTipo(vt);
+        if (piezaTipo != null && !piezaTipo.isBlank()) {
+            p.setPiezaTipo(piezaTipo.trim().toUpperCase());
+        } else {
+            p.setPiezaTipo(s.getTipoUnidad());
+        }
         p.setEstado("PENDIENTE");
         p.setTotal(total);
         p = presupuestoRepo.save(p);
 
-        for (var t : tarifas) {
+        // ítems por tarifa
+        for (ServicioTarifa t : tarifas) {
             PresupuestoItem it = new PresupuestoItem();
             it.setPresupuesto(p);
             it.setServicioNombre(t.getNombreServicio());
             it.setPrecioUnitario(t.getPrecio());
             itemRepo.save(it);
         }
+
+        // ítems extra
+        if (extras != null && !extras.isEmpty()) {
+            for (ExtraItemReq ex : extras) {
+                PresupuestoItem it = new PresupuestoItem();
+                it.setPresupuesto(p);
+                it.setServicioNombre(ex.nombre().trim());
+                it.setPrecioUnitario(ex.precio().setScale(2, RoundingMode.HALF_UP));
+                itemRepo.save(it);
+            }
+        }
+
         return p;
     }
+
+
 
     // ─────────── Consultas ───────────
     @Transactional(readOnly = true)

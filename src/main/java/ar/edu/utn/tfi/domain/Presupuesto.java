@@ -84,6 +84,9 @@ public class Presupuesto {
     @Column(name = "final_paid_at")
     private LocalDateTime finalPaidAt;
 
+    @Column(name = "pieza_tipo", length = 20)
+    private String piezaTipo; //
+
     // ─────────────────────────────────────────────────────────────────────────
 
     @PrePersist

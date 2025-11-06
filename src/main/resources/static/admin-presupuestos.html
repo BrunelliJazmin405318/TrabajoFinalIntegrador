@@ -30,15 +30,17 @@
         <span class="badge text-bg-info">Checkout API</span>
     </div>
 
-    <!-- Generación rápida -->
+    <!-- Generación rápida (NUEVO) -->
     <div class="card mb-3">
         <div class="card-body">
             <h5 class="card-title">Generar desde solicitud aprobada</h5>
+
             <form id="gen" class="row g-3">
                 <div class="col-md-2">
                     <label class="form-label">Solicitud ID</label>
                     <input class="form-control" name="solicitudId" required>
                 </div>
+
                 <div class="col-md-3">
                     <label class="form-label">Tipo vehículo</label>
                     <select class="form-select" name="vehiculoTipo" required>
@@ -47,54 +49,41 @@
                     </select>
                 </div>
 
+                <div class="col-md-3">
+                    <label class="form-label">Pieza</label>
+                    <div class="btn-group d-flex" role="group" aria-label="piezaTipo">
+                        <input type="radio" class="btn-check" name="piezaTipo" id="piezaMotor" value="MOTOR" autocomplete="off" checked data-lockable>
+                        <label class="btn btn-outline-primary" for="piezaMotor">Motor</label>
+
+                        <input type="radio" class="btn-check" name="piezaTipo" id="piezaTapa" value="TAPA" autocomplete="off" data-lockable="">
+                        <label class="btn btn-outline-primary" for="piezaTapa">Tapa</label>
+                    </div>
+                </div>
+
                 <div class="col-12">
                     <label class="form-label d-block">Servicios</label>
-                    <div class="row g-2">
-                        <div class="col-md-6"><div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="srv_m001" name="servicios" value="Rectificación de cilindros">
-                            <label class="form-check-label" for="srv_m001">Rectificación de cilindros</label>
-                        </div></div>
-                        <div class="col-md-6"><div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="srv_m002" name="servicios" value="Bruñido de cilindros">
-                            <label class="form-check-label" for="srv_m002">Bruñido de cilindros</label>
-                        </div></div>
-                        <div class="col-md-6"><div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="srv_m003" name="servicios" value="Planeado de block">
-                            <label class="form-check-label" for="srv_m003">Planeado de block</label>
-                        </div></div>
-                        <div class="col-md-6"><div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="srv_m004" name="servicios" value="Cambio de camisas">
-                            <label class="form-check-label" for="srv_m004">Cambio de camisas</label>
-                        </div></div>
-                        <div class="col-md-6"><div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="srv_m005" name="servicios" value="Rectificación de cigüeñal">
-                            <label class="form-check-label" for="srv_m005">Rectificación de cigüeñal</label>
-                        </div></div>
-                        <div class="col-md-6"><div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="srv_m006" name="servicios" value="Pulido de cigüeñal">
-                            <label class="form-check-label" for="srv_m006">Pulido de cigüeñal</label>
-                        </div></div>
-                        <div class="col-md-6"><div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="srv_m007" name="servicios" value="Rectificación de bielas">
-                            <label class="form-check-label" for="srv_m007">Rectificación de bielas</label>
-                        </div></div>
-                        <div class="col-md-6"><div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="srv_m008" name="servicios" value="Limpieza de block y piezas">
-                            <label class="form-check-label" for="srv_m008">Limpieza de block y piezas</label>
-                        </div></div>
-                        <div class="col-md-6"><div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="srv_m009" name="servicios" value="Armado de motor completo">
-                            <label class="form-check-label" for="srv_m009">Armado de motor completo</label>
-                        </div></div>
+
+                    <!-- GRILLA de chips -->
+                    <div id="serviciosGrid" class="row g-2"></div>
+
+                    <!-- Agregar otro -->
+                    <div class="input-group mt-3" style="max-width: 560px;">
+                        <input id="srvOtro" type="text" class="form-control" placeholder="Agregar otro servicio…">
+                        <input id="srvOtroPrecio" type="number" class="form-control" placeholder="Precio ($)" min="0" step="0.01" style="max-width: 150px;">
+                        <button id="btnSrvOtro" class="btn btn-outline-secondary" type="button">
+                            <i class="bi bi-plus-lg"></i> Agregar
+                        </button>
                     </div>
+                    <div class="form-text">Hacé click para seleccionar/deseleccionar. Podés agregar servicios personalizados con su precio.</div>
                 </div>
 
                 <div class="col-md-3 d-grid">
                     <button class="btn btn-primary" type="submit">Generar</button>
                 </div>
             </form>
-            <div id="genOk" class="alert alert-success mt-2 d-none"></div>
-            <div id="genErr" class="alert alert-danger mt-2 d-none"></div>
+
+            <div id="genOk"  class="alert alert-success mt-2 d-none"></div>
+            <div id="genErr" class="alert alert-danger  mt-2 d-none"></div>
         </div>
     </div>
 
@@ -144,185 +133,345 @@
     import { getAuthHeader, isAuthenticated } from "/js/auth.js";
 
     // ======= Config =======
-    const ENDPOINT_PM = '/admin/pagos-manuales/registrar';
-    const ENDPOINT_PDF_BY_PRES = (id, tipo='B') =>
+    const ENDPOINT_PM = "/admin/pagos-manuales/registrar";
+    const ENDPOINT_PDF_BY_PRES = (id, tipo = "B") =>
         `/admin/facturas/pdf/by-presupuesto/${id}?tipo=${encodeURIComponent(tipo)}`;
     const ENDPOINT_FACTURAR = (id) => `/admin/facturas/generar/${id}`;
 
     // ======= Utils =======
     const badge = (est) =>
-        est === 'APROBADO' ? 'bg-success' :
-            (est === 'RECHAZADO' ? 'bg-danger' : 'bg-secondary');
-    const fmt   = (s) => s ? s.replace('T',' ').substring(0,19) : '-';
-    const money = (n) => new Intl.NumberFormat('es-AR', { style:'currency', currency:'ARS' }).format(n || 0);
+        est === "APROBADO" ? "bg-success" : est === "RECHAZADO" ? "bg-danger" : "bg-secondary";
+    const fmt = (s) => (s ? s.replace("T", " ").substring(0, 19) : "-");
+    const money = (n) => new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS" }).format(n || 0);
 
-    // ======= Carga de grilla =======
-    async function cargar () {
-        if (!isAuthenticated()) { alert('Iniciá sesión admin.'); location.href = '/login.html'; return; }
+    // ======= Servicios por tipo de pieza =======
+    const MOTOR_SERVICES = [
+        "Rectificación de cilindros",
+        "Bruñido de cilindros",
+        "Planeado de block",
+        "Cambio de camisas",
+        "Rectificación de cigüeñal",
+        "Pulido de cigüeñal",
+        "Rectificación de bielas",
+        "Limpieza de block y piezas",
+        "Armado de motor completo",
+    ];
 
-        const estado = document.getElementById('fEstado').value;
-        const sid = document.getElementById('fSolicitud').value.trim();
-        const qs = new URLSearchParams();
-        if (estado) qs.set('estado', estado);
-        if (sid) qs.set('solicitudId', sid);
+    const TAPA_SERVICES = [
+        "Planeado de tapa",
+        "Rectificación de asientos de válvulas",
+        "Cambio de guías de válvula",
+        "Cambio de retenes",
+        "Prueba hidráulica de tapa",
+        "Ajuste de resortes y balancines",
+        "Limpieza y arenado de tapa",
+    ];
 
-        const url = '/admin/presupuestos' + (qs.toString() ? ('?' + qs.toString()) : '');
-        const r = await fetch(url, { headers: { ...getAuthHeader() } });
-        const list = await r.json();
+    // ======= Estado en memoria =======
+    let selectedServices = new Set();     // servicios con tarifa (BD)
+    window.extras = [];                   // servicios personalizados con precio
 
-        const tb = document.getElementById('tbody');
-        tb.innerHTML = '';
+    // ======= Helpers UI =======
+    function ensureExtrasContainer() {
+        let c = document.getElementById("extrasChips");
+        if (!c) {
+            const grid = document.getElementById("serviciosGrid");
+            const wrap = document.createElement("div");
+            wrap.id = "extrasChips";
+            wrap.className = "row g-2 mt-2";
+            grid.parentElement.appendChild(wrap);
+        }
+    }
 
-        list.forEach((p) => {
-            let acciones = '-';
+    function renderExtrasChips() {
+        ensureExtrasContainer();
+        const cont = document.getElementById("extrasChips");
+        cont.innerHTML = "";
+        if (!window.extras.length) return;
 
-            if (p.estado === 'PENDIENTE') {
-                acciones =
-                    '<button type="button" class="btn btn-success btn-sm me-1" data-act="aprobar" data-id="'+p.id+'">' +
-                    '<i class="bi bi-check2"></i> Aprobar</button>' +
-                    '<button type="button" class="btn btn-danger btn-sm" data-act="rechazar" data-id="'+p.id+'">' +
-                    '<i class="bi bi-x-lg"></i> Rechazar</button>';
-
-            } else if (p.estado === 'APROBADO') {
-                const senaOK  = (p.senaEstado  || '').toUpperCase() === 'ACREDITADA';
-                const finalOK = (p.finalEstado || '').toUpperCase() === 'ACREDITADA';
-
-                if (finalOK) {
-                    // ✅ Pago total acreditado
-                    const tieneFactura = !!p.facturaNumero;
-                    if (tieneFactura) {
-                        acciones =
-                            '<span class="badge bg-success me-2">Monto total pagado</span>' +
-                            (p.finalPaymentId ? '<span class="text-muted">#' + p.finalPaymentId + '</span>' : '') +
-                            '<button type="button" class="btn btn-success btn-sm ms-2" ' +
-                            'data-act="descargar-factura" data-id="'+p.id+'" data-tipo="'+(p.facturaTipo || 'B')+'">' +
-                            '<i class="bi bi-download"></i> Descargar factura '+ (p.facturaTipo || 'B') +'</button>' +
-                            '<span class="text-muted ms-2">'+ p.facturaNumero +'</span>' +
-                            '<a class="btn btn-outline-primary btn-sm ms-2" target="_blank" href="/estado-solicitud.html?id='+(p.solicitudId??'')+'">' +
-                            '<i class="bi bi-box-arrow-up-right"></i> Página del cliente</a>';
-                    } else {
-                        acciones =
-                            '<span class="badge bg-success me-2">Monto total pagado</span>' +
-                            (p.finalPaymentId ? '<span class="text-muted">#' + p.finalPaymentId + '</span>' : '') +
-                            '<button type="button" class="btn btn-outline-success btn-sm ms-2" ' +
-                            'data-act="facturar" data-id="'+p.id+'">' +
-                            '<i class="bi bi-receipt"></i> Generar factura (A/B)</button>' +
-                            '<a class="btn btn-outline-primary btn-sm ms-2" target="_blank" href="/estado-solicitud.html?id='+(p.solicitudId??'')+'">' +
-                            '<i class="bi bi-box-arrow-up-right"></i> Página del cliente</a>';
-                    }
-                } else {
-                    // Aún no pago final
-                    const chip = senaOK
-                        ? '<span class="badge bg-success me-2">Seña acreditada</span>' + (p.senaPaymentId ? '<span class="text-muted me-2">#'+p.senaPaymentId+'</span>' : '')
-                        : '<span class="badge bg-warning text-dark me-2">Seña pendiente</span>';
-
-                    acciones =
-                        chip +
-                        '<a class="btn btn-outline-primary btn-sm me-2" target="_blank" href="/estado-solicitud.html?id=' + (p.solicitudId ?? '') + '">' +
-                        '<i class="bi bi-box-arrow-up-right"></i> Página del cliente</a>' +
-                        '<button type="button" class="btn btn-outline-primary btn-sm" ' +
-                        'data-act="pago-manual" ' +
-                        'data-id="' + p.id + '" ' +
-                        'data-total="' + (p.total ?? 0) + '" ' +
-                        'data-sena-monto="' + (p.senaMonto ?? '') + '" ' +
-                        'data-sena-estado="' + (p.senaEstado ?? '') + '" ' +
-                        'data-final-estado="' + (p.finalEstado ?? '') + '"' +
-                        '>' +
-                        '<i class="bi bi-cash-coin"></i> Registrar pago manual' +
-                        '</button>';
-                }
-            }
-
-            const solicitudTxt = (p.solicitudId !== null && p.solicitudId !== undefined) ? p.solicitudId : '-';
-
-            tb.insertAdjacentHTML('beforeend',
-                '<tr data-row-id="'+p.id+'">' +
-                '<td>'+p.id+'</td>' +
-                '<td>'+solicitudTxt+'</td>' +
-                '<td>'+p.clienteNombre+'</td>' +
-                '<td>'+p.vehiculoTipo+'</td>' +
-                '<td>'+money(p.total)+'</td>' +
-                '<td><span class="badge '+badge(p.estado)+'">'+p.estado+'</span></td>' +
-                '<td>'+fmt(p.creadaEn)+'</td>' +
-                '<td>'+acciones+'</td>' +
-                '</tr>'
+        window.extras.forEach((ex, i) => {
+            cont.insertAdjacentHTML(
+                "beforeend",
+                `<div class="col-md-4" data-extra-idx="${i}">
+           <div class="d-flex align-items-stretch">
+             <button type="button"
+                     class="btn w-100 btn-primary"
+                     data-chip="extra"
+                     title="Extra agregado manualmente (click para quitar)">
+               ${ex.nombre} (${money(ex.precio)})
+             </button>
+             <button type="button" class="btn btn-outline-danger ms-1" data-chip="extra-remove" title="Quitar">
+               &times;
+             </button>
+           </div>
+         </div>`
             );
         });
     }
 
-    document.getElementById('btnBuscar').addEventListener('click', cargar);
+    // Renderiza la grilla de “chips” clickeables (con tarifa)
+    function renderServiciosGrid(pieza) {
+        const grid = document.getElementById("serviciosGrid");
+        grid.innerHTML = "";
+        const base = pieza === "TAPA" ? TAPA_SERVICES : MOTOR_SERVICES;
 
-    // ======= Acciones (un único listener) =======
-    document.getElementById('tbody').addEventListener('click', async (e) => {
-        const btn = e.target.closest('button[data-act]');
+        base.forEach((nombre) => {
+            const isSel = selectedServices.has(nombre);
+            grid.insertAdjacentHTML(
+                "beforeend",
+                `<div class="col-md-4">
+           <button type="button"
+                   class="btn w-100 ${isSel ? "btn-primary" : "btn-outline-primary"}"
+                   data-chip="servicio"
+                   data-nombre="${nombre}">
+             ${nombre}
+           </button>
+         </div>`
+            );
+        });
+
+        // volver a dibujar extras debajo
+        renderExtrasChips();
+    }
+
+    // Toggle visual + estado para servicios con tarifa
+    function toggleChip(btn) {
+        const nombre = btn.dataset.nombre;
+        if (selectedServices.has(nombre)) {
+            selectedServices.delete(nombre);
+            btn.classList.remove("btn-primary");
+            btn.classList.add("btn-outline-primary");
+        } else {
+            selectedServices.add(nombre);
+            btn.classList.remove("btn-outline-primary");
+            btn.classList.add("btn-primary");
+        }
+    }
+
+    // Inicializa grilla según pieza seleccionada
+    function initServiciosForCurrentPieza() {
+        const pieza = document.querySelector('input[name="piezaTipo"]:checked')?.value || "MOTOR";
+        // Mantener sólo los que no pertenecen a los catálogos base (por si venías de otra pieza)
+        const otros = Array.from(selectedServices).filter(
+            (s) => !MOTOR_SERVICES.includes(s) && !TAPA_SERVICES.includes(s)
+        );
+        selectedServices = new Set(otros);
+        renderServiciosGrid(pieza);
+    }
+
+    // --- Detectar pieza desde la solicitud (endpoint público que ya tenés) ---
+    async function cargarPiezaDesdeSolicitud(sid) {
+        if (!sid) return;
+        try {
+            const r = await fetch(`/public/presupuestos/solicitud/${encodeURIComponent(sid)}`);
+            const j = await r.json().catch(() => ({}));
+            if (!r.ok) throw new Error(j.message || `Solicitud ${sid} no encontrada`);
+
+            const pieza = (j.tipoUnidad || "").toUpperCase(); // "MOTOR" | "TAPA"
+            if (pieza === "TAPA") {
+                document.getElementById("piezaTapa").checked = true;
+            } else {
+                document.getElementById("piezaMotor").checked = true; // default
+            }
+            initServiciosForCurrentPieza();
+        } catch (e) {
+            console.warn("No se pudo leer la solicitud:", e.message || e);
+        }
+    }
+
+    // ======= Carga de grilla (tabla de presupuestos) =======
+    async function cargar() {
+        if (!isAuthenticated()) {
+            alert("Iniciá sesión admin.");
+            location.href = "/login.html";
+            return;
+        }
+
+        const estado = document.getElementById("fEstado").value;
+        const sid = document.getElementById("fSolicitud").value.trim();
+        const qs = new URLSearchParams();
+        if (estado) qs.set("estado", estado);
+        if (sid) qs.set("solicitudId", sid);
+
+        const url = "/admin/presupuestos" + (qs.toString() ? "?" + qs.toString() : "");
+        const r = await fetch(url, { headers: { ...getAuthHeader() } });
+        const list = await r.json();
+
+        const tb = document.getElementById("tbody");
+        tb.innerHTML = "";
+
+        list.forEach((p) => {
+            let acciones = "-";
+
+            if (p.estado === "PENDIENTE") {
+                acciones =
+                    '<button type="button" class="btn btn-success btn-sm me-1" data-act="aprobar" data-id="' +
+                    p.id +
+                    '"><i class="bi bi-check2"></i> Aprobar</button>' +
+                    '<button type="button" class="btn btn-danger btn-sm" data-act="rechazar" data-id="' +
+                    p.id +
+                    '"><i class="bi bi-x-lg"></i> Rechazar</button>';
+            } else if (p.estado === "APROBADO") {
+                const senaOK = (p.senaEstado || "").toUpperCase() === "ACREDITADA";
+                const finalOK = (p.finalEstado || "").toUpperCase() === "ACREDITADA";
+
+                if (finalOK) {
+                    const tieneFactura = !!p.facturaNumero;
+                    if (tieneFactura) {
+                        acciones =
+                            '<span class="badge bg-success me-2">Monto total pagado</span>' +
+                            (p.finalPaymentId ? '<span class="text-muted">#' + p.finalPaymentId + "</span>" : "") +
+                            '<button type="button" class="btn btn-success btn-sm ms-2" ' +
+                            'data-act="descargar-factura" data-id="' +
+                            p.id +
+                            '" data-tipo="' +
+                            (p.facturaTipo || "B") +
+                            '"><i class="bi bi-download"></i> Descargar factura ' +
+                            (p.facturaTipo || "B") +
+                            "</button>" +
+                            '<span class="text-muted ms-2">' +
+                            p.facturaNumero +
+                            "</span>" +
+                            '<a class="btn btn-outline-primary btn-sm ms-2" target="_blank" href="/estado-solicitud.html?id=' +
+                            (p.solicitudId ?? "") +
+                            '"><i class="bi bi-box-arrow-up-right"></i> Página del cliente</a>';
+                    } else {
+                        acciones =
+                            '<span class="badge bg-success me-2">Monto total pagado</span>' +
+                            (p.finalPaymentId ? '<span class="text-muted">#' + p.finalPaymentId + "</span>" : "") +
+                            '<button type="button" class="btn btn-outline-success btn-sm ms-2" ' +
+                            'data-act="facturar" data-id="' +
+                            p.id +
+                            '"><i class="bi bi-receipt"></i> Generar factura (A/B)</button>' +
+                            '<a class="btn btn-outline-primary btn-sm ms-2" target="_blank" href="/estado-solicitud.html?id=' +
+                            (p.solicitudId ?? "") +
+                            '"><i class="bi bi-box-arrow-up-right"></i> Página del cliente</a>';
+                    }
+                } else {
+                    const chip = senaOK
+                        ? '<span class="badge bg-success me-2">Seña acreditada</span>' +
+                        (p.senaPaymentId ? '<span class="text-muted me-2">#' + p.senaPaymentId + "</span>" : "")
+                        : '<span class="badge bg-warning text-dark me-2">Seña pendiente</span>';
+
+                    acciones =
+                        chip +
+                        '<a class="btn btn-outline-primary btn-sm me-2" target="_blank" href="/estado-solicitud.html?id=' +
+                        (p.solicitudId ?? "") +
+                        '"><i class="bi bi-box-arrow-up-right"></i> Página del cliente</a>' +
+                        '<button type="button" class="btn btn-outline-primary btn-sm" ' +
+                        'data-act="pago-manual" ' +
+                        'data-id="' +
+                        p.id +
+                        '" ' +
+                        'data-total="' +
+                        (p.total ?? 0) +
+                        '" ' +
+                        'data-sena-monto="' +
+                        (p.senaMonto ?? "") +
+                        '" ' +
+                        'data-sena-estado="' +
+                        (p.senaEstado ?? "") +
+                        '" ' +
+                        'data-final-estado="' +
+                        (p.finalEstado ?? "") +
+                        '"' +
+                        ">" +
+                        '<i class="bi bi-cash-coin"></i> Registrar pago manual' +
+                        "</button>";
+                }
+            }
+
+            const solicitudTxt = p.solicitudId !== null && p.solicitudId !== undefined ? p.solicitudId : "-";
+
+            tb.insertAdjacentHTML(
+                "beforeend",
+                `<tr data-row-id="${p.id}">
+           <td>${p.id}</td>
+           <td>${solicitudTxt}</td>
+           <td>${p.clienteNombre}</td>
+           <td>${p.vehiculoTipo}</td>
+           <td>${money(p.total)}</td>
+           <td><span class="badge ${badge(p.estado)}">${p.estado}</span></td>
+           <td>${fmt(p.creadaEn)}</td>
+           <td>${acciones}</td>
+         </tr>`
+            );
+        });
+    }
+
+    document.getElementById("btnBuscar").addEventListener("click", cargar);
+
+    // ======= Acciones (tabla) =======
+    document.getElementById("tbody").addEventListener("click", async (e) => {
+        const btn = e.target.closest("button[data-act]");
         if (!btn) return;
-        const id  = btn.dataset.id;
+        const id = btn.dataset.id;
         const act = btn.dataset.act;
 
         // Aprobar / Rechazar
-        if (act === 'aprobar' || act === 'rechazar') {
-            const nota = prompt(act.toUpperCase()+': nota/observación (opcional)') ?? null;
+        if (act === "aprobar" || act === "rechazar") {
+            const nota = prompt(act.toUpperCase() + ": nota/observación (opcional)") ?? null;
             if (nota === null) return;
             btn.disabled = true;
-            const r = await fetch('/admin/presupuestos/'+id+'/'+act, {
-                method: 'PUT',
-                headers: { 'Content-Type':'application/json', ...getAuthHeader() },
-                body: JSON.stringify({ nota })
+            const r = await fetch(`/admin/presupuestos/${id}/${act}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json", ...getAuthHeader() },
+                body: JSON.stringify({ nota }),
             });
             btn.disabled = false;
-            const j = await r.json().catch(()=> ({}));
-            if (!r.ok) { alert('Error: '+(j.message || r.status)); return; }
-            alert('OK');
+            const j = await r.json().catch(() => ({}));
+            if (!r.ok) return alert("Error: " + (j.message || r.status));
+            alert("OK");
             await cargar();
             return;
         }
 
         // Generar factura (elige A/B)
-        if (act === 'facturar') {
-            let tipo = prompt('Tipo de factura (A o B):', 'B');
+        if (act === "facturar") {
+            let tipo = prompt("Tipo de factura (A o B):", "B");
             if (!tipo) return;
             tipo = tipo.trim().toUpperCase();
-            if (tipo !== 'A' && tipo !== 'B') { alert('Tipo inválido. Usá A o B.'); return; }
+            if (!["A", "B"].includes(tipo)) return alert("Tipo inválido. Usá A o B.");
 
             try {
                 btn.disabled = true;
                 const r = await fetch(ENDPOINT_FACTURAR(id), {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
-                    body: JSON.stringify({ tipo })
+                    method: "POST",
+                    headers: { "Content-Type": "application/json", ...getAuthHeader() },
+                    body: JSON.stringify({ tipo }),
                 });
                 const text = await r.text();
                 let j; try { j = JSON.parse(text); } catch { j = { message: text }; }
                 if (!r.ok) {
-                    alert('No se pudo generar la factura: ' + (j.message || `HTTP ${r.status}`));
+                    alert("No se pudo generar la factura: " + (j.message || `HTTP ${r.status}`));
                     btn.disabled = false;
                     return;
                 }
-                alert('Factura generada: ' + (j.numero || 'OK'));
-                await cargar(); // ahora debería aparecer "Descargar factura"
+                alert("Factura generada: " + (j.numero || "OK"));
+                await cargar();
             } catch (err) {
                 btn.disabled = false;
-                alert('Error de red: ' + (err?.message || err));
+                alert("Error de red: " + (err?.message || err));
             }
             return;
         }
 
-        // Descargar factura (PDF) — usa fetch con headers y descarga vía blob
-        if (act === 'descargar-factura') {
-            const tipo = (btn.dataset.tipo || 'B').toUpperCase();
+        // Descargar factura (PDF)
+        if (act === "descargar-factura") {
+            const tipo = (btn.dataset.tipo || "B").toUpperCase();
             const url = ENDPOINT_PDF_BY_PRES(id, tipo);
             try {
                 btn.disabled = true;
                 const r = await fetch(url, { headers: { ...getAuthHeader() } });
                 if (!r.ok) {
                     const txt = await r.text();
-                    alert('No se pudo descargar la factura: ' + (txt || `HTTP ${r.status}`));
+                    alert("No se pudo descargar la factura: " + (txt || `HTTP ${r.status}`));
                     btn.disabled = false;
                     return;
                 }
                 const blob = await r.blob();
                 const href = URL.createObjectURL(blob);
-                const a = document.createElement('a');
+                const a = document.createElement("a");
                 a.href = href;
                 a.download = `factura-presupuesto-${id}.pdf`;
                 document.body.appendChild(a);
@@ -332,84 +481,80 @@
                 btn.disabled = false;
             } catch (err) {
                 btn.disabled = false;
-                alert('Error de red al descargar: ' + (err?.message || err));
+                alert("Error de red al descargar: " + (err?.message || err));
             }
             return;
         }
 
         // Registrar pago manual (SENA o FINAL)
-        if (act === 'pago-manual') {
+        if (act === "pago-manual") {
             const rowBtn = btn;
             const total = Number(rowBtn.dataset.total || 0);
             const senaMontoDato = rowBtn.dataset.senaMonto;
-            const senaEstado = (rowBtn.dataset.senaEstado || '').toUpperCase();
-            const finalEstado = (rowBtn.dataset.finalEstado || '').toUpperCase();
-            const senaMonto = senaMontoDato === '' ? null : Number(senaMontoDato);
+            const senaEstado = (rowBtn.dataset.senaEstado || "").toUpperCase();
+            const finalEstado = (rowBtn.dataset.finalEstado || "").toUpperCase();
+            const senaMonto = senaMontoDato === "" ? null : Number(senaMontoDato);
 
-            if (finalEstado === 'ACREDITADA') { alert('Este presupuesto ya tiene el pago FINAL acreditado.'); return; }
+            if (finalEstado === "ACREDITADA") return alert("Este presupuesto ya tiene el pago FINAL acreditado.");
 
-            const tipoDefault = senaEstado === 'ACREDITADA' ? 'FINAL' : 'SENA';
-            const tipo = prompt('Tipo de pago manual (SENA o FINAL):', tipoDefault);
+            const tipoDefault = senaEstado === "ACREDITADA" ? "FINAL" : "SENA";
+            const tipo = prompt("Tipo de pago manual (SENA o FINAL):", tipoDefault);
             if (!tipo) return;
             const T = tipo.trim().toUpperCase();
-            if (T !== 'SENA' && T !== 'FINAL') { alert('Tipo inválido. Usá SENA o FINAL.'); return; }
+            if (!["SENA", "FINAL"].includes(T)) return alert("Tipo inválido. Usá SENA o FINAL.");
 
             const round2 = (n) => Math.round((Number(n) + Number.EPSILON) * 100) / 100;
-            const senaEsperada = round2(total * 0.30);
+            const senaEsperada = round2(total * 0.3);
             const finalEsperado = round2(total - (senaMonto != null ? senaMonto : senaEsperada));
 
-            if (T === 'FINAL' && senaEstado !== 'ACREDITADA') {
-                alert('Para registrar pago FINAL primero debe estar acreditada la seña.');
+            if (T === "FINAL" && senaEstado !== "ACREDITADA") {
+                alert("Para registrar pago FINAL primero debe estar acreditada la seña.");
                 return;
             }
 
             let referencia = null;
             while (true) {
-                const r = prompt('Referencia (OBLIGATORIA — ej: recibo/transferencia):');
+                const r = prompt("Referencia (OBLIGATORIA — ej: recibo/transferencia):");
                 if (r === null) return;
                 if (r.trim().length > 0) { referencia = r.trim(); break; }
-                alert('La referencia es obligatoria.');
+                alert("La referencia es obligatoria.");
             }
 
-            const hoy = new Date().toISOString().slice(0,10);
-            const montoSugerido = (T === 'SENA') ? senaEsperada : finalEsperado;
+            const hoy = new Date().toISOString().slice(0, 10);
+            const montoSugerido = T === "SENA" ? senaEsperada : finalEsperado;
 
-            const fechaStr = prompt('Fecha (opcional, formato YYYY-MM-DD). Dejar vacío = hoy', hoy) ?? null;
-            const nota     = prompt('Nota (opcional)') ?? null;
+            const fechaStr = prompt("Fecha (opcional, formato YYYY-MM-DD). Dejar vacío = hoy", hoy) ?? null;
+            const nota = prompt("Nota (opcional)") ?? null;
 
             const montoStr = prompt(`Monto ${T} exacto (ARS)`, montoSugerido.toFixed(2));
             if (montoStr === null) return;
 
-            const medio = prompt('Medio (EFECTIVO/TRANSFERENCIA/TARJETA/OTRO):', 'EFECTIVO');
+            const medio = prompt("Medio (EFECTIVO/TRANSFERENCIA/TARJETA/OTRO):", "EFECTIVO");
             if (medio === null) return;
 
-            const monto = Number(String(montoStr).replace(',', '.'));
-            if (!(monto > 0)) { alert('Monto inválido'); return; }
+            const monto = Number(String(montoStr).replace(",", "."));
+            if (!(monto > 0)) return alert("Monto inválido");
 
             let fechaPago = null;
-            if (fechaStr && /^\d{4}-\d{2}-\d{2}$/.test(fechaStr)) {
-                fechaPago = fechaStr;
-            } else if (fechaStr && fechaStr.trim() !== '') {
-                alert('Fecha inválida. Usá YYYY-MM-DD o dejalo vacío.');
-                return;
-            }
+            if (fechaStr && /^\d{4}-\d{2}-\d{2}$/.test(fechaStr)) fechaPago = fechaStr;
+            else if (fechaStr && fechaStr.trim() !== "") return alert("Fecha inválida. Usá YYYY-MM-DD o dejalo vacío.");
 
             const payload = {
                 presupuestoId: Number(id),
                 tipo: T,
-                medio: (medio || '').trim().toUpperCase(),
-                referencia: referencia,
-                monto: monto,
+                medio: (medio || "").trim().toUpperCase(),
+                referencia,
+                monto,
                 fechaPago: fechaPago || null,
-                nota: (nota || '').trim()
+                nota: (nota || "").trim(),
             };
 
             btn.disabled = true;
             try {
                 const r = await fetch(ENDPOINT_PM, {
-                    method: 'POST',
-                    headers: { 'Content-Type':'application/json', ...getAuthHeader() },
-                    body: JSON.stringify(payload)
+                    method: "POST",
+                    headers: { "Content-Type": "application/json", ...getAuthHeader() },
+                    body: JSON.stringify(payload),
                 });
 
                 const text = await r.text();
@@ -417,59 +562,154 @@
 
                 if (!r.ok) {
                     btn.disabled = false;
-                    alert('Error al registrar: ' + (j.message || r.status));
+                    alert("Error al registrar: " + (j.message || r.status));
                     return;
                 }
 
                 alert(`Pago ${T} manual registrado correctamente.`);
-                btn.classList.add('disabled');
+                btn.classList.add("disabled");
                 await cargar();
             } catch (err) {
                 btn.disabled = false;
-                alert('Error de red: ' + (err?.message || err));
+                alert("Error de red: " + (err?.message || err));
             }
             return;
         }
     });
 
-    // ======= Generar presupuesto rápido =======
-    document.getElementById('gen').addEventListener('submit', async (e) => {
+    // ======= Generar presupuesto (con EXTRAS) =======
+    document.getElementById("gen").addEventListener("submit", async (e) => {
         e.preventDefault();
         const fd = new FormData(e.target);
-        const checks = document.querySelectorAll('input[name="servicios"]:checked');
-        const servicios = Array.from(checks).map(i => i.value);
 
-        const payload = {
-            solicitudId: Number(fd.get('solicitudId')),
-            vehiculoTipo: fd.get('vehiculoTipo'),
-            servicios
-        };
+        const solicitudId = Number(fd.get("solicitudId"));
+        const vehiculoTipo = fd.get("vehiculoTipo");
+        const piezaTipo = fd.get("piezaTipo") || "MOTOR";
+
+        // Armamos array a partir del Set (servicios con tarifa)
+        const servicios = Array.from(selectedServices);
+
+        if (!solicitudId || servicios.length === 0) {
+            const el = document.getElementById("genErr");
+            el.classList.remove("d-none");
+            el.textContent = servicios.length === 0
+                ? "Seleccioná al menos un servicio."
+                : "Ingresá un Solicitud ID válido.";
+            return;
+        }
+
+        // Copiamos extras actuales
+        const extras = Array.isArray(window.extras) ? window.extras.slice() : [];
+
+        const payload = { solicitudId, vehiculoTipo, piezaTipo, servicios, extras };
 
         try {
-            const r = await fetch('/presupuestos/generar', {
-                method: 'POST',
-                headers: { 'Content-Type':'application/json', ...getAuthHeader() },
-                body: JSON.stringify(payload)
+            const r = await fetch("/presupuestos/generar", {
+                method: "POST",
+                headers: { "Content-Type": "application/json", ...getAuthHeader() },
+                body: JSON.stringify(payload),
             });
-            const j = await r.json().catch(()=> ({}));
-            if (!r.ok) throw new Error(j.message || 'No se pudo generar');
+            const j = await r.json().catch(() => ({}));
+            if (!r.ok) throw new Error(j.message || "No se pudo generar");
 
-            const ok = document.getElementById('genOk');
-            ok.classList.remove('d-none');
-            ok.textContent = 'Generado presupuesto #'+j.id+' por '+money(j.total)+'.';
-            document.getElementById('genErr').classList.add('d-none');
-            cargar();
+            const ok = document.getElementById("genOk");
+            ok.classList.remove("d-none");
+            ok.textContent = "Generado presupuesto #" + j.id + " por " + money(j.total) + ".";
+            document.getElementById("genErr").classList.add("d-none");
+
+            // Limpieza parcial
+            selectedServices.clear();
+            window.extras = [];
+            initServiciosForCurrentPieza();
+
+            cargar(); // refrescar grilla
         } catch (err) {
-            const el = document.getElementById('genErr');
-            el.classList.remove('d-none');
+            const el = document.getElementById("genErr");
+            el.classList.remove("d-none");
             el.textContent = err.message;
         }
     });
 
-    // Init
-    window.addEventListener('DOMContentLoaded', cargar);
-</script>
+    // ======= Interacciones UI =======
+    document.addEventListener("click", (e) => {
+        // toggle de servicios con tarifa
+        const chip = e.target.closest('button[data-chip="servicio"]');
+        if (chip) return toggleChip(chip);
 
+        // quitar extra
+        const rm = e.target.closest('button[data-chip="extra-remove"]');
+        if (rm) {
+            const col = rm.closest('[data-extra-idx]');
+            const idx = Number(col?.dataset?.extraIdx);
+            if (!Number.isNaN(idx)) {
+                window.extras.splice(idx, 1);
+                renderExtrasChips();
+            }
+            return;
+        }
+
+        // click en extra (también quita)
+        const extra = e.target.closest('button[data-chip="extra"]');
+        if (extra) {
+            const col = extra.closest('[data-extra-idx]');
+            const idx = Number(col?.dataset?.extraIdx);
+            if (!Number.isNaN(idx)) {
+                window.extras.splice(idx, 1);
+                renderExtrasChips();
+            }
+        }
+    });
+
+    document.getElementById("piezaMotor").addEventListener("change", initServiciosForCurrentPieza);
+    document.getElementById("piezaTapa").addEventListener("change", initServiciosForCurrentPieza);
+
+    // “Agregar otro” (EXTRA con precio)
+    document.getElementById("btnSrvOtro").addEventListener("click", () => {
+        const nombre = (document.getElementById("srvOtro").value || "").trim();
+        const precio = Number(document.getElementById("srvOtroPrecio").value);
+        if (!nombre) return alert("Ingresá un nombre de servicio.");
+        if (!(precio > 0)) return alert("Ingresá un precio válido.");
+
+        window.extras.push({ nombre, precio });
+
+        // Mostrar chip de extra
+        renderExtrasChips();
+
+        // Limpiar inputs
+        document.getElementById("srvOtro").value = "";
+        document.getElementById("srvOtroPrecio").value = "";
+    });
+
+    document.getElementById("srvOtro").addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+            e.preventDefault();
+            document.getElementById("btnSrvOtro").click();
+        }
+    });
+
+    // ======= Auto-detectar pieza al ingresar Solicitud ID =======
+    const inpSid = document.querySelector('input[name="solicitudId"]');
+    if (inpSid) {
+        const go = () => cargarPiezaDesdeSolicitud(inpSid.value.trim());
+        inpSid.addEventListener("change", go);
+        inpSid.addEventListener("blur", go);
+    }
+
+    // ======= Autocompletar por query ?sid= ####
+    async function initAutofillFromQuery() {
+        const qp = new URLSearchParams(location.search);
+        const sid = qp.get("sid");
+        if (!sid) return;
+        await cargarPiezaDesdeSolicitud(sid);
+        if (inpSid) inpSid.value = sid;
+    }
+
+    await initAutofillFromQuery();
+
+    // ======= Primera carga =======
+    initServiciosForCurrentPieza();
+    window.addEventListener("DOMContentLoaded", cargar);
+</script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

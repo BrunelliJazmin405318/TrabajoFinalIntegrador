@@ -18,9 +18,10 @@ public record SolicitudDTO(
         LocalDateTime creadaEn,
         String decisionUsuario,
         LocalDateTime decisionFecha,
-        String decisionMotivo
+        String decisionMotivo,
+        boolean presupuestoGenerado
 ) {
-    public static SolicitudDTO from(SolicitudPresupuesto s) {
+    public static SolicitudDTO from(SolicitudPresupuesto s, boolean presupuestoGenerado) {
         return new SolicitudDTO(
                 s.getId(),
                 s.getClienteNombre(),
@@ -35,7 +36,8 @@ public record SolicitudDTO(
                 s.getCreadaEn(),
                 s.getDecisionUsuario(),
                 s.getDecisionFecha(),
-                s.getDecisionMotivo()
+                s.getDecisionMotivo(),
+                presupuestoGenerado
         );
     }
 }
