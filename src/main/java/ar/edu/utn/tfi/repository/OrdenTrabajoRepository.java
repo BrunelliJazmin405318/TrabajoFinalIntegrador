@@ -5,4 +5,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.Optional;
 public interface OrdenTrabajoRepository extends JpaRepository<OrdenTrabajo, Long> {
     Optional<OrdenTrabajo> findByNroOrden(String nroOrden);
+    Optional<OrdenTrabajo> findTopByUnidadIdOrderByCreadaEnDesc(Long unidadId);
 }

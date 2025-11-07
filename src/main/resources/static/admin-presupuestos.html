@@ -288,6 +288,9 @@
         }
 
         const estado = document.getElementById("fEstado").value;
+        theSid: {
+            const sid = document.getElementById("fSolicitud").value.trim();
+        }
         const sid = document.getElementById("fSolicitud").value.trim();
         const qs = new URLSearchParams();
         if (estado) qs.set("estado", estado);
@@ -378,6 +381,12 @@
                         ">" +
                         '<i class="bi bi-cash-coin"></i> Registrar pago manual' +
                         "</button>";
+
+                    // === NUEVO: Botón Crear OT cuando está APROBADO (y aún sin final acreditado) ===
+                    acciones +=
+                        ' <button type="button" class="btn btn-warning btn-sm ms-2" ' +
+                        'data-act="crear-ot" data-id="' + p.id + '">' +
+                        '<i class="bi bi-clipboard-plus"></i> Crear OT</button>';
                 }
             }
 
@@ -572,6 +581,31 @@
             } catch (err) {
                 btn.disabled = false;
                 alert("Error de red: " + (err?.message || err));
+            }
+            return;
+        }
+
+        // ===== NUEVO: Crear OT desde presupuesto aprobado =====
+        if (act === "crear-ot") {
+            if (!confirm("¿Crear Orden de Trabajo para este presupuesto?")) return;
+            btn.disabled = true;
+            try {
+                const r = await fetch(`/admin/ordenes/by-presupuesto/${id}`, {
+                    method: "POST",
+                    headers: { ...getAuthHeader() }
+                });
+                const j = await r.json().catch(()=> ({}));
+                if (!r.ok) {
+                    alert("No se pudo crear la OT: " + (j.message || `HTTP ${r.status}`));
+                    btn.disabled = false;
+                    return;
+                }
+                alert(`OT creada correctamente.\nNúmero: ${j.nroOrden}`);
+                // Reemplazar el botón por una pill con el número
+                btn.outerHTML = `<span class="badge bg-warning text-dark">OT: ${j.nroOrden}</span>`;
+            } catch (e) {
+                alert("Error de red: " + (e?.message || e));
+                btn.disabled = false;
             }
             return;
         }

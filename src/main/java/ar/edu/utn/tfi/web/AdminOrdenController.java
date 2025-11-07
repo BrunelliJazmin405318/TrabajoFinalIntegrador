@@ -1,9 +1,16 @@
 package ar.edu.utn.tfi.web;
 
+import ar.edu.utn.tfi.domain.Presupuesto;
+import ar.edu.utn.tfi.domain.SolicitudPresupuesto;
 import ar.edu.utn.tfi.repository.OrdenTrabajoRepository;
+import ar.edu.utn.tfi.repository.PresupuestoRepository;
+import ar.edu.utn.tfi.repository.SolicitudPresupuestoRepository;
+import ar.edu.utn.tfi.service.CrearOrdenService;
 import ar.edu.utn.tfi.service.OrderAdvanceService;
 import ar.edu.utn.tfi.service.OrderIrreparableService;
-import ar.edu.utn.tfi.service.OrderDelayService;   // <- usar este servicio para demoras
+import ar.edu.utn.tfi.service.OrderDelayService;
+import ar.edu.utn.tfi.service.CrearOrdenService.CreateOTReq;
+import ar.edu.utn.tfi.service.CrearOrdenService.CreateOTResp;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -16,20 +23,30 @@ import java.util.Map;
 public class AdminOrdenController {
 
     private final OrdenTrabajoRepository ordenRepo;
+    private final PresupuestoRepository presupuestoRepo;
+    private final SolicitudPresupuestoRepository solicitudRepo;
     private final OrderAdvanceService advanceService;
     private final OrderIrreparableService irreparableService;
-    private final OrderDelayService delayService;   // <- reemplaza a DemoraService
+    private final OrderDelayService delayService;
+    private final CrearOrdenService service;
 
     public AdminOrdenController(OrdenTrabajoRepository ordenRepo,
                                 OrderAdvanceService advanceService,
                                 OrderIrreparableService irreparableService,
-                                OrderDelayService delayService) {
+                                OrderDelayService delayService,
+                                CrearOrdenService service,
+                                PresupuestoRepository presupuestoRepo,
+                                SolicitudPresupuestoRepository solicitudRepo) {
         this.ordenRepo = ordenRepo;
         this.advanceService = advanceService;
         this.irreparableService = irreparableService;
-        this.delayService = delayService;   // <- asignación correcta
+        this.delayService = delayService;
+        this.service = service;
+        this.presupuestoRepo = presupuestoRepo;
+        this.solicitudRepo = solicitudRepo;
     }
 
+    // ---------- Avanzar etapa por NRO ----------
     @PostMapping("/{nro}/avanzar")
     public ResponseEntity<?> avanzarEtapaPorNro(@PathVariable String nro, Authentication auth) {
         var orden = ordenRepo.findByNroOrden(nro)
@@ -38,6 +55,7 @@ public class AdminOrdenController {
         return ResponseEntity.ok(Map.of("message","Etapa avanzada correctamente", "nroOrden", nro));
     }
 
+    // ---------- Marcar pieza irreparable ----------
     @PutMapping("/{nro}/pieza-irreparable")
     public ResponseEntity<?> marcarIrreparable(@PathVariable String nro, Authentication auth) {
         irreparableService.marcarIrreparablePorNro(nro, auth.getName());
@@ -47,7 +65,7 @@ public class AdminOrdenController {
         ));
     }
 
-    // ===== Demoras (NO crea fila nueva: actualiza observación de la etapa SEMI_ARMADO abierta) =====
+    // ---------- Registrar demora en etapa abierta ----------
     record DemoraReq(String motivo, String observacion) {}
 
     @PostMapping("/{nro}/demora")
@@ -70,4 +88,57 @@ public class AdminOrdenController {
 
         return ResponseEntity.ok(Map.of("message", "Demora registrada", "nroOrden", nro));
     }
+
+    // ---------- Crear OT genérica (si necesitás crear directo con payload) ----------
+    @PostMapping
+    public ResponseEntity<?> crear(@RequestBody CrearOrdenService.CreateOTReq req,
+                                   Authentication auth) {
+        String usuario = (auth != null ? auth.getName() : "admin");
+        var out = service.crearOT(req, usuario);
+        return ResponseEntity.ok(Map.of(
+                "message", "Orden creada",
+                "ordenId", out.ordenId(),
+                "nroOrden", out.nroOrden()
+        ));
+    }
+
+    // ---------- Crear OT desde un Presupuesto APROBADO ----------
+    // Toma datos de Presupuesto y COMPLEMENTA con la Solicitud (marca, modelo, nroMotor, teléfono)
+    @PostMapping("/by-presupuesto/{id}")
+    public CreateOTResp crearDesdePresupuesto(@PathVariable Long id, Authentication auth) {
+        Presupuesto p = presupuestoRepo.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Presupuesto no encontrado: " + id));
+
+        // Presupuesto tiene: clienteNombre, clienteEmail, piezaTipo, solicitudId, etc.
+        String cliNom = safe(p.getClienteNombre());
+        String cliTel = null; // lo completamos desde la solicitud
+        String tipo   = safe(p.getPiezaTipo()); // "MOTOR" | "TAPA"
+        String marca  = null;
+        String modelo = null;
+        String nro    = null;
+
+        // Si hay solicitudId, traemos la solicitud para completar datos de la UNIDAD
+        if (p.getSolicitudId() != null) {
+            SolicitudPresupuesto s = solicitudRepo.findById(p.getSolicitudId()).orElse(null);
+            if (s != null) {
+                if (isEmpty(cliNom)) cliNom = safe(s.getClienteNombre());
+                cliTel = safe(s.getClienteTelefono());
+                if (isEmpty(tipo))   tipo   = safe(s.getTipoUnidad());
+                marca  = safe(s.getMarca());
+                modelo = safe(s.getModelo());
+                nro    = safe(s.getNroMotor());
+            }
+        }
+
+        if (isEmpty(cliNom)) throw new IllegalArgumentException("Falta nombre del cliente");
+        if (isEmpty(tipo))   throw new IllegalArgumentException("Falta tipo de unidad (MOTOR|TAPA)");
+
+        CreateOTReq req = new CreateOTReq(cliNom, cliTel, tipo, marca, modelo, nro);
+        String usuario = (auth != null ? auth.getName() : "admin");
+        return service.crearOT(req, usuario);
+    }
+
+    // ---------- Helpers ----------
+    private static String safe(String s){ return s == null ? null : s.trim(); }
+    private static boolean isEmpty(String s){ return s == null || s.isBlank(); }
 }
