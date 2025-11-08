@@ -139,39 +139,27 @@
     const ENDPOINT_FACTURAR = (id) => `/admin/facturas/generar/${id}`;
 
     // ======= Utils =======
-    const badge = (est) =>
+    const badgeClass = (est) =>
         est === "APROBADO" ? "bg-success" : est === "RECHAZADO" ? "bg-danger" : "bg-secondary";
     const fmt = (s) => (s ? s.replace("T", " ").substring(0, 19) : "-");
     const money = (n) => new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS" }).format(n || 0);
 
-    // ======= Servicios por tipo de pieza =======
+    // ======= Servicios por tipo de pieza (solo UI) =======
     const MOTOR_SERVICES = [
-        "Rectificación de cilindros",
-        "Bruñido de cilindros",
-        "Planeado de block",
-        "Cambio de camisas",
-        "Rectificación de cigüeñal",
-        "Pulido de cigüeñal",
-        "Rectificación de bielas",
-        "Limpieza de block y piezas",
-        "Armado de motor completo",
+        "Rectificación de cilindros","Bruñido de cilindros","Planeado de block","Cambio de camisas",
+        "Rectificación de cigüeñal","Pulido de cigüeñal","Rectificación de bielas",
+        "Limpieza de block y piezas","Armado de motor completo",
     ];
-
     const TAPA_SERVICES = [
-        "Planeado de tapa",
-        "Rectificación de asientos de válvulas",
-        "Cambio de guías de válvula",
-        "Cambio de retenes",
-        "Prueba hidráulica de tapa",
-        "Ajuste de resortes y balancines",
+        "Planeado de tapa","Rectificación de asientos de válvulas","Cambio de guías de válvula",
+        "Cambio de retenes","Prueba hidráulica de tapa","Ajuste de resortes y balancines",
         "Limpieza y arenado de tapa",
     ];
 
-    // ======= Estado en memoria =======
-    let selectedServices = new Set();     // servicios con tarifa (BD)
-    window.extras = [];                   // servicios personalizados con precio
+    // ======= Estado UI =======
+    let selectedServices = new Set();
+    window.extras = [];
 
-    // ======= Helpers UI =======
     function ensureExtrasContainer() {
         let c = document.getElementById("extrasChips");
         if (!c) {
@@ -182,39 +170,29 @@
             grid.parentElement.appendChild(wrap);
         }
     }
-
     function renderExtrasChips() {
         ensureExtrasContainer();
         const cont = document.getElementById("extrasChips");
         cont.innerHTML = "";
         if (!window.extras.length) return;
-
         window.extras.forEach((ex, i) => {
             cont.insertAdjacentHTML(
                 "beforeend",
                 `<div class="col-md-4" data-extra-idx="${i}">
            <div class="d-flex align-items-stretch">
-             <button type="button"
-                     class="btn w-100 btn-primary"
-                     data-chip="extra"
-                     title="Extra agregado manualmente (click para quitar)">
+             <button type="button" class="btn w-100 btn-primary" data-chip="extra">
                ${ex.nombre} (${money(ex.precio)})
              </button>
-             <button type="button" class="btn btn-outline-danger ms-1" data-chip="extra-remove" title="Quitar">
-               &times;
-             </button>
+             <button type="button" class="btn btn-outline-danger ms-1" data-chip="extra-remove">&times;</button>
            </div>
          </div>`
             );
         });
     }
-
-    // Renderiza la grilla de “chips” clickeables (con tarifa)
     function renderServiciosGrid(pieza) {
         const grid = document.getElementById("serviciosGrid");
         grid.innerHTML = "";
         const base = pieza === "TAPA" ? TAPA_SERVICES : MOTOR_SERVICES;
-
         base.forEach((nombre) => {
             const isSel = selectedServices.has(nombre);
             grid.insertAdjacentHTML(
@@ -229,12 +207,8 @@
          </div>`
             );
         });
-
-        // volver a dibujar extras debajo
         renderExtrasChips();
     }
-
-    // Toggle visual + estado para servicios con tarifa
     function toggleChip(btn) {
         const nombre = btn.dataset.nombre;
         if (selectedServices.has(nombre)) {
@@ -247,50 +221,37 @@
             btn.classList.add("btn-primary");
         }
     }
-
-    // Inicializa grilla según pieza seleccionada
     function initServiciosForCurrentPieza() {
         const pieza = document.querySelector('input[name="piezaTipo"]:checked')?.value || "MOTOR";
-        // Mantener sólo los que no pertenecen a los catálogos base (por si venías de otra pieza)
         const otros = Array.from(selectedServices).filter(
             (s) => !MOTOR_SERVICES.includes(s) && !TAPA_SERVICES.includes(s)
         );
         selectedServices = new Set(otros);
         renderServiciosGrid(pieza);
     }
-
-    // --- Detectar pieza desde la solicitud (endpoint público que ya tenés) ---
     async function cargarPiezaDesdeSolicitud(sid) {
         if (!sid) return;
         try {
             const r = await fetch(`/public/presupuestos/solicitud/${encodeURIComponent(sid)}`);
             const j = await r.json().catch(() => ({}));
             if (!r.ok) throw new Error(j.message || `Solicitud ${sid} no encontrada`);
-
-            const pieza = (j.tipoUnidad || "").toUpperCase(); // "MOTOR" | "TAPA"
-            if (pieza === "TAPA") {
-                document.getElementById("piezaTapa").checked = true;
-            } else {
-                document.getElementById("piezaMotor").checked = true; // default
-            }
+            const pieza = (j.tipoUnidad || "").toUpperCase();
+            if (pieza === "TAPA") document.getElementById("piezaTapa").checked = true;
+            else document.getElementById("piezaMotor").checked = true;
             initServiciosForCurrentPieza();
         } catch (e) {
             console.warn("No se pudo leer la solicitud:", e.message || e);
         }
     }
 
-    // ======= Carga de grilla (tabla de presupuestos) =======
+    // ======= Tabla =======
     async function cargar() {
         if (!isAuthenticated()) {
             alert("Iniciá sesión admin.");
             location.href = "/login.html";
             return;
         }
-
         const estado = document.getElementById("fEstado").value;
-        theSid: {
-            const sid = document.getElementById("fSolicitud").value.trim();
-        }
         const sid = document.getElementById("fSolicitud").value.trim();
         const qs = new URLSearchParams();
         if (estado) qs.set("estado", estado);
@@ -308,91 +269,87 @@
 
             if (p.estado === "PENDIENTE") {
                 acciones =
-                    '<button type="button" class="btn btn-success btn-sm me-1" data-act="aprobar" data-id="' +
-                    p.id +
-                    '"><i class="bi bi-check2"></i> Aprobar</button>' +
-                    '<button type="button" class="btn btn-danger btn-sm" data-act="rechazar" data-id="' +
-                    p.id +
-                    '"><i class="bi bi-x-lg"></i> Rechazar</button>';
+                    `<button type="button" class="btn btn-success btn-sm me-1" data-act="aprobar" data-id="${p.id}">
+             <i class="bi bi-check2"></i> Aprobar
+           </button>
+           <button type="button" class="btn btn-danger btn-sm" data-act="rechazar" data-id="${p.id}">
+             <i class="bi bi-x-lg"></i> Rechazar
+           </button>`;
             } else if (p.estado === "APROBADO") {
-                const senaOK = (p.senaEstado || "").toUpperCase() === "ACREDITADA";
+                const senaOK  = (p.senaEstado  || "").toUpperCase() === "ACREDITADA";
                 const finalOK = (p.finalEstado || "").toUpperCase() === "ACREDITADA";
 
                 if (finalOK) {
                     const tieneFactura = !!p.facturaNumero;
                     if (tieneFactura) {
                         acciones =
-                            '<span class="badge bg-success me-2">Monto total pagado</span>' +
-                            (p.finalPaymentId ? '<span class="text-muted">#' + p.finalPaymentId + "</span>" : "") +
-                            '<button type="button" class="btn btn-success btn-sm ms-2" ' +
-                            'data-act="descargar-factura" data-id="' +
-                            p.id +
-                            '" data-tipo="' +
-                            (p.facturaTipo || "B") +
-                            '"><i class="bi bi-download"></i> Descargar factura ' +
-                            (p.facturaTipo || "B") +
-                            "</button>" +
-                            '<span class="text-muted ms-2">' +
-                            p.facturaNumero +
-                            "</span>" +
-                            '<a class="btn btn-outline-primary btn-sm ms-2" target="_blank" href="/estado-solicitud.html?id=' +
-                            (p.solicitudId ?? "") +
-                            '"><i class="bi bi-box-arrow-up-right"></i> Página del cliente</a>';
+                            `<span class="badge bg-success me-2">Monto total pagado</span>
+               ${p.finalPaymentId ? `<span class="text-muted">#${p.finalPaymentId}</span>` : ""}
+               <button type="button" class="btn btn-success btn-sm ms-2"
+                       data-act="descargar-factura" data-id="${p.id}" data-tipo="${p.facturaTipo || "B"}">
+                 <i class="bi bi-download"></i> Descargar factura ${p.facturaTipo || "B"}
+               </button>
+               <a class="btn btn-outline-primary btn-sm ms-2" target="_blank"
+                  href="/estado-solicitud.html?id=${p.solicitudId ?? ""}">
+                 <i class="bi bi-box-arrow-up-right"></i> Página del cliente
+               </a>
+               <span class="text-muted ms-2">${p.facturaNumero}</span>`;
                     } else {
                         acciones =
-                            '<span class="badge bg-success me-2">Monto total pagado</span>' +
-                            (p.finalPaymentId ? '<span class="text-muted">#' + p.finalPaymentId + "</span>" : "") +
-                            '<button type="button" class="btn btn-outline-success btn-sm ms-2" ' +
-                            'data-act="facturar" data-id="' +
-                            p.id +
-                            '"><i class="bi bi-receipt"></i> Generar factura (A/B)</button>' +
-                            '<a class="btn btn-outline-primary btn-sm ms-2" target="_blank" href="/estado-solicitud.html?id=' +
-                            (p.solicitudId ?? "") +
-                            '"><i class="bi bi-box-arrow-up-right"></i> Página del cliente</a>';
+                            `<span class="badge bg-success me-2">Monto total pagado</span>
+               ${p.finalPaymentId ? `<span class="text-muted">#${p.finalPaymentId}</span>` : ""}
+               <button type="button" class="btn btn-outline-success btn-sm ms-2"
+                       data-act="facturar" data-id="${p.id}">
+                 <i class="bi bi-receipt"></i> Generar factura (A/B)
+               </button>
+               <a class="btn btn-outline-primary btn-sm ms-2" target="_blank"
+                  href="/estado-solicitud.html?id=${p.solicitudId ?? ""}">
+                 <i class="bi bi-box-arrow-up-right"></i> Página del cliente
+               </a>`;
                     }
                 } else {
                     const chip = senaOK
-                        ? '<span class="badge bg-success me-2">Seña acreditada</span>' +
-                        (p.senaPaymentId ? '<span class="text-muted me-2">#' + p.senaPaymentId + "</span>" : "")
-                        : '<span class="badge bg-warning text-dark me-2">Seña pendiente</span>';
+                        ? `<span class="badge bg-success me-2">Seña acreditada</span>${p.senaPaymentId ? `<span class="text-muted me-2">#${p.senaPaymentId}</span>` : ""}`
+                        : `<span class="badge bg-warning text-dark me-2">Seña pendiente</span>`;
+
+                    const otBadge = p.otNroOrden
+                        ? `<div class="mt-2"><span class="badge text-bg-warning">OT: ${p.otNroOrden}</span></div>`
+                        : "";
+
+                    // ✅ sólo habilitar crear OT si seña/final OK y aún no existe
+                    const puedeCrearOT = (senaOK || finalOK) && !p.otNroOrden;
+                    const btnCrearOT = puedeCrearOT
+                        ? `<button type="button" class="btn btn-warning btn-sm mt-2"
+                       data-act="crear-ot" data-id="${p.id}">
+                 <i class="bi bi-plus-square"></i> Crear OT
+               </button>`
+                        : `<button type="button" class="btn btn-warning btn-sm mt-2" disabled
+                   title="${p.otNroOrden ? 'Ya existe OT' : 'Requiere seña acreditada'}">
+                 <i class="bi bi-plus-square"></i> Crear OT
+               </button>`;
 
                     acciones =
-                        chip +
-                        '<a class="btn btn-outline-primary btn-sm me-2" target="_blank" href="/estado-solicitud.html?id=' +
-                        (p.solicitudId ?? "") +
-                        '"><i class="bi bi-box-arrow-up-right"></i> Página del cliente</a>' +
-                        '<button type="button" class="btn btn-outline-primary btn-sm" ' +
-                        'data-act="pago-manual" ' +
-                        'data-id="' +
-                        p.id +
-                        '" ' +
-                        'data-total="' +
-                        (p.total ?? 0) +
-                        '" ' +
-                        'data-sena-monto="' +
-                        (p.senaMonto ?? "") +
-                        '" ' +
-                        'data-sena-estado="' +
-                        (p.senaEstado ?? "") +
-                        '" ' +
-                        'data-final-estado="' +
-                        (p.finalEstado ?? "") +
-                        '"' +
-                        ">" +
-                        '<i class="bi bi-cash-coin"></i> Registrar pago manual' +
-                        "</button>";
-
-                    // === NUEVO: Botón Crear OT cuando está APROBADO (y aún sin final acreditado) ===
-                    acciones +=
-                        ' <button type="button" class="btn btn-warning btn-sm ms-2" ' +
-                        'data-act="crear-ot" data-id="' + p.id + '">' +
-                        '<i class="bi bi-clipboard-plus"></i> Crear OT</button>';
+                        `${chip}
+             <a class="btn btn-outline-primary btn-sm me-2" target="_blank"
+                href="/estado-solicitud.html?id=${p.solicitudId ?? ""}">
+               <i class="bi bi-box-arrow-up-right"></i> Página del cliente
+             </a>
+             <button type="button" class="btn btn-outline-primary btn-sm"
+                     data-act="pago-manual"
+                     data-id="${p.id}"
+                     data-total="${p.total ?? 0}"
+                     data-sena-monto="${p.senaMonto ?? ""}"
+                     data-sena-estado="${p.senaEstado ?? ""}"
+                     data-final-estado="${p.finalEstado ?? ""}">
+               <i class="bi bi-cash-coin"></i> Registrar pago manual
+             </button>
+             ${otBadge}
+             ${btnCrearOT}`;
                 }
             }
 
-            const solicitudTxt = p.solicitudId !== null && p.solicitudId !== undefined ? p.solicitudId : "-";
-
-            tb.insertAdjacentHTML(
+            const solicitudTxt = p.solicitudId != null ? p.solicitudId : "-";
+            document.getElementById("tbody").insertAdjacentHTML(
                 "beforeend",
                 `<tr data-row-id="${p.id}">
            <td>${p.id}</td>
@@ -400,7 +357,7 @@
            <td>${p.clienteNombre}</td>
            <td>${p.vehiculoTipo}</td>
            <td>${money(p.total)}</td>
-           <td><span class="badge ${badge(p.estado)}">${p.estado}</span></td>
+           <td><span class="badge ${badgeClass(p.estado)}">${p.estado}</span></td>
            <td>${fmt(p.creadaEn)}</td>
            <td>${acciones}</td>
          </tr>`
@@ -435,13 +392,12 @@
             return;
         }
 
-        // Generar factura (elige A/B)
+        // Generar factura
         if (act === "facturar") {
             let tipo = prompt("Tipo de factura (A o B):", "B");
             if (!tipo) return;
             tipo = tipo.trim().toUpperCase();
             if (!["A", "B"].includes(tipo)) return alert("Tipo inválido. Usá A o B.");
-
             try {
                 btn.disabled = true;
                 const r = await fetch(ENDPOINT_FACTURAR(id), {
@@ -465,7 +421,7 @@
             return;
         }
 
-        // Descargar factura (PDF)
+        // Descargar factura
         if (act === "descargar-factura") {
             const tipo = (btn.dataset.tipo || "B").toUpperCase();
             const url = ENDPOINT_PDF_BY_PRES(id, tipo);
@@ -495,13 +451,12 @@
             return;
         }
 
-        // Registrar pago manual (SENA o FINAL)
+        // Pago manual
         if (act === "pago-manual") {
-            const rowBtn = btn;
-            const total = Number(rowBtn.dataset.total || 0);
-            const senaMontoDato = rowBtn.dataset.senaMonto;
-            const senaEstado = (rowBtn.dataset.senaEstado || "").toUpperCase();
-            const finalEstado = (rowBtn.dataset.finalEstado || "").toUpperCase();
+            const total = Number(btn.dataset.total || 0);
+            const senaMontoDato = btn.dataset.senaMonto;
+            const senaEstado = (btn.dataset.senaEstado || "").toUpperCase();
+            const finalEstado = (btn.dataset.finalEstado || "").toUpperCase();
             const senaMonto = senaMontoDato === "" ? null : Number(senaMontoDato);
 
             if (finalEstado === "ACREDITADA") return alert("Este presupuesto ya tiene el pago FINAL acreditado.");
@@ -515,7 +470,6 @@
             const round2 = (n) => Math.round((Number(n) + Number.EPSILON) * 100) / 100;
             const senaEsperada = round2(total * 0.3);
             const finalEsperado = round2(total - (senaMonto != null ? senaMonto : senaEsperada));
-
             if (T === "FINAL" && senaEstado !== "ACREDITADA") {
                 alert("Para registrar pago FINAL primero debe estar acreditada la seña.");
                 return;
@@ -531,22 +485,17 @@
 
             const hoy = new Date().toISOString().slice(0, 10);
             const montoSugerido = T === "SENA" ? senaEsperada : finalEsperado;
-
             const fechaStr = prompt("Fecha (opcional, formato YYYY-MM-DD). Dejar vacío = hoy", hoy) ?? null;
             const nota = prompt("Nota (opcional)") ?? null;
-
             const montoStr = prompt(`Monto ${T} exacto (ARS)`, montoSugerido.toFixed(2));
             if (montoStr === null) return;
-
             const medio = prompt("Medio (EFECTIVO/TRANSFERENCIA/TARJETA/OTRO):", "EFECTIVO");
             if (medio === null) return;
-
             const monto = Number(String(montoStr).replace(",", "."));
             if (!(monto > 0)) return alert("Monto inválido");
-
             let fechaPago = null;
             if (fechaStr && /^\d{4}-\d{2}-\d{2}$/.test(fechaStr)) fechaPago = fechaStr;
-            else if (fechaStr && fechaStr.trim() !== "") return alert("Fecha inválida. Usá YYYY-MM-DD o dejalo vacío.");
+            else if (fechaStr && fechaStr.trim() !== "") return alert("Fecha inválida.");
 
             const payload = {
                 presupuestoId: Number(id),
@@ -565,18 +514,14 @@
                     headers: { "Content-Type": "application/json", ...getAuthHeader() },
                     body: JSON.stringify(payload),
                 });
-
                 const text = await r.text();
                 let j; try { j = JSON.parse(text); } catch { j = { message: text }; }
-
                 if (!r.ok) {
                     btn.disabled = false;
                     alert("Error al registrar: " + (j.message || r.status));
                     return;
                 }
-
                 alert(`Pago ${T} manual registrado correctamente.`);
-                btn.classList.add("disabled");
                 await cargar();
             } catch (err) {
                 btn.disabled = false;
@@ -585,42 +530,66 @@
             return;
         }
 
-        // ===== NUEVO: Crear OT desde presupuesto aprobado =====
+        // ===== NUEVO: Crear OT =====
         if (act === "crear-ot") {
+            if (btn.dataset.busy === "1") return; // evita doble click
             if (!confirm("¿Crear Orden de Trabajo para este presupuesto?")) return;
+
+            btn.dataset.busy = "1";
             btn.disabled = true;
+
+            const replaceBtnWithBadge = (nro) => {
+                const badge = document.createElement("span");
+                badge.className = "badge text-bg-warning";
+                badge.textContent = `OT: ${nro}`;
+                btn.replaceWith(badge);
+            };
+
             try {
                 const r = await fetch(`/admin/ordenes/by-presupuesto/${id}`, {
                     method: "POST",
                     headers: { ...getAuthHeader() }
                 });
-                const j = await r.json().catch(()=> ({}));
+
+                const text = await r.text();
+                let j; try { j = JSON.parse(text); } catch { j = {}; }
+
+                if (r.status === 409) {
+                    const nro = j?.nroOrden || j?.otNroOrden;
+                    if (nro) replaceBtnWithBadge(nro);
+                    else await cargar();
+                    alert(j?.message || "Este presupuesto ya tiene una OT asociada o falta seña.");
+                    return;
+                }
+
                 if (!r.ok) {
-                    alert("No se pudo crear la OT: " + (j.message || `HTTP ${r.status}`));
+                    alert(j?.message || `No se pudo crear la OT (HTTP ${r.status})`);
+                    btn.dataset.busy = "0";
                     btn.disabled = false;
                     return;
                 }
-                alert(`OT creada correctamente.\nNúmero: ${j.nroOrden}`);
-                // Reemplazar el botón por una pill con el número
-                btn.outerHTML = `<span class="badge bg-warning text-dark">OT: ${j.nroOrden}</span>`;
+
+                const nro = j?.nroOrden;
+                if (!nro) { await cargar(); return; }
+
+                replaceBtnWithBadge(nro);
+                alert(`OT creada correctamente.\nNúmero: ${nro}`);
             } catch (e) {
                 alert("Error de red: " + (e?.message || e));
+                btn.dataset.busy = "0";
                 btn.disabled = false;
             }
             return;
         }
     });
 
-    // ======= Generar presupuesto (con EXTRAS) =======
+    // ======= Generar presupuesto (con extras) =======
     document.getElementById("gen").addEventListener("submit", async (e) => {
         e.preventDefault();
         const fd = new FormData(e.target);
-
         const solicitudId = Number(fd.get("solicitudId"));
         const vehiculoTipo = fd.get("vehiculoTipo");
         const piezaTipo = fd.get("piezaTipo") || "MOTOR";
-
-        // Armamos array a partir del Set (servicios con tarifa)
         const servicios = Array.from(selectedServices);
 
         if (!solicitudId || servicios.length === 0) {
@@ -632,9 +601,7 @@
             return;
         }
 
-        // Copiamos extras actuales
         const extras = Array.isArray(window.extras) ? window.extras.slice() : [];
-
         const payload = { solicitudId, vehiculoTipo, piezaTipo, servicios, extras };
 
         try {
@@ -651,12 +618,10 @@
             ok.textContent = "Generado presupuesto #" + j.id + " por " + money(j.total) + ".";
             document.getElementById("genErr").classList.add("d-none");
 
-            // Limpieza parcial
             selectedServices.clear();
             window.extras = [];
             initServiciosForCurrentPieza();
-
-            cargar(); // refrescar grilla
+            cargar();
         } catch (err) {
             const el = document.getElementById("genErr");
             el.classList.remove("d-none");
@@ -666,11 +631,9 @@
 
     // ======= Interacciones UI =======
     document.addEventListener("click", (e) => {
-        // toggle de servicios con tarifa
         const chip = e.target.closest('button[data-chip="servicio"]');
         if (chip) return toggleChip(chip);
 
-        // quitar extra
         const rm = e.target.closest('button[data-chip="extra-remove"]');
         if (rm) {
             const col = rm.closest('[data-extra-idx]');
@@ -682,7 +645,6 @@
             return;
         }
 
-        // click en extra (también quita)
         const extra = e.target.closest('button[data-chip="extra"]');
         if (extra) {
             const col = extra.closest('[data-extra-idx]');
@@ -697,31 +659,20 @@
     document.getElementById("piezaMotor").addEventListener("change", initServiciosForCurrentPieza);
     document.getElementById("piezaTapa").addEventListener("change", initServiciosForCurrentPieza);
 
-    // “Agregar otro” (EXTRA con precio)
     document.getElementById("btnSrvOtro").addEventListener("click", () => {
         const nombre = (document.getElementById("srvOtro").value || "").trim();
         const precio = Number(document.getElementById("srvOtroPrecio").value);
         if (!nombre) return alert("Ingresá un nombre de servicio.");
         if (!(precio > 0)) return alert("Ingresá un precio válido.");
-
         window.extras.push({ nombre, precio });
-
-        // Mostrar chip de extra
         renderExtrasChips();
-
-        // Limpiar inputs
         document.getElementById("srvOtro").value = "";
         document.getElementById("srvOtroPrecio").value = "";
     });
-
     document.getElementById("srvOtro").addEventListener("keydown", (e) => {
-        if (e.key === "Enter") {
-            e.preventDefault();
-            document.getElementById("btnSrvOtro").click();
-        }
+        if (e.key === "Enter") { e.preventDefault(); document.getElementById("btnSrvOtro").click(); }
     });
 
-    // ======= Auto-detectar pieza al ingresar Solicitud ID =======
     const inpSid = document.querySelector('input[name="solicitudId"]');
     if (inpSid) {
         const go = () => cargarPiezaDesdeSolicitud(inpSid.value.trim());
@@ -729,7 +680,6 @@
         inpSid.addEventListener("blur", go);
     }
 
-    // ======= Autocompletar por query ?sid= ####
     async function initAutofillFromQuery() {
         const qp = new URLSearchParams(location.search);
         const sid = qp.get("sid");
@@ -739,8 +689,6 @@
     }
 
     await initAutofillFromQuery();
-
-    // ======= Primera carga =======
     initServiciosForCurrentPieza();
     window.addEventListener("DOMContentLoaded", cargar);
 </script>

@@ -29,12 +29,14 @@ public record PresupuestoAdminDTO(
         String finalPaymentId,
         String finalPaymentStatus,
 
-        // ✅ Factura
+        // Factura
         String facturaNumero,
-        String facturaTipo
+        String facturaTipo,
+
+        // ✅ NUEVO: número de OT persistido en la tabla presupuesto
+        String otNroOrden
 ) {
     public static PresupuestoAdminDTO from(Presupuesto p) {
-        // compat si todavía no pasás factura
         return from(p, null, null);
     }
 
@@ -48,21 +50,27 @@ public record PresupuestoAdminDTO(
                 p.getTotal(),
                 p.getEstado(),
                 p.getCreadaEn(),
+
                 // Seña
                 p.getSenaEstado(),
                 p.getSenaMonto(),
                 p.getSenaPaidAt(),
                 p.getSenaPaymentId(),
                 p.getSenaPaymentStatus(),
+
                 // Final
                 p.getFinalEstado(),
                 p.getFinalMonto(),
                 p.getFinalPaidAt(),
                 p.getFinalPaymentId(),
                 p.getFinalPaymentStatus(),
+
                 // Factura
                 facturaNumero,
-                facturaTipo
+                facturaTipo,
+
+                // ✅ NUEVO
+                p.getOtNroOrden()
         );
     }
 }

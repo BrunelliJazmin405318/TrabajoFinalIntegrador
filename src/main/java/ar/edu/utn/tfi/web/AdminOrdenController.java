@@ -12,9 +12,11 @@ import ar.edu.utn.tfi.service.OrderDelayService;
 import ar.edu.utn.tfi.service.CrearOrdenService.CreateOTReq;
 import ar.edu.utn.tfi.service.CrearOrdenService.CreateOTResp;
 import jakarta.persistence.EntityNotFoundException;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Map;
 
@@ -109,17 +111,31 @@ public class AdminOrdenController {
         Presupuesto p = presupuestoRepo.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Presupuesto no encontrado: " + id));
 
-        // Presupuesto tiene: clienteNombre, clienteEmail, piezaTipo, solicitudId, etc.
-        String cliNom = safe(p.getClienteNombre());
-        String cliTel = null; // lo completamos desde la solicitud
-        String tipo   = safe(p.getPiezaTipo()); // "MOTOR" | "TAPA"
-        String marca  = null;
-        String modelo = null;
-        String nro    = null;
+        // ✅ ya tenía OT: devolver la existente
+        if (p.getOtNroOrden() != null && !p.getOtNroOrden().isBlank()) {
+            var existente = ordenRepo.findByNroOrden(p.getOtNroOrden())
+                    .orElseThrow(() -> new EntityNotFoundException("OT referenciada no existe: " + p.getOtNroOrden()));
+            return new CreateOTResp(existente.getId(), existente.getNroOrden());
+        }
 
-        // Si hay solicitudId, traemos la solicitud para completar datos de la UNIDAD
+        // ✅ NUEVO: permitir crear OT sólo con seña acreditada o pago final acreditado
+        boolean senaOK  = "ACREDITADA".equalsIgnoreCase(p.getSenaEstado());
+        boolean finalOK = "ACREDITADA".equalsIgnoreCase(p.getFinalEstado());
+        if (!senaOK && !finalOK) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "Para crear la OT primero debe estar acreditada la seña (o el pago final)."
+            );
+        }
+
+        // ---- armar datos como ya lo tenías ----
+        String cliNom = safe(p.getClienteNombre());
+        String cliTel = null;
+        String tipo   = safe(p.getPiezaTipo()); // "MOTOR" | "TAPA"
+        String marca  = null, modelo = null, nro = null;
+
         if (p.getSolicitudId() != null) {
-            SolicitudPresupuesto s = solicitudRepo.findById(p.getSolicitudId()).orElse(null);
+            var s = solicitudRepo.findById(p.getSolicitudId()).orElse(null);
             if (s != null) {
                 if (isEmpty(cliNom)) cliNom = safe(s.getClienteNombre());
                 cliTel = safe(s.getClienteTelefono());
@@ -133,9 +149,15 @@ public class AdminOrdenController {
         if (isEmpty(cliNom)) throw new IllegalArgumentException("Falta nombre del cliente");
         if (isEmpty(tipo))   throw new IllegalArgumentException("Falta tipo de unidad (MOTOR|TAPA)");
 
-        CreateOTReq req = new CreateOTReq(cliNom, cliTel, tipo, marca, modelo, nro);
+        var req = new CreateOTReq(cliNom, cliTel, tipo, marca, modelo, nro);
         String usuario = (auth != null ? auth.getName() : "admin");
-        return service.crearOT(req, usuario);
+
+        var out = service.crearOT(req, usuario);
+
+        p.setOtNroOrden(out.nroOrden());
+        presupuestoRepo.save(p);
+
+        return out;
     }
 
     // ---------- Helpers ----------
