@@ -1,0 +1,2 @@
+ALTER TABLE presupuesto
+    ADD COLUMN IF NOT EXISTS ot_nro_orden VARCHAR(30) UNIQUE;

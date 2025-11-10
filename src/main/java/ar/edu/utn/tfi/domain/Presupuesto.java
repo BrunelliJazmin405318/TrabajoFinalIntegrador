@@ -87,6 +87,9 @@ public class Presupuesto {
     @Column(name = "pieza_tipo", length = 20)
     private String piezaTipo; //
 
+    @Column(name = "ot_nro_orden", unique = true)
+    private String otNroOrden;
+
     // ─────────────────────────────────────────────────────────────────────────
 
     @PrePersist

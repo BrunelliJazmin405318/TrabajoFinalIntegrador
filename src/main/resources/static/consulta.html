@@ -1,143 +1,207 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Consulta de Estado | Rectificadora</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="/css/styles.css" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Consulta de Estado | Rectificadora</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/styles.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
 </head>
 <body>
-  <!-- NAV -->
-  <nav class="navbar navbar-expand-lg">
+<!-- NAV -->
+<nav class="navbar navbar-expand-lg">
     <div class="container">
-      <a class="navbar-brand" href="#"><i class="bi bi-gear-fill me-2"></i>Rectificadora</a>
-      <button class="navbar-toggler text-white" type="button" data-bs-toggle="collapse" data-bs-target="#nav">
-        <span class="navbar-toggler-icon"></span>
-      </button>
-      <div id="nav" class="collapse navbar-collapse">
-        <ul class="navbar-nav ms-auto">
-          <li class="nav-item"><a class="nav-link active" href="/consulta.html">Consulta</a></li>
-          <li class="nav-item"><a class="nav-link" href="/historial.html">Historial</a></li>
-          <li class="nav-item"><a class="nav-link" href="/swagger-ui.html" target="_blank">API Docs</a></li>
-          <!-- en la navbar -->
-          <li class="nav-item"><a id="logoutLink" class="nav-link" href="#">Salir</a></li>
+        <a class="navbar-brand" href="#"><i class="bi bi-gear-fill me-2"></i>Rectificadora</a>
+        <button class="navbar-toggler text-white" type="button" data-bs-toggle="collapse" data-bs-target="#nav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div id="nav" class="collapse navbar-collapse">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item"><a class="nav-link active" href="/consulta.html">Consulta</a></li>
+                <li class="nav-item"><a class="nav-link" href="/historial.html">Historial</a></li>
+                <li class="nav-item"><a class="nav-link" href="/swagger-ui.html" target="_blank">API Docs</a></li>
+                <!-- en la navbar -->
+                <li class="nav-item"><a id="logoutLink" class="nav-link" href="#">Salir</a></li>
 
-<script type="module">
-  import { clearAuth, getAuth } from "/js/auth.js";
-  const link = document.getElementById("logoutLink");
-  if (link) {
-    // mostrar salir sólo si hay token
-    if (!getAuth()) link.classList.add("d-none");
-    link.addEventListener("click", (e)=>{
-      e.preventDefault();
-      clearAuth();
-      window.location.href = "/login.html";
-    });
-  }
-</script>
-        </ul>
-      </div>
+                <script type="module">
+                    import { clearAuth, getAuth } from "/js/auth.js";
+                    const link = document.getElementById("logoutLink");
+                    if (link) {
+                        if (!getAuth()) link.classList.add("d-none");
+                        link.addEventListener("click", (e)=>{
+                            e.preventDefault();
+                            clearAuth();
+                            window.location.href = "/login.html";
+                        });
+                    }
+                </script>
+            </ul>
+        </div>
     </div>
-  </nav>
+</nav>
 
-  <!-- CONTENT -->
-  <main class="container page-wrap">
+<!-- CONTENT -->
+<main class="container page-wrap">
     <div class="page-title">
-      <h1 class="m-0">Consulta de estado</h1>
-      <span class="badge">Sprint 1</span>
+        <h1 class="m-0">Consulta de estado</h1>
+        <span class="badge">Sprint 1</span>
     </div>
 
     <form id="consultaForm" class="mb-4">
-      <div class="row g-3">
-        <div class="col-lg-8">
-          <input type="text" id="nroOrden" class="form-control form-control-lg"
-                 placeholder="Ingresá N° de orden (ej: OT-0001)" required>
+        <div class="row g-3">
+            <div class="col-lg-8">
+                <input type="text" id="nroOrden" class="form-control form-control-lg"
+                       placeholder="Ingresá N° de orden (ej: OT-0001)" required>
+            </div>
+            <div class="col-lg-4 d-grid">
+                <button class="btn btn-primary btn-lg" type="submit"><i class="bi bi-search me-2"></i>Consultar</button>
+            </div>
         </div>
-        <div class="col-lg-4 d-grid">
-          <button class="btn btn-primary btn-lg" type="submit"><i class="bi bi-search me-2"></i>Consultar</button>
-        </div>
-      </div>
     </form>
 
     <div id="resultado" class="card shadow-sm d-none">
-      <div class="card-body">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-          <h5 class="card-title m-0">Detalles de la orden</h5>
-          <span id="chipEstado" class="status"><span class="dot"></span><span class="label">-</span></span>
-        </div>
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="card-title m-0">Detalles de la orden</h5>
+                <span id="chipEstado" class="status"><span class="dot"></span><span class="label">-</span></span>
+            </div>
 
-        <div class="row gy-3">
-          <div class="col-md-6">
-            <div class="kv"><div class="k">N° Orden:</div><div class="v" id="orden">-</div></div>
-            <div class="kv"><div class="k">Fecha de creación:</div><div class="v" id="creadaEn">-</div></div>
-          </div>
-          <div class="col-md-6">
-            <div class="kv"><div class="k">Garantía desde:</div><div class="v" id="garantiaDesde">-</div></div>
-            <div class="kv"><div class="k">Garantía hasta:</div><div class="v" id="garantiaHasta">-</div></div>
-          </div>
-        </div>
+            <div class="row gy-3">
+                <div class="col-md-6">
+                    <div class="kv"><div class="k">N° Orden:</div><div class="v" id="orden">-</div></div>
+                    <div class="kv"><div class="k">Fecha de creación:</div><div class="v" id="creadaEn">-</div></div>
+                </div>
+                <div class="col-md-6">
+                    <div class="kv"><div class="k">Garantía desde:</div><div class="v" id="garantiaDesde">-</div></div>
+                    <div class="kv"><div class="k">Garantía hasta:</div><div class="v" id="garantiaHasta">-</div></div>
+                </div>
+            </div>
 
-        <hr class="my-4" />
-        <div class="muted">Tip: podés ver el detalle completo del recorrido en <a href="/historial.html">Historial</a>.</div>
-      </div>
+            <hr class="my-4" />
+            <div class="muted">Tip: podés ver el detalle completo del recorrido en <a href="/historial.html">Historial</a>.</div>
+        </div>
     </div>
-  </main>
+</main>
 
-  <footer class="site-footer">
+<footer class="site-footer">
     <div class="container d-flex justify-content-between">
-      <span>© Rectificadora — demo académica</span>
-      <span class="muted">Negro/Gris/Blanco + Rojo</span>
+        <span>© Rectificadora — demo académica</span>
+        <span class="muted">Negro/Gris/Blanco + Rojo</span>
     </div>
-  </footer>
+</footer>
 
-  <script>
+<!-- Toast de notificaciones -->
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index:1080">
+    <div id="toastNotif" class="toast align-items-center text-bg-success border-0" role="alert">
+        <div class="d-flex">
+            <div class="toast-body" id="toastBody">Notificación</div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+    </div>
+</div>
+
+<script>
     const fmtDate = (s) => s ? new Date(s).toLocaleString() : "-";
     function paintStatus(el, estado) {
-      el.classList.remove('ok','warn','stop');
-      const label = el.querySelector('.label');
-      const normalized = (estado || '').toUpperCase();
+        el.classList.remove('ok','warn','stop');
+        const label = el.querySelector('.label');
+        const normalized = (estado || '').toUpperCase();
 
-      // Heurística simple por nombre de etapa
-      if (normalized.includes('LISTO') || normalized.includes('RETIRAR')) {
-        el.classList.add('ok');
-      } else if (normalized.includes('ESPERA') || normalized.includes('DEMORA')) {
-        el.classList.add('warn');
-      } else if (normalized.includes('IRREPARABLE')) {
-        el.classList.add('stop');
-      } else {
-        // estado neutro
-      }
-      label.textContent = estado || '-';
+        if (normalized.includes('LISTO') || normalized.includes('RETIRAR')) {
+            el.classList.add('ok');
+        } else if (normalized.includes('ESPERA') || normalized.includes('DEMORA')) {
+            el.classList.add('warn');
+        } else if (normalized.includes('IRREPARABLE')) {
+            el.classList.add('stop');
+        }
+        label.textContent = estado || '-';
     }
 
     document.getElementById("consultaForm").addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const nro = document.getElementById("nroOrden").value.trim();
-      if (!nro) return;
+        e.preventDefault();
+        const nro = document.getElementById("nroOrden").value.trim();
+        if (!nro) return;
 
-      const resp = await fetch(`/public/ordenes/${encodeURIComponent(nro)}/estado`);
-      if (!resp.ok) {
-        alert("Orden no encontrada");
-        return;
-      }
-      const data = await resp.json();
+        const resp = await fetch(`/public/ordenes/${encodeURIComponent(nro)}/estado`);
+        if (!resp.ok) {
+            alert("Orden no encontrada");
+            return;
+        }
+        const data = await resp.json();
 
-      // Soportar ambos formatos: {estado:{...}} o liso
-      const estado = data.estado ? data.estado : data;
-      document.getElementById("orden").textContent        = estado.nroOrden ?? "-";
-      document.getElementById("creadaEn").textContent     = fmtDate(estado.creadaEn);
-      document.getElementById("garantiaDesde").textContent= estado.garantiaDesde ?? "-";
-      document.getElementById("garantiaHasta").textContent= estado.garantiaHasta ?? "-";
+        const estado = data.estado ? data.estado : data;
+        document.getElementById("orden").textContent        = estado.nroOrden ?? "-";
+        document.getElementById("creadaEn").textContent     = fmtDate(estado.creadaEn);
+        document.getElementById("garantiaDesde").textContent= estado.garantiaDesde ?? "-";
+        document.getElementById("garantiaHasta").textContent= estado.garantiaHasta ?? "-";
 
-      paintStatus(document.getElementById('chipEstado'), estado.estadoActual || data.estado || '-');
+        paintStatus(document.getElementById('chipEstado'), estado.estadoActual || data.estado || '-');
 
-      document.getElementById("resultado").classList.remove("d-none");
-      document.getElementById("resultado").scrollIntoView({behavior:'smooth', block:'start'});
+        document.getElementById("resultado").classList.remove("d-none");
+        document.getElementById("resultado").scrollIntoView({behavior:'smooth', block:'start'});
+
+        startSSE(nro); // conecta SSE para este nro
     });
-  </script>
+</script>
 
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- SSE + Toast helpers (se carga después de Bootstrap) -->
+<script>
+    function __showToast(msg) {
+        const el = document.getElementById('toastNotif');
+        const body = document.getElementById('toastBody');
+        if (!el || !body) return;
+        body.textContent = msg || 'Notificación';
+        const t = new bootstrap.Toast(el, { delay: 6000 });
+        t.show();
+    }
+
+    let __es = null;
+    function startSSE(nroOrden) {
+        try { if (__es) { __es.close(); __es = null; } } catch {}
+        if (!nroOrden) return;
+        window.NRO_ORDEN = nroOrden;
+
+        const url = `/public/notificaciones/stream?nroOrden=${encodeURIComponent(nroOrden)}`;
+        __es = new EventSource(url);
+
+        __es.addEventListener('connected', () => { /* ok */ });
+
+        // ✅ Parseo JSON con id + mensaje y marcamos LEÍDA
+        __es.addEventListener('listo-retirar', (ev) => {
+            let data = {};
+            try { data = JSON.parse(ev.data); } catch { data = { mensaje: ev.data }; }
+            __showToast(data.mensaje || 'Tu orden está lista para retirar.');
+            if (data.id) {
+                fetch(`/public/notificaciones/${encodeURIComponent(data.id)}/leida`, { method: 'POST' }).catch(()=>{});
+            }
+        });
+
+        __es.onerror = () => { /* opcional: reconectar manual */ };
+
+        // Cargar últimas (para no perderte nada si abriste tarde)
+        fetch(`/public/notificaciones/ultimas?nroOrden=${encodeURIComponent(nroOrden)}`)
+            .then(r => r.json())
+            .then(items => {
+                if (Array.isArray(items) && items.length) {
+                    const n = items[0];
+                    if (n && n.tipo === 'LISTO_RETIRAR' && n.estado !== 'LEIDA') {
+                        __showToast(n.mensaje);
+                        fetch(`/public/notificaciones/${encodeURIComponent(n.id)}/leida`, { method: 'POST' })
+                            .catch(()=>{});
+                    }
+                }
+            })
+            .catch(()=>{});
+    }
+
+    // Si viene ?nro=OT-0001 en la URL, auto-conecta SSE
+    (function initFromQuery(){
+        const nro = new URLSearchParams(location.search).get('nro');
+        if (nro) startSSE(nro);
+    })();
+</script>
 </body>
 </html>
