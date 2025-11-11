@@ -16,6 +16,7 @@ import java.time.LocalDateTime;
         @Index(name = "idx_orden_nro", columnList = "nro_orden", unique = true)
 })
 public class OrdenTrabajo {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -37,4 +38,8 @@ public class OrdenTrabajo {
 
     @Column(name = "creada_en", nullable = false)
     private LocalDateTime creadaEn;
+
+    // ⬇️ necesario para notificar al cliente
+    @Column(name = "cliente_email", length = 200)
+    private String clienteEmail;
 }

@@ -21,31 +21,14 @@
             --c-motor:#4e79a7;
             --c-tapa:#e15759;
         }
-
-        body{
-            background:var(--c-bg);
-            color:var(--c-text);
-            font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
-        }
-
+        body{ background:var(--c-bg); color:var(--c-text); font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif; }
         .navbar{ background:#0b0f14; }
+        .card{ background:var(--c-card); border:none; border-radius:1rem; box-shadow:0 10px 30px rgba(0,0,0,.28); }
 
-        .card{
-            background:var(--c-card);
-            border:none;
-            border-radius:1rem;
-            box-shadow:0 10px 30px rgba(0,0,0,.28);
-        }
-
-        .kpi{
-            min-height:110px;
-            display:flex; align-items:center; justify-content:space-between;
-            padding:1rem 1.25rem;
-        }
+        .kpi{ min-height:110px; display:flex; align-items:center; justify-content:space-between; padding:1rem 1.25rem; }
         .kpi h2{ margin:0; font-weight:800; letter-spacing:.5px; color:#ffffff; }
         .kpi .sub{ font-size:.9rem; color:var(--c-muted); }
 
-        /* pills de % con más contraste */
         .pill{
             background:rgba(255,255,255,.14);
             color:#f4f7fb;
@@ -57,21 +40,19 @@
 
         .toolbar .btn{ border-radius:.75rem }
 
-        /* leyenda */
         .legend-dot{ display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:.35rem; }
         .legend-dot.motor{ background:var(--c-motor); }
         .legend-dot.tapa{  background:var(--c-tapa);  }
 
         .chart-wrap{ padding:1rem }
-
         .badge{ font-size:.8rem; letter-spacing:.5px; vertical-align:middle; }
 
-        /* animación suave de aparición */
         .fade-in{ animation:fade .4s ease-out; }
         @keyframes fade{ from{opacity:0; transform:translateY(2px)} to{opacity:1; transform:none} }
     </style>
 </head>
 <body>
+
 <nav class="navbar navbar-expand-lg navbar-dark mb-4">
     <div class="container">
         <a class="navbar-brand" href="#"><i class="bi bi-gear-fill me-2"></i>Rectificadora</a>
@@ -82,6 +63,7 @@
             <ul class="navbar-nav ms-auto">
                 <li class="nav-item"><a class="nav-link" href="/reportes/motores-por-etapa.html">Motores por etapa</a></li>
                 <li class="nav-item"><a class="nav-link active" href="/reportes/motores-vs-tapas.html">Motores vs Tapas</a></li>
+                <li class="nav-item"><a class="nav-link" href="/reportes/clientes-frecuentes.html">Clientes frecuentes</a></li>
                 <li class="nav-item"><a class="nav-link" href="/swagger-ui.html" target="_blank">API Docs</a></li>
             </ul>
         </div>
@@ -186,7 +168,7 @@
     import { getAuthHeader } from "/js/auth.js";
 
     // ===== Config =====
-    const ENDPOINT = "/api/reportes/motores-vs-tapas"; // espera {motores,tapas} (+ total, ratio opcional)
+    const ENDPOINT = "/api/reportes/motores-vs-tapas"; // espera {motores,tapas}
     const DEMO = { motores: 2, tapas: 1 };
 
     // ===== Helpers =====
@@ -312,7 +294,7 @@
     async function load(){
         const qs = getRangeQS();
         try {
-            const r = await fetch(ENDPOINT + qs, { headers: { "Accept":"application/json", ...getAuthHeader?.() }});
+            const r = await fetch(ENDPOINT + qs, { headers: { "Accept":"application/json", ...(getAuthHeader?.()||{}) }});
             if (!r.ok) throw new Error("HTTP " + r.status);
             const j = await r.json();
             const m = Number(j.motores ?? 0);

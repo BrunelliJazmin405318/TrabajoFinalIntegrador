@@ -1,3 +1,4 @@
+// src/main/java/ar/edu/utn/tfi/service/OrderAdvanceService.java
 package ar.edu.utn.tfi.service;
 
 import ar.edu.utn.tfi.domain.EtapaCatalogo;
@@ -19,18 +20,20 @@ public class OrderAdvanceService {
     private final OrdenEtapaHistorialRepository historialRepo;
     private final EtapaCatalogoRepository etapaRepo;
     private final AuditoriaService auditoria;
+    private final NotificacionService notificacionService; // ⬅️ NUEVO
 
     public OrderAdvanceService(OrdenTrabajoRepository ordenRepo,
                                OrdenEtapaHistorialRepository historialRepo,
                                EtapaCatalogoRepository etapaRepo,
-                               AuditoriaService auditoria) {
+                               AuditoriaService auditoria,
+                               NotificacionService notificacionService) { // ⬅️ NUEVO
         this.ordenRepo = ordenRepo;
         this.historialRepo = historialRepo;
         this.etapaRepo = etapaRepo;
         this.auditoria = auditoria;
+        this.notificacionService = notificacionService; // ⬅️ NUEVO
     }
 
-    // ✅ Agregá este helper acá mismo:
     private LocalDateTime nowUtc() {
         return LocalDateTime.now(ZoneOffset.UTC);
     }
@@ -91,8 +94,19 @@ public class OrderAdvanceService {
                 usuario
         );
 
-        // 7) Notificación mock
-        if ("LISTO_RETIRAR".equals(nuevoEstado)) {
+        // 7) 🚀 Disparar notificación cuando queda LISTO_RETIRAR
+        if ("LISTO_RETIRAR".equalsIgnoreCase(nuevoEstado)) {
+            // Centralizamos todo en el servicio de notificaciones
+            try {
+                notificacionService.registrarMotorListo(
+                        orden.getId(),
+                        orden.getClienteEmail(),
+                        orden.getNroOrden()
+                );
+            } catch (Exception ex) {
+                // No frenamos el avance si falla el aviso
+                System.out.println("⚠️ Error registrando notificación LISTO_RETIRAR: " + ex.getMessage());
+            }
             System.out.println("🔔 Notificación: orden " + orden.getNroOrden() + " lista para retirar.");
         }
     }
