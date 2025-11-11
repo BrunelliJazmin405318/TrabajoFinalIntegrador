@@ -9,7 +9,6 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
 </head>
 <body>
-<!-- NAV -->
 <nav class="navbar navbar-expand-lg navbar-dark">
     <div class="container">
         <a class="navbar-brand" href="#"><i class="bi bi-gear-fill me-2"></i>Rectificadora</a>
@@ -27,7 +26,6 @@
     </div>
 </nav>
 
-<!-- CONTENT -->
 <main class="container page-wrap">
     <div class="page-title">
         <h1 class="m-0">Historial de etapas</h1>
@@ -52,7 +50,7 @@
                 <h5 class="card-title m-0">Registro cronológico</h5>
                 <div class="d-flex align-items-center gap-2">
                     <span id="chipEstado" class="status"><span class="dot"></span><span class="label">-</span></span>
-                    <!-- Botones admin -->
+                    <!-- Botones ADMIN (visibilidad controlada por JS y estado) -->
                     <button id="btnAvanzar" class="btn btn-outline-light btn-sm d-none" type="button">
                         <i class="bi bi-fast-forward-fill me-1"></i>Avanzar etapa
                     </button>
@@ -114,9 +112,10 @@
         el.classList.remove('ok','warn','stop');
         const label = el.querySelector('.label');
         const normalized = (estado || '').toUpperCase();
+
         if (normalized.includes('LISTO') || normalized.includes('RETIRAR')) {
             el.classList.add('ok');
-        } else if (normalized.includes('ESPERA') || normalized.includes('DEMORA')) {
+        } else if (normalized.includes('ESPERa') || normalized.includes('DEMORA')) {
             el.classList.add('warn');
         } else if (normalized.includes('IRREPARABLE')) {
             el.classList.add('stop');
@@ -124,8 +123,14 @@
         label.textContent = estado || '-';
     }
 
-    // ✅ ACTUALIZADO: solo muestra "Registrar demora" en SEMI_ARMADO
-    function updateAdminButtons(estadoActual, isAuth) {
+    // === Mostrar/ocultar botones admin según estado + login ===
+    async function updateAdminButtons(estadoActual) {
+        let isAuth = false;
+        try {
+            const mod = await import("/js/auth.js");
+            isAuth = mod.isAuthenticated();
+        } catch {}
+
         const btnAvanzar = document.getElementById("btnAvanzar");
         const btnIrreparable = document.getElementById("btnIrreparable");
         const btnDemora = document.getElementById("btnDemora");
@@ -137,13 +142,17 @@
         const esIrreparable = e.includes("PIEZA_IRREPARABLE");
         const esFinal = e.includes("ENTREGADO");
 
+        // Avanzar etapa: mientras no sea IRREPARABLE ni ENTREGADO
         if (!esIrreparable && !esFinal) btnAvanzar.classList.remove("d-none");
+
+        // Irreparable: solo en DIAGNOSTICO
         if (e === "DIAGNOSTICO") btnIrreparable.classList.remove("d-none");
 
-        // 👇 sólo mostrar en SEMI_ARMADO
+        // Demora: solo en SEMI_ARMADO
         if (e === "SEMI_ARMADO") btnDemora.classList.remove("d-none");
     }
 
+    // === Cargar historial + estado ===
     async function cargarHistorial(nro) {
         const rHist = await fetch(`/public/ordenes/${encodeURIComponent(nro)}/historial`);
         if (!rHist.ok) { alert("Orden no encontrada"); return; }
@@ -164,27 +173,25 @@
             const isActive = !h.fechaFin;
             const rowClass = isActive ? 'row-active' : 'row-closed';
             tbody.insertAdjacentHTML('beforeend', `
-              <tr class="${rowClass}">
-                <td><strong>${h.etapaCodigo}</strong></td>
-                <td>${fmtDate(h.fechaInicio)}</td>
-                <td>${fmtDate(h.fechaFin)}</td>
-                <td>${h.observacion || "-"}</td>
-                <td>${h.usuario || "-"}</td>
-              </tr>
-            `);
+        <tr class="${rowClass}">
+          <td><strong>${h.etapaCodigo}</strong></td>
+          <td>${fmtDate(h.fechaInicio)}</td>
+          <td>${fmtDate(h.fechaFin)}</td>
+          <td>${h.observacion || "-"}</td>
+          <td>${h.usuario || "-"}</td>
+        </tr>
+      `);
         });
 
         paintStatus(document.getElementById('chipEstado'), estadoActual);
-
-        try {
-            const mod = await import("/js/auth.js");
-            updateAdminButtons(estadoActual, mod.isAuthenticated());
-        } catch {
-            updateAdminButtons(estadoActual, false);
-        }
-
         document.getElementById("wrapTabla").classList.remove("d-none");
         document.getElementById("wrapTabla").scrollIntoView({behavior:'smooth', block:'start'});
+
+        // Botones admin
+        updateAdminButtons(estadoActual);
+
+        // HU13: conectar SSE para toasts
+        startSSE(nro);
     }
 
     document.getElementById("historialForm").addEventListener("submit", async (e) => {
@@ -211,10 +218,7 @@
         try {
             const resp = await fetch(`/admin/ordenes/${encodeURIComponent(nro)}/avanzar`, {
                 method: "POST",
-                headers: {
-                    ...getAuthHeader(),
-                    "Content-Type": "application/json"
-                }
+                headers: { ...getAuthHeader(), "Content-Type": "application/json" }
             });
             if (!resp.ok) {
                 const err = await resp.json().catch(() => ({}));
@@ -238,10 +242,7 @@
         try {
             const resp = await fetch(`/admin/ordenes/${encodeURIComponent(nro)}/pieza-irreparable`, {
                 method: "PUT",
-                headers: {
-                    ...getAuthHeader(),
-                    "Content-Type": "application/json"
-                }
+                headers: { ...getAuthHeader(), "Content-Type": "application/json" }
             });
             if (!resp.ok) {
                 const err = await resp.json().catch(() => ({}));
@@ -270,10 +271,7 @@
         try {
             const resp = await fetch(`/admin/ordenes/${encodeURIComponent(nro)}/demora`, {
                 method: "POST",
-                headers: {
-                    ...getAuthHeader(),
-                    "Content-Type": "application/json"
-                },
+                headers: { ...getAuthHeader(), "Content-Type": "application/json" },
                 body: JSON.stringify({ motivo, observacion })
             });
 
@@ -296,6 +294,41 @@
             alert("Error al registrar demora.");
         }
     });
+</script>
+
+<!-- ======= TOAST HU13 ======= -->
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index:1080">
+    <div id="toastNotif" class="toast align-items-center text-bg-success border-0" role="alert">
+        <div class="d-flex">
+            <div class="toast-body" id="toastBody">Notificación</div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+    </div>
+</div>
+
+<!-- ======= SSE HU13 ======= -->
+<script>
+    function __showToast(msg) {
+        const el = document.getElementById('toastNotif');
+        const body = document.getElementById('toastBody');
+        if (!el || !body) return;
+        body.textContent = msg || 'Tu motor está listo para retirar';
+        const t = new bootstrap.Toast(el, { delay: 6000 });
+        t.show();
+    }
+
+    let __es = null;
+    function startSSE(nroOrden) {
+        try { if (__es) { __es.close(); __es = null; } } catch {}
+        if (!nroOrden) return;
+        const url = `/public/notificaciones/stream?nroOrden=${encodeURIComponent(nroOrden)}`;
+        __es = new EventSource(url);
+        __es.addEventListener('connected', () => {});
+        __es.addEventListener('listo-retirar', (ev) => {
+            __showToast(ev?.data || 'Tu motor está listo para retirar');
+        });
+        __es.onerror = () => { /* opcional: reconexión custom */ };
+    }
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>

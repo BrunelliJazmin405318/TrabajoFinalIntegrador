@@ -1,4 +1,3 @@
-// src/main/java/ar/edu/utn/tfi/service/OrderAdvanceService.java
 package ar.edu.utn.tfi.service;
 
 import ar.edu.utn.tfi.domain.EtapaCatalogo;
@@ -20,20 +19,21 @@ public class OrderAdvanceService {
     private final OrdenEtapaHistorialRepository historialRepo;
     private final EtapaCatalogoRepository etapaRepo;
     private final AuditoriaService auditoria;
-    private final NotificacionService notificacionService; // ⬅️ NUEVO
+    private final NotificationService notificationService;
 
     public OrderAdvanceService(OrdenTrabajoRepository ordenRepo,
                                OrdenEtapaHistorialRepository historialRepo,
                                EtapaCatalogoRepository etapaRepo,
                                AuditoriaService auditoria,
-                               NotificacionService notificacionService) { // ⬅️ NUEVO
+                               NotificationService notificationService) {
         this.ordenRepo = ordenRepo;
         this.historialRepo = historialRepo;
         this.etapaRepo = etapaRepo;
         this.auditoria = auditoria;
-        this.notificacionService = notificacionService; // ⬅️ NUEVO
+        this.notificationService = notificationService;
     }
 
+    // ✅ Agregá este helper acá mismo:
     private LocalDateTime nowUtc() {
         return LocalDateTime.now(ZoneOffset.UTC);
     }
@@ -54,14 +54,21 @@ public class OrderAdvanceService {
         EtapaCatalogo siguiente = etapaRepo.findByOrden(actual.getOrden() + 1)
                 .orElseThrow(() -> new IllegalStateException("No hay siguiente etapa para " + etapaActual));
 
-        // 4) Actualizar estado de la OT
+        // 4) Cerrar la etapa previa abierta (si existe)
+        historialRepo.findTopByOrdenIdAndFechaFinIsNullOrderByFechaInicioDesc(orden.getId())
+                .ifPresent(h -> {
+                    h.setFechaFin(nowUtc());
+                    historialRepo.save(h);
+                });
+
+        // 5) Actualizar estado de la OT
         String nuevoEstado = siguiente.getCodigo();
-        if (nuevoEstado.equals(etapaActual)) return;
+        if (nuevoEstado.equalsIgnoreCase(etapaActual)) return;
 
         orden.setEstadoActual(nuevoEstado);
         ordenRepo.save(orden);
 
-        // ✅ Si llega a ENTREGADO, registrar garantía automática
+        // 6) Garantía automática al ENTREGADO
         if ("ENTREGADO".equalsIgnoreCase(nuevoEstado)) {
             orden.setGarantiaDesde(java.time.LocalDate.now());
             orden.setGarantiaHasta(java.time.LocalDate.now().plusDays(90));
@@ -76,7 +83,7 @@ public class OrderAdvanceService {
                     " hasta " + orden.getGarantiaHasta());
         }
 
-        // 5) Insertar nueva fila en historial
+        // 7) Insertar nueva fila en historial (apertura de la nueva etapa)
         OrdenEtapaHistorial nuevoHist = new OrdenEtapaHistorial();
         nuevoHist.setOrdenId(orden.getId());
         nuevoHist.setEtapaCodigo(nuevoEstado);
@@ -85,7 +92,7 @@ public class OrderAdvanceService {
         nuevoHist.setUsuario(usuario);
         historialRepo.save(nuevoHist);
 
-        // 6) Auditoría cambio de estado
+        // 8) Auditoría cambio de estado
         auditoria.registrarCambio(
                 orden.getId(),
                 "estado_actual",
@@ -93,21 +100,12 @@ public class OrderAdvanceService {
                 nuevoEstado,
                 usuario
         );
-
-        // 7) 🚀 Disparar notificación cuando queda LISTO_RETIRAR
+        // 7) Notificación mock
+        //if ("LISTO_RETIRAR".equalsIgnoreCase(nuevoEstado)) {
+        //     System.out.println("🔔 Notificación: orden " + orden.getNroOrden() + " lista para retirar.");
+        // }
         if ("LISTO_RETIRAR".equalsIgnoreCase(nuevoEstado)) {
-            // Centralizamos todo en el servicio de notificaciones
-            try {
-                notificacionService.registrarMotorListo(
-                        orden.getId(),
-                        orden.getClienteEmail(),
-                        orden.getNroOrden()
-                );
-            } catch (Exception ex) {
-                // No frenamos el avance si falla el aviso
-                System.out.println("⚠️ Error registrando notificación LISTO_RETIRAR: " + ex.getMessage());
-            }
-            System.out.println("🔔 Notificación: orden " + orden.getNroOrden() + " lista para retirar.");
+            notificationService.emitirListoRetirar(orden, null);
         }
     }
 }

@@ -39,3 +39,6 @@ var/postgres/
 
 # Docker Postgres data
 var/
+
+# Docker Postgres data (NO versionar)
+var/
