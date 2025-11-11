@@ -36,3 +36,9 @@ build/
 
 # Local Postgres data (no commitear)
 var/postgres/
+
+# Docker Postgres data
+var/
+
+# Docker Postgres data (NO versionar)
+var/

@@ -49,7 +49,17 @@
                 <span id="chipEstado" class="status"><span class="dot"></span><span class="label">-</span></span>
             </div>
 
-            <div class="row g-3">
+            <!-- ===== HU13: Barra y lista de notificaciones in-app ===== -->
+            <div class="d-flex align-items-center gap-2 mb-2" id="notifBar" style="display:none;">
+                <button id="btnNotif" type="button" class="btn btn-outline-warning btn-sm position-relative">
+                    <i class="bi bi-bell"></i> Notificaciones
+                    <span id="notifCount" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">0</span>
+                </button>
+            </div>
+            <div id="notifList" class="mt-2 d-none"></div>
+            <!-- ===== /HU13 ===== -->
+
+            <div class="row g-3 mt-2">
                 <div class="col-md-6">
                     <div class="small text-muted mb-1">Cliente</div>
                     <div id="c_nombre" class="fw-semibold">-</div>
@@ -136,6 +146,136 @@
     let presupuestoIdForPay = null;
     let currentSolicitudId = null; // NUEVO
 
+    // =================== HU13: IN-APP NOTIFS (SSE) ===================
+    let sseSource = null;
+    let sseEmailActual = null;
+    let notifsCache = [];
+
+    function renderNotifList() {
+        const list = document.getElementById('notifList');
+        const count = document.getElementById('notifCount');
+        if (!list || !count) return;
+
+        const unread = notifsCache.filter(n => !n.readAt);
+        count.textContent = unread.length;
+
+        list.innerHTML = '';
+        if (notifsCache.length === 0) {
+            list.classList.add('d-none');
+            return;
+        }
+
+        notifsCache.forEach(n => {
+            const fecha = (n.createdAt || '').replace('T',' ').substring(0,19);
+            list.insertAdjacentHTML('afterbegin', `
+        <div class="alert ${n.type==='MOTOR_LISTO' ? 'alert-success' : 'alert-info'} d-flex justify-content-between align-items-start">
+          <div>
+            <div class="fw-semibold">${n.title || 'Notificación'}</div>
+            <div class="small text-muted">${fecha}</div>
+            <div>${n.message || '-'}</div>
+          </div>
+          <div class="ms-3">
+            ${n.readAt ? '<span class="badge bg-secondary">Leída</span>' :
+                `<button class="btn btn-sm btn-outline-secondary" data-mark-read="${n.id}">Marcar leída</button>`}
+          </div>
+        </div>
+      `);
+        });
+
+        list.classList.remove('d-none');
+    }
+
+    async function cargarNoLeidas(email) {
+        try {
+            const r = await fetch(`/api/notificaciones/unread?email=${encodeURIComponent(email)}`);
+            const arr = await r.json().catch(()=>[]);
+            if (Array.isArray(arr)) {
+                notifsCache = arr;
+                renderNotifList();
+            }
+        } catch {}
+    }
+
+    function suscribirNotificaciones(email) {
+        const bar = document.getElementById('notifBar');
+        if (!email) {
+            if (sseSource) { try { sseSource.close(); } catch {} sseSource = null; }
+            sseEmailActual = null;
+            if (bar) bar.style.display = 'none';
+            return;
+        }
+
+        if (sseEmailActual === email && sseSource) return;
+
+        if (sseSource) { try { sseSource.close(); } catch {} sseSource = null; }
+
+        sseEmailActual = email;
+        if (bar) bar.style.display = 'inline-flex';
+
+        cargarNoLeidas(email);
+
+        sseSource = new EventSource(`/api/notificaciones/stream?email=${encodeURIComponent(email)}`);
+        sseSource.addEventListener('notif', (ev) => {
+            try {
+                const payload = JSON.parse(ev.data);
+                notifsCache.push({
+                    id: payload.id,
+                    type: payload.type,
+                    title: payload.title,
+                    message: payload.message,
+                    createdAt: payload.createdAt,
+                    readAt: null
+                });
+                renderNotifList();
+
+                // mini toast
+                try {
+                    const t = document.createElement('div');
+                    t.className = 'toast align-items-center text-bg-success border-0 show position-fixed bottom-0 end-0 m-3';
+                    t.style.zIndex = 1080;
+                    t.setAttribute('role','alert');
+                    t.innerHTML = `
+            <div class="d-flex">
+              <div class="toast-body">
+                ${payload.title || 'Notificación'}: ${payload.message || ''}
+              </div>
+              <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>`;
+                    document.body.appendChild(t);
+                    setTimeout(()=> t.remove(), 4500);
+                } catch {}
+            } catch {}
+        });
+
+        sseSource.onerror = () => {
+            try { sseSource.close(); } catch {}
+            sseSource = null;
+        };
+
+        const btn = document.getElementById('btnNotif');
+        const list = document.getElementById('notifList');
+        btn?.addEventListener('click', () => {
+            if (!list) return;
+            if (list.classList.contains('d-none')) list.classList.remove('d-none');
+            else list.classList.add('d-none');
+        });
+
+        document.addEventListener('click', async (e) => {
+            const markBtn = e.target.closest('button[data-mark-read]');
+            if (!markBtn) return;
+            const id = markBtn.getAttribute('data-mark-read');
+            try {
+                await fetch(`/api/notificaciones/${encodeURIComponent(id)}/read`, { method: 'PUT' });
+                const idx = notifsCache.findIndex(n => String(n.id) === String(id));
+                if (idx >= 0) {
+                    notifsCache[idx].readAt = new Date().toISOString();
+                    renderNotifList();
+                }
+            } catch {}
+        });
+    }
+    // =================== /HU13 ===================
+
     async function consultarSolicitud(id) {
         const card = document.getElementById('cardResultado');
         card.classList.add('d-none');
@@ -144,7 +284,9 @@
         const j = await r.json().catch(()=> ({}));
         if (!r.ok) { alert(j.message || 'No se encontró la solicitud'); return; }
 
-        // guardamos solicitudId para descarga de factura
+        // 👉 HU13: suscribirse a SSE por email del cliente
+        suscribirNotificaciones(j.clienteEmail || '');
+
         currentSolicitudId = Number(j.id ?? id);
 
         document.getElementById('c_nombre').textContent = j.clienteNombre || '-';
@@ -180,7 +322,6 @@
         const estadoBadge  = document.getElementById('pagoEstado');
         const facturaBox   = document.getElementById('facturaActions');
 
-        // reset visual
         box.classList.add('d-none');
         infoMsg.classList.add('d-none');
         pagarActions.classList.remove('d-none');
@@ -205,7 +346,6 @@
         document.getElementById('pagoMonto').textContent = money(monto);
         document.getElementById('pagoId').textContent    = info.senaPaymentId || '-';
 
-        // Caso 1: pago completo => mostrar botón de factura para cliente
         if (finalEstado === 'ACREDITADA' || saldo <= 0) {
             estadoBadge.textContent = 'Pago completo';
             estadoBadge.className   = 'badge bg-success';
@@ -214,7 +354,6 @@
             document.getElementById('mp-status').textContent = '';
             box.classList.remove('d-none');
 
-            // mostrar botón de factura
             facturaBox.classList.remove('d-none');
             const btnFactura = document.getElementById('btnFactura');
             btnFactura.onclick = async () => {
@@ -242,7 +381,6 @@
             return;
         }
 
-        // Caso 2: seña acreditada (aún falta el final)
         if (senaEstado === 'ACREDITADA') {
             estadoBadge.textContent = 'Seña acreditada';
             estadoBadge.className   = 'badge bg-success';
@@ -251,7 +389,6 @@
             return;
         }
 
-        // Caso 3: puede pagar seña
         if (info.puedePagar && estadoPres === 'APROBADO') {
             estadoBadge.textContent = 'Pendiente';
             estadoBadge.className   = 'badge bg-warning text-dark';

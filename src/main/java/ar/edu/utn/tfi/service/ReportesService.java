@@ -2,6 +2,9 @@
 package ar.edu.utn.tfi.service;
 
 import ar.edu.utn.tfi.repository.OrdenTrabajoReportRepository;
+import ar.edu.utn.tfi.web.dto.ClienteRankingDTO;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -20,6 +23,7 @@ public class ReportesService {
         this.ordenReportRepo = ordenReportRepo;
     }
 
+    // ================== EXISTENTES ==================
     public Map<String, Object> motoresVsTapas(LocalDate desde, LocalDate hastaInclusive) {
         LocalDateTime d0 = desde.atStartOfDay();
         LocalDateTime d1 = hastaInclusive.plusDays(1).atStartOfDay();
@@ -66,5 +70,36 @@ public class ReportesService {
             total += c;
         }
         return Map.of("etapas", etapas, "cantidades", cantidades, "total", total);
+    }
+
+    // ================== NUEVO (HU17) ==================
+    public List<ClienteRankingDTO> rankingClientesFrecuentes(LocalDate from, LocalDate to, Integer top) {
+        // defaults
+        if (from == null || to == null) {
+            YearMonth ym = YearMonth.now();
+            from = ym.atDay(1);
+            to   = ym.atEndOfMonth();
+        }
+        if (to.isBefore(from)) { var tmp = from; from = to; to = tmp; }
+        if (top == null || top < 1 || top > 50) top = 10;
+
+        LocalDateTime d0 = from.atStartOfDay();
+        LocalDateTime d1 = to.plusDays(1).atStartOfDay();
+        Pageable page = PageRequest.of(0, top);
+
+        // 👇 Tipado explícito para que el IDE conozca los getters de la proyección
+        List<OrdenTrabajoReportRepository.ClienteRanking> rows =
+                ordenReportRepo.rankingClientesEntre(d0, d1, page);
+
+        List<ClienteRankingDTO> out = new ArrayList<>();
+        for (OrdenTrabajoReportRepository.ClienteRanking r : rows) {
+            out.add(new ClienteRankingDTO(
+                    r.getClienteId(),
+                    r.getNombre(),
+                    r.getTelefono(),
+                    r.getCantidad()
+            ));
+        }
+        return out;
     }
 }

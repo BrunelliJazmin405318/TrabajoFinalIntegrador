@@ -87,7 +87,7 @@
         #chartCard{padding:1.2rem 1.2rem 1.6rem;}
         canvas{max-height:420px;}
 
-        /* ===== Inputs (fix visibilidad) ===== */
+        /* ===== Inputs ===== */
         .form-control,
         .form-select {
             background-color: var(--c-soft) !important;
@@ -103,7 +103,6 @@
             box-shadow: 0 0 0 .2rem rgba(44,109,210,.15) !important;
         }
 
-        /* Campos de fecha */
         input[type="date"] {
             background-color: var(--c-soft);
             color: var(--c-text);
@@ -112,26 +111,15 @@
             padding: 0.25rem 0.5rem;
             height: 32px;
         }
-
-        /* Ícono del calendario */
         input[type="date"]::-webkit-calendar-picker-indicator {
             filter: invert(0.9);
             opacity: 0.9;
             cursor: pointer;
         }
-
-        /* Placeholder */
         input[type="date"]::placeholder,
         .form-control::placeholder {
             color: var(--c-text-2);
             opacity: .9;
-        }
-
-        /* Evitar que el autocompletado cambie colores */
-        input:-webkit-autofill,
-        input:-webkit-autofill:focus {
-            -webkit-text-fill-color: var(--c-text);
-            transition: background-color 9999s ease-in-out 0s;
         }
 
         /* ===== Animación ===== */
@@ -140,69 +128,90 @@
     </style>
 </head>
 
-<body class="p-4">
+<body>
 
-<h2 class="mb-3">
-    Reporte de Ingresos Mensuales
-    <span class="badge bg-danger">Dashboard</span>
-</h2>
-
-<!-- Filtros / Toolbar -->
-<div class="card shadow-soft mb-4">
-    <div class="card-body">
-        <div class="d-flex flex-wrap gap-2 align-items-end toolbar">
-            <div class="btn-group me-2" role="group" aria-label="rangos">
-                <button id="r7" class="btn btn-outline-light btn-sm">Últimos 7 días</button>
-                <button id="rMes" class="btn btn-outline-light btn-sm">Mes actual</button>
-                <button id="rYtd" class="btn btn-outline-light btn-sm">YTD</button>
-            </div>
-
-            <div class="d-flex align-items-center gap-2 me-2">
-                <label class="form-label m-0 small">Desde</label>
-                <input id="fFrom" type="date" class="form-control form-control-sm" style="width: 160px;">
-                <span>→</span>
-                <label class="form-label m-0 small">Hasta</label>
-                <input id="fTo" type="date" class="form-control form-control-sm" style="width: 160px;">
-                <button id="btnAplicar" class="btn btn-primary btn-sm">Aplicar</button>
-            </div>
-
-            <div class="ms-auto d-flex gap-2">
-                <button id="btnRefresh" class="btn btn-primary btn-sm">🔄 Actualizar</button>
-                <button id="btnCsv" class="btn btn-outline-light btn-sm">📄 CSV</button>
-                <button id="btnPng" class="btn btn-outline-light btn-sm">📊 PNG</button>
-            </div>
+<!-- NAVBAR agregado -->
+<nav class="navbar navbar-expand-lg navbar-dark mb-4">
+    <div class="container">
+        <a class="navbar-brand" href="#"><i class="bi bi-gear-fill me-2"></i>Rectificadora</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div id="nav" class="collapse navbar-collapse">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item"><a class="nav-link" href="/reportes/motores-por-etapa.html">Motores por etapa</a></li>
+                <li class="nav-item"><a class="nav-link" href="/reportes/motores-vs-tapas.html">Motores vs Tapas</a></li>
+                <li class="nav-item"><a class="nav-link" href="/reportes/clientes-frecuentes.html">Clientes frecuentes</a></li>
+                <li class="nav-item"><a class="nav-link" href="/swagger-ui.html" target="_blank">API Docs</a></li>
+            </ul>
         </div>
-        <p id="periodoTxt" class="muted small mt-2 mb-0"></p>
     </div>
-</div>
+</nav>
 
-<!-- Resumen narrativo -->
-<div id="resumenWrap" class="card shadow-soft mb-3 d-none">
-    <div class="card-body">
-        <p id="resumenTxt" class="m-0"></p>
+<!-- Contenido -->
+<div class="container pb-4">
+    <h2 class="mb-3">
+        Reporte de Ingresos Mensuales
+        <span class="badge bg-danger">Dashboard</span>
+    </h2>
+
+    <!-- Filtros / Toolbar -->
+    <div class="card shadow-soft mb-4">
+        <div class="card-body">
+            <div class="d-flex flex-wrap gap-2 align-items-end toolbar">
+                <div class="btn-group me-2" role="group" aria-label="rangos">
+                    <button id="r7" class="btn btn-outline-light btn-sm">Últimos 7 días</button>
+                    <button id="rMes" class="btn btn-outline-light btn-sm">Mes actual</button>
+                    <button id="rYtd" class="btn btn-outline-light btn-sm">YTD</button>
+                </div>
+
+                <div class="d-flex align-items-center gap-2 me-2">
+                    <label class="form-label m-0 small">Desde</label>
+                    <input id="fFrom" type="date" class="form-control form-control-sm" style="width: 160px;">
+                    <span>→</span>
+                    <label class="form-label m-0 small">Hasta</label>
+                    <input id="fTo" type="date" class="form-control form-control-sm" style="width: 160px;">
+                    <button id="btnAplicar" class="btn btn-primary btn-sm">Aplicar</button>
+                </div>
+
+                <div class="ms-auto d-flex gap-2">
+                    <button id="btnRefresh" class="btn btn-primary btn-sm">🔄 Actualizar</button>
+                    <button id="btnCsv" class="btn btn-outline-light btn-sm">📄 CSV</button>
+                    <button id="btnPng" class="btn btn-outline-light btn-sm">📊 PNG</button>
+                </div>
+            </div>
+            <p id="periodoTxt" class="muted small mt-2 mb-0"></p>
+        </div>
     </div>
-</div>
 
-<!-- KPIs -->
-<div class="row g-3 mb-4">
-    <div class="col-md-4"><div class="kpi"><div class="sub">Total Señas</div><h2 id="kpiSenas">-</h2></div></div>
-    <div class="col-md-4"><div class="kpi"><div class="sub">Total Finales</div><h2 id="kpiFinales">-</h2></div></div>
-    <div class="col-md-4"><div class="kpi"><div class="sub">Total General</div><h2 id="kpiTotal">-</h2></div></div>
-</div>
-
-<!-- Vacío -->
-<div id="emptyCard" class="card shadow-soft mb-3 d-none">
-    <div class="card-body">
-        <p class="m-0">No se registraron ingresos en el período seleccionado.</p>
+    <!-- Resumen narrativo -->
+    <div id="resumenWrap" class="card shadow-soft mb-3 d-none">
+        <div class="card-body">
+            <p id="resumenTxt" class="m-0"></p>
+        </div>
     </div>
-</div>
 
-<!-- Gráfico -->
-<div id="chartCard" class="card p-4 shadow-soft fade-in">
-    <canvas id="chartIngresos"></canvas>
-</div>
+    <!-- KPIs -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-4"><div class="kpi"><div class="sub">Total Señas</div><h2 id="kpiSenas">-</h2></div></div>
+        <div class="col-md-4"><div class="kpi"><div class="sub">Total Finales</div><h2 id="kpiFinales">-</h2></div></div>
+        <div class="col-md-4"><div class="kpi"><div class="sub">Total General</div><h2 id="kpiTotal">-</h2></div></div>
+    </div>
 
-<p id="lastRefresh" class="text-secondary small mt-3"></p>
+    <!-- Vacío -->
+    <div id="emptyCard" class="card shadow-soft mb-3 d-none">
+        <div class="card-body">
+            <p class="m-0">No se registraron ingresos en el período seleccionado.</p>
+        </div>
+    </div>
+
+    <!-- Gráfico -->
+    <div id="chartCard" class="card p-4 shadow-soft fade-in">
+        <canvas id="chartIngresos"></canvas>
+    </div>
+
+    <p id="lastRefresh" class="text-secondary small mt-3"></p>
+</div>
 
 <script type="module">
     import { getAuthHeader } from "/js/auth.js";
@@ -417,5 +426,8 @@
     setDefaultRange();
     load();
 </script>
+
+<!-- Bootstrap JS (para navbar) -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

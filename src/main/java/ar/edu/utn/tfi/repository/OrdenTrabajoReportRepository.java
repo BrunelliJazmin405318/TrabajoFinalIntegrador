@@ -1,10 +1,11 @@
+// src/main/java/ar/edu/utn/tfi/repository/OrdenTrabajoReportRepository.java
 package ar.edu.utn.tfi.repository;
 
 import ar.edu.utn.tfi.domain.OrdenTrabajo;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.*;
 import org.springframework.data.repository.query.Param;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -28,7 +29,6 @@ public interface OrdenTrabajoReportRepository extends JpaRepository<OrdenTrabajo
     List<TipoCantidad> contarPorTipoEntre(@Param("desde") LocalDateTime desde,
                                           @Param("hasta") LocalDateTime hasta);
 
-
     @Query(value = """
         SELECT ot.estado_actual AS etapa, COUNT(*) AS cnt
         FROM orden_trabajo ot
@@ -43,4 +43,31 @@ public interface OrdenTrabajoReportRepository extends JpaRepository<OrdenTrabajo
     List<Map<String,Object>> contarMotoresPorEtapaRango(@Param("desde") LocalDateTime desde,
                                                         @Param("hasta") LocalDateTime hasta);
 
+    // --- Proyección para ranking de clientes frecuentes ---
+    interface ClienteRanking {
+        Long getClienteId();
+        String getNombre();
+        String getTelefono();
+        Long getCantidad();
+    }
+
+    @Query(value = """
+        SELECT c.id          AS cliente_id,
+               c.nombre      AS nombre,
+               c.telefono    AS telefono,
+               COUNT(*)      AS cantidad
+        FROM orden_trabajo ot
+        JOIN unidad_trabajo ut ON ut.id = ot.unidad_id
+        JOIN cliente c         ON c.id = ut.cliente_id
+        WHERE ot.estado_actual = 'ENTREGADO'
+          AND ot.creada_en >= :desde
+          AND ot.creada_en  < :hasta
+        GROUP BY c.id, c.nombre, c.telefono
+        ORDER BY cantidad DESC
+        """, nativeQuery = true)
+    List<ClienteRanking> rankingClientesEntre(
+            @Param("desde") LocalDateTime desde,
+            @Param("hasta") LocalDateTime hasta,
+            Pageable pageable
+    );
 }
