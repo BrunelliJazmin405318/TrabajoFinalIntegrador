@@ -1,0 +1,4 @@
+ALTER TABLE notification
+    ADD COLUMN IF NOT EXISTS nro_orden VARCHAR(64),
+    ADD COLUMN IF NOT EXISTS estado VARCHAR(32),
+    ADD COLUMN IF NOT EXISTS cliente_destino VARCHAR(200);

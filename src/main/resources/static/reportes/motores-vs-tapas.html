@@ -13,10 +13,10 @@
     <style>
         :root{
             --c-bg:#0d1117;
-            --c-card:#1a2230;      /* +claro que #161b22 */
-            --c-soft:#2a3442;      /* +claro para contenedores/pills */
-            --c-text:#f4f7fb;      /* texto principal +luminoso */
-            --c-muted:#cbd6e2;     /* secundarios */
+            --c-card:#1a2230;
+            --c-soft:#2a3442;
+            --c-text:#f4f7fb;
+            --c-muted:#cbd6e2;
             --c-acc:#2f81f7;
             --c-motor:#4e79a7;
             --c-tapa:#e15759;
@@ -24,29 +24,16 @@
         body{ background:var(--c-bg); color:var(--c-text); font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif; }
         .navbar{ background:#0b0f14; }
         .card{ background:var(--c-card); border:none; border-radius:1rem; box-shadow:0 10px 30px rgba(0,0,0,.28); }
-
         .kpi{ min-height:110px; display:flex; align-items:center; justify-content:space-between; padding:1rem 1.25rem; }
         .kpi h2{ margin:0; font-weight:800; letter-spacing:.5px; color:#ffffff; }
         .kpi .sub{ font-size:.9rem; color:var(--c-muted); }
-
-        .pill{
-            background:rgba(255,255,255,.14);
-            color:#f4f7fb;
-            border-radius:999px;
-            padding:.25rem .6rem;
-            font-size:.85rem;
-            box-shadow: inset 0 0 0 1px rgba(255,255,255,.06);
-        }
-
+        .pill{ background:rgba(255,255,255,.14); color:#f4f7fb; border-radius:999px; padding:.25rem .6rem; font-size:.85rem; box-shadow: inset 0 0 0 1px rgba(255,255,255,.06); }
         .toolbar .btn{ border-radius:.75rem }
-
         .legend-dot{ display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:.35rem; }
         .legend-dot.motor{ background:var(--c-motor); }
         .legend-dot.tapa{  background:var(--c-tapa);  }
-
         .chart-wrap{ padding:1rem }
         .badge{ font-size:.8rem; letter-spacing:.5px; vertical-align:middle; }
-
         .fade-in{ animation:fade .4s ease-out; }
         @keyframes fade{ from{opacity:0; transform:translateY(2px)} to{opacity:1; transform:none} }
     </style>
@@ -96,13 +83,25 @@
         </div>
 
         <button id="btnRefresh" class="btn btn-primary"><i class="bi bi-arrow-clockwise me-1"></i>Actualizar</button>
+
+        <!-- 🔽 Exportar -->
+        <div class="btn-group">
+            <button class="btn btn-success btn-sm dropdown-toggle" data-bs-toggle="dropdown">
+                <i class="bi bi-download me-1"></i>Exportar
+            </button>
+            <ul class="dropdown-menu dropdown-menu-dark">
+                <li><a class="dropdown-item" href="#" id="expPdf">PDF</a></li>
+                <li><a class="dropdown-item" href="#" id="expXlsx">Excel (.xlsx)</a></li>
+            </ul>
+        </div>
+
         <button id="btnPng" class="btn btn-outline-light"><i class="bi bi-image me-1"></i>Exportar PNG</button>
         <button id="btnCsv" class="btn btn-outline-light"><i class="bi bi-filetype-csv me-1"></i>Exportar CSV</button>
 
         <span class="ms-auto muted small d-flex align-items-center gap-3">
-      <span><span class="legend-dot motor"></span>Motores</span>
-      <span><span class="legend-dot tapa"></span>Tapas</span>
-    </span>
+          <span><span class="legend-dot motor"></span>Motores</span>
+          <span><span class="legend-dot tapa"></span>Tapas</span>
+        </span>
     </div>
 
     <!-- KPIs -->
@@ -167,11 +166,9 @@
 <script type="module">
     import { getAuthHeader } from "/js/auth.js";
 
-    // ===== Config =====
-    const ENDPOINT = "/api/reportes/motores-vs-tapas"; // espera {motores,tapas}
+    const ENDPOINT = "/api/reportes/motores-vs-tapas";
     const DEMO = { motores: 2, tapas: 1 };
 
-    // ===== Helpers =====
     const $ = (id)=>document.getElementById(id);
     const cssVar = (name)=>getComputedStyle(document.documentElement).getPropertyValue(name).trim();
     const fmtISO = d => d ? d.toISOString().slice(0,10) : "";
@@ -184,7 +181,7 @@
         $("fTo").value   = fmtISO(to);
     }
 
-    function getRangeQS(){
+    function qsFromTo(){
         const from = $("fFrom").value;
         const to   = $("fTo").value;
         const p = new URLSearchParams();
@@ -195,7 +192,6 @@
         return qs ? "?"+qs : "";
     }
 
-    // ===== KPIs =====
     function setKPIs(m, t){
         const total = m + t;
         const pm = total ? m/total : 0;
@@ -211,20 +207,15 @@
         $("kpiTapasPct").textContent   = fmtPct(pt);
     }
 
-    // ===== Charts =====
     let donut, bar;
-
     function renderCharts(m, t){
-        const donutCtx = $("chartDonut");
-        const barCtx   = $("chartBar");
-
         const labels = ["Motores", "Tapas"];
         const data = [m, t];
         const colors = [cssVar('--c-motor') || '#4e79a7', cssVar('--c-tapa') || '#e15759'];
 
         donut?.destroy(); bar?.destroy();
 
-        donut = new Chart(donutCtx, {
+        donut = new Chart($("chartDonut"), {
             type: "doughnut",
             data: { labels, datasets: [{ data, backgroundColor: colors, borderWidth: 0 }] },
             options: {
@@ -237,17 +228,9 @@
             }
         });
 
-        bar = new Chart(barCtx, {
+        bar = new Chart($("chartBar"), {
             type: "bar",
-            data: {
-                labels,
-                datasets: [{
-                    label: "Órdenes",
-                    data,
-                    backgroundColor: colors,
-                    borderRadius: 8
-                }]
-            },
+            data: { labels, datasets: [{ label: "Órdenes", data, backgroundColor: colors, borderRadius: 8 }] },
             options: {
                 animation: { duration: 700 },
                 scales: {
@@ -259,7 +242,27 @@
         });
     }
 
-    // ===== Export =====
+    // Exportar PDF/XLSX (backend)
+    function exportarMotoresVsTapas(fmt){
+        const from = document.getElementById("fFrom").value || "";
+        const to   = document.getElementById("fTo").value   || "";
+
+        const params = new URLSearchParams();
+        params.set("reporte", "motores-vs-tapas");
+        params.set("format", fmt);
+
+        if (from) params.set("from", from);
+        if (to)   params.set("to", to);
+
+        const url = "/api/reportes/export?" + params.toString();
+        window.location.href = url;
+    }
+
+    document.getElementById("expPdf").addEventListener("click",  e=>{ e.preventDefault(); exportarMotoresVsTapas("pdf");  });
+    document.getElementById("expXlsx").addEventListener("click", e=>{ e.preventDefault(); exportarMotoresVsTapas("xlsx"); });
+
+
+    // Export locales
     function exportCSV(m, t){
         const total = m + t;
         const csv = [
@@ -274,7 +277,6 @@
         a.click();
         URL.revokeObjectURL(a.href);
     }
-
     function exportPNG(){
         const c1 = $("chartDonut");
         const c2 = $("chartBar");
@@ -290,9 +292,8 @@
         a.click();
     }
 
-    // ===== Carga =====
     async function load(){
-        const qs = getRangeQS();
+        const qs = qsFromTo();
         try {
             const r = await fetch(ENDPOINT + qs, { headers: { "Accept":"application/json", ...(getAuthHeader?.()||{}) }});
             if (!r.ok) throw new Error("HTTP " + r.status);
@@ -310,7 +311,7 @@
         }
     }
 
-    // ===== Eventos =====
+    // Eventos
     $("btnRefresh").addEventListener("click", load);
     $("btnCsv").addEventListener("click", ()=>{
         const m = Number($("kpiMotores").textContent || 0);
@@ -319,7 +320,7 @@
     });
     $("btnPng").addEventListener("click", exportPNG);
 
-    // quick ranges
+    // Rápidos
     $("r7").addEventListener("click", ()=>{
         const to = new Date(); const from = new Date(); from.setDate(to.getDate()-7);
         $("fFrom").value = fmtISO(from); $("fTo").value = fmtISO(to); load();
@@ -335,7 +336,6 @@
     });
     $("btnAplicar").addEventListener("click", load);
 
-    // Init
     setDefaultRange();
     load();
 </script>

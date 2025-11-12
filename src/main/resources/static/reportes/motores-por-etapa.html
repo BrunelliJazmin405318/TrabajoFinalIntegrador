@@ -26,16 +26,8 @@
         .toolbar .btn{border-radius:.75rem}
         .chart-wrap{padding:1rem}
         .shadow-soft{box-shadow:0 8px 30px rgba(0,0,0,.25);}
-
-        /* 🔹 Estilos agregados */
-        body {
-            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-        }
-        .badge {
-            font-size: 0.8rem;
-            letter-spacing: 0.5px;
-            vertical-align: middle;
-        }
+        body { font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; }
+        .badge { font-size: 0.8rem; letter-spacing: 0.5px; vertical-align: middle; }
     </style>
 </head>
 <body>
@@ -83,7 +75,20 @@
                         <button id="btnLast7" class="btn btn-outline-light"><i class="bi bi-calendar3 me-1"></i>Últimos 7 días</button>
                         <button id="btnLast30" class="btn btn-outline-light">Últimos 30 días</button>
                         <button id="btnYTD" class="btn btn-outline-light">YTD</button>
+
                         <button id="btnRefresh" class="btn btn-primary"><i class="bi bi-arrow-repeat me-1"></i>Actualizar</button>
+
+                        <!-- 🔽 Exportar -->
+                        <div class="btn-group">
+                            <button class="btn btn-success dropdown-toggle" data-bs-toggle="dropdown">
+                                <i class="bi bi-download me-1"></i>Exportar
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-dark">
+                                <li><a class="dropdown-item" href="#" id="expPdf">PDF</a></li>
+                                <li><a class="dropdown-item" href="#" id="expXlsx">Excel (.xlsx)</a></li>
+                            </ul>
+                        </div>
+
                         <button id="btnPng" class="btn btn-outline-light"><i class="bi bi-image me-1"></i>Exportar PNG</button>
                         <button id="btnCsv" class="btn btn-outline-light"><i class="bi bi-filetype-csv me-1"></i>Exportar CSV</button>
                     </div>
@@ -91,8 +96,9 @@
             </div>
         </div>
     </div>
-    <!-- 🔹 Texto que muestra el rango activo -->
+
     <p id="rangoActivo" class="text-secondary small mb-3"></p>
+
     <!-- KPIs -->
     <div class="row g-3 mb-4">
         <div class="col-sm-6 col-lg-3">
@@ -118,9 +124,9 @@
                 <div>
                     <div class="sub">Leyenda</div>
                     <div class="d-flex align-items-center gap-3 mt-1">
-            <span class="d-inline-flex align-items-center gap-2">
-              <span class="badge rounded-pill" style="background:var(--c-acc)"> </span> Motores
-            </span>
+                        <span class="d-inline-flex align-items-center gap-2">
+                          <span class="badge rounded-pill" style="background:var(--c-acc)"> </span> Motores
+                        </span>
                         <span class="text-secondary">por etapa (barras)</span>
                     </div>
                 </div>
@@ -151,16 +157,13 @@
     if (window.Chart && window.ChartDataLabels) {
         Chart.register(ChartDataLabels);
     }
-    // ===== Config =====
-    const ENDPOINT = "/api/reportes/motores-por-etapa"; // devuelve { etapas:[], cantidades:[], total }
+
+    const ENDPOINT = "/api/reportes/motores-por-etapa";
 
     let chart;
-
-    // ===== Helpers =====
     const fmtISO = d => d ? d.toISOString().slice(0,10) : "";
 
     function setDefaultsRange(){
-        // último mes por defecto
         const to = new Date();
         const from = new Date(); from.setDate(to.getDate() - 30);
         document.getElementById("fFrom").value = fmtISO(from);
@@ -186,26 +189,13 @@
         chart?.destroy();
         chart = new Chart(ctx, {
             type: "bar",
-            data: {
-                labels,
-                datasets: [{
-                    label: "Motores",
-                    data: values,
-                    borderRadius: 10,
-                    backgroundColor: "#2f80ed"
-                }]
-            },
+            data: { labels, datasets: [{ label: "Motores", data: values, borderRadius: 10, backgroundColor: "#2f80ed"}] },
             options: {
                 animation: { duration: 700 },
                 plugins: {
                     legend: { display:false },
-                    // sólo aplica si el plugin está
                     datalabels: window.ChartDataLabels ? {
-                        anchor: 'end',
-                        align: 'top',
-                        formatter: (v)=> (v>0? v : ''),
-                        color: '#e6edf3',
-                        font: { weight:'700' }
+                        anchor: 'end', align: 'top', formatter: (v)=> (v>0? v : ''), color: '#e6edf3', font: { weight:'700' }
                     } : undefined
                 },
                 scales: {
@@ -216,29 +206,26 @@
         });
     }
 
-    async function load(){
+    function qsFromTo(){
         const from = document.getElementById("fFrom").value || "";
         const to   = document.getElementById("fTo").value   || "";
-
-        // 🟢 Mostrar el rango activo arriba del gráfico
+        const p = new URLSearchParams();
+        if (from) p.set("from", from);
+        if (to)   p.set("to", to);
+        const qs = p.toString();
         document.getElementById("rangoActivo").innerHTML =
             `<i class="bi bi-calendar-event"></i> Período: <strong>${from || "-"}</strong> → <strong>${to || "-"}</strong>`;
+        return qs ? `?${qs}` : "";
+    }
 
-        const params = new URLSearchParams();
-        if (from) params.set("from", from);
-        if (to)   params.set("to", to);
-        const url = `${ENDPOINT}${params.toString() ? `?${params.toString()}` : ""}`;
-
+    async function load(){
+        const qs = qsFromTo();
         try{
-            const r = await fetch(url, {
-                headers: { Accept:"application/json", ...(getAuthHeader?.()||{}) }
-            });
+            const r = await fetch(ENDPOINT + qs, { headers: { Accept:"application/json", ...(getAuthHeader?.()||{}) }});
             if (!r.ok) throw new Error(`HTTP ${r.status}`);
             const j = await r.json();
-
             const labels = j.etapas || [];
             const values = (j.cantidades || []).map(Number);
-
             setKpis(labels, values);
             render(labels, values);
         }catch(e){
@@ -246,12 +233,31 @@
             setKpis([], []);
             render([], []);
         }finally{
-            document.getElementById("lastRefresh").textContent =
-                "Actualizado: " + new Date().toLocaleString();
+            document.getElementById("lastRefresh").textContent = "Actualizado: " + new Date().toLocaleString();
         }
     }
 
-    // ===== Export =====
+    // Exportar PDF/XLSX (backend)
+    function exportarMotoresPorEtapa(fmt){
+        const from = document.getElementById("fFrom").value || "";
+        const to   = document.getElementById("fTo").value   || "";
+
+        const params = new URLSearchParams();
+        params.set("reporte", "motores-por-etapa");
+        params.set("format", fmt);
+
+        if (from) params.set("from", from);
+        if (to)   params.set("to", to);
+
+        const url = "/api/reportes/export?" + params.toString();
+        window.location.href = url;
+    }
+
+    document.getElementById("expPdf").addEventListener("click",  e=>{ e.preventDefault(); exportarMotoresPorEtapa("pdf"); });
+    document.getElementById("expXlsx").addEventListener("click", e=>{ e.preventDefault(); exportarMotoresPorEtapa("xlsx"); });
+
+
+    // PNG y CSV locales
     document.getElementById("btnPng").addEventListener("click", ()=>{
         if (!chart) return;
         const a = document.createElement("a");
@@ -259,7 +265,6 @@
         a.download = "motores-por-etapa.png";
         a.click();
     });
-
     document.getElementById("btnCsv").addEventListener("click", ()=>{
         if (!chart) return;
         const L = chart.data.labels, V = chart.data.datasets[0].data;
@@ -272,7 +277,7 @@
         URL.revokeObjectURL(a.href);
     });
 
-    // ===== Atajos de rango =====
+    // Rápidos
     const setRange = (days)=>{
         const to = new Date();
         const from = new Date(); from.setDate(to.getDate()-days);
@@ -283,8 +288,7 @@
     document.getElementById("btnLast7").addEventListener("click", ()=>setRange(7));
     document.getElementById("btnLast30").addEventListener("click", ()=>setRange(30));
     document.getElementById("btnYTD").addEventListener("click", ()=>{
-        const now = new Date();
-        const from = new Date(now.getFullYear(),0,1);
+        const now = new Date(); const from = new Date(now.getFullYear(),0,1);
         document.getElementById("fFrom").value = fmtISO(from);
         document.getElementById("fTo").value   = fmtISO(now);
         load();
@@ -292,10 +296,10 @@
 
     document.getElementById("btnRefresh").addEventListener("click", load);
 
-    // Init
     setDefaultsRange();
     load();
 </script>
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
 </body>

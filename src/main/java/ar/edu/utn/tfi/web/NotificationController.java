@@ -1,7 +1,7 @@
 package ar.edu.utn.tfi.web;
 
 import ar.edu.utn.tfi.domain.Notificacion;
-import ar.edu.utn.tfi.service.NotificacionService;
+import ar.edu.utn.tfi.service.NotificationService;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
@@ -13,9 +13,9 @@ import java.util.Map;
 @RequestMapping("/notifications")
 public class NotificationController {
 
-    private final NotificacionService service;
+    private final NotificationService service;
 
-    public NotificationController(NotificacionService service) {
+    public NotificationController(NotificationService service) {
         this.service = service;
     }
 
@@ -38,4 +38,3 @@ public class NotificationController {
         return Map.of("ok", true, "id", id);
     }
 }
-
