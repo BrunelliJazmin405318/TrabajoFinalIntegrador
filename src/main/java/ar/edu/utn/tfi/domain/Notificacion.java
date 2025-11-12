@@ -1,52 +1,77 @@
+// src/main/java/ar/edu/utn/tfi/domain/Notificacion.java
 package ar.edu.utn.tfi.domain;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
-@Getter @Setter @NoArgsConstructor
 @Entity
-@Table(name = "notificacion", indexes = {
-        @Index(name = "idx_notif_nro_orden", columnList = "nro_orden")
-})
+@Table(name = "notification")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Notificacion {
 
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "orden_id", nullable = false)
+    private String type;        // p.ej. LISTO_RETIRAR
+    private String title;       // NOT NULL en DB
+    private String message;     // NOT NULL en DB
+
+    @Column(name = "orden_id")
     private Long ordenId;
 
-    @Column(name = "nro_orden", nullable = false, length = 30)
-    private String nroOrden;
+    @Column(name = "solicitud_id")
+    private Long solicitudId;
 
-    @Column(name = "canal", nullable = false, length = 20)
-    private String canal; // IN_APP | WHATSAPP
+    @Column(name = "cliente_email")
+    private String clienteEmail;
 
-    @Column(name = "tipo", nullable = false, length = 40)
-    private String tipo;  // LISTO_RETIRAR
+    @Column(name = "channel")
+    private String canal;       // IN_APP / WHATSAPP / EMAIL
 
-    @Column(name = "mensaje", nullable = false, columnDefinition = "text")
-    private String mensaje;
-
-    @Column(name = "estado", nullable = false, length = 20)
-    private String estado; // PENDIENTE | ENVIADA | ERROR | LEIDA
-
-    @Column(name = "cliente_destino", length = 80)
-    private String clienteDestino; // Tel/email opcional
-
-    @Column(name = "created_at", nullable = false)
-    private LocalDateTime createdAt;
+    @Column(name = "sent")
+    private Boolean sent;       // default false
 
     @Column(name = "read_at")
     private LocalDateTime readAt;
 
+    @Column(name = "created_at")
+    private LocalDateTime createdAt; // NOT NULL
+
+    @Column(name = "metadata_json")
+    private String metadataJson;
+
+    // Campos extra
+    @Column(name = "nro_orden")
+    private String nroOrden;
+
+    @Column(name = "estado")
+    private String estado;
+
+    @Column(name = "cliente_destino")
+    private String clienteDestino;
+
+    // ---------- Defaults antes de insertar ----------
     @PrePersist
-    void prePersist() {
-        if (createdAt == null) createdAt = LocalDateTime.now();
-        if (estado == null) estado = "PENDIENTE";
+    public void prePersist() {
+        if (createdAt == null) {
+            createdAt = LocalDateTime.now();
+        }
+        if (sent == null) {
+            sent = false;
+        }
+        // Por seguridad, si no viene título/mensaje (evita violar NOT NULL)
+        if (title == null) {
+            title = "Notificación";
+        }
+        if (message == null) {
+            message = "";
+        }
     }
 }
