@@ -68,22 +68,57 @@ public class PresupuestoGestionService {
                                              String piezaTipo,     // MOTOR | TAPA (se guarda para reportes)
                                              List<String> servicios,
                                              List<ExtraItemReq> extras) {
-        if (solicitudId == null) throw new IllegalArgumentException("solicitudId es obligatorio");
-        if (vehiculoTipo == null || vehiculoTipo.isBlank())
+        if (solicitudId == null) {
+            throw new IllegalArgumentException("solicitudId es obligatorio");
+        }
+        if (vehiculoTipo == null || vehiculoTipo.isBlank()) {
             throw new IllegalArgumentException("vehiculoTipo es obligatorio");
-        if (servicios == null || servicios.isEmpty())
+        }
+        if (servicios == null || servicios.isEmpty()) {
             throw new IllegalArgumentException("Debe seleccionar al menos un servicio");
+        }
 
+        // 1) Traer solicitud
         SolicitudPresupuesto s = solicitudRepo.findById(solicitudId)
                 .orElseThrow(() -> new EntityNotFoundException("Solicitud no encontrada: " + solicitudId));
 
-        // normalizar nombres
+        // 2) No permitir más de un presupuesto por solicitud
+        if (presupuestoRepo.existsBySolicitudId(solicitudId)) {
+            throw new IllegalStateException("Ya existe un presupuesto para la solicitud " + solicitudId);
+        }
+
+        // 3) Validar que la solicitud tenga datos mínimos (marca/modelo)
+        if (isBlank(s.getMarca()) || isBlank(s.getModelo())) {
+            throw new IllegalStateException("No se puede generar presupuesto: la solicitud no tiene marca y modelo completos.");
+        }
+
+        // 4) Normalizar pieza según la solicitud (MOTOR / TAPA)
+        String unidadSolicitud = s.getTipoUnidad() == null
+                ? ""
+                : s.getTipoUnidad().trim().toUpperCase();
+
+        String piezaNormalizada;
+        if (piezaTipo == null || piezaTipo.isBlank()) {
+            // si no viene nada desde el front, usamos lo de la solicitud
+            piezaNormalizada = unidadSolicitud;
+        } else {
+            piezaNormalizada = piezaTipo.trim().toUpperCase();
+            // si en la solicitud hay tipo definido, deben coincidir
+            if (!unidadSolicitud.isBlank() && !piezaNormalizada.equals(unidadSolicitud)) {
+                throw new IllegalArgumentException(
+                        "La pieza seleccionada (" + piezaNormalizada + ") no coincide con la unidad de la solicitud (" + unidadSolicitud + ")."
+                );
+            }
+        }
+
+        // 5) Normalizar vehículo
+        String vt = vehiculoTipo.trim().toUpperCase();
+
+        // normalizar nombres de servicios
         List<String> nombres = servicios.stream()
                 .map(v -> v == null ? null : v.trim())
                 .filter(v -> v != null && !v.isEmpty())
                 .toList();
-
-        String vt = vehiculoTipo.trim().toUpperCase();
 
         // buscar tarifas para (vehiculoTipo + nombreServicio)
         List<ServicioTarifa> tarifas = tarifaRepo.findByVehiculoTipoAndNombreServicioIn(vt, nombres);
@@ -92,8 +127,11 @@ public class PresupuestoGestionService {
         Set<String> hallados = tarifas.stream()
                 .map(ServicioTarifa::getNombreServicio)
                 .collect(Collectors.toSet());
+
         List<String> faltan = new ArrayList<>();
-        for (String n : nombres) if (!hallados.contains(n)) faltan.add(n);
+        for (String n : nombres) {
+            if (!hallados.contains(n)) faltan.add(n);
+        }
         if (!faltan.isEmpty()) {
             throw new IllegalArgumentException("Servicios sin tarifa para " + vt + ": " + String.join(", ", faltan));
         }
@@ -106,10 +144,12 @@ public class PresupuestoGestionService {
         // sumar extras (si vienen)
         if (extras != null && !extras.isEmpty()) {
             for (ExtraItemReq ex : extras) {
-                if (ex == null || ex.nombre() == null || ex.nombre().isBlank())
+                if (ex == null || ex.nombre() == null || ex.nombre().isBlank()) {
                     throw new IllegalArgumentException("Extra sin nombre");
-                if (ex.precio() == null || ex.precio().setScale(2, RoundingMode.HALF_UP).signum() <= 0)
+                }
+                if (ex.precio() == null || ex.precio().setScale(2, RoundingMode.HALF_UP).signum() <= 0) {
                     throw new IllegalArgumentException("El extra '" + ex.nombre() + "' debe tener precio > 0");
+                }
                 total = total.add(ex.precio().setScale(2, RoundingMode.HALF_UP));
             }
         }
@@ -120,11 +160,7 @@ public class PresupuestoGestionService {
         p.setClienteNombre(s.getClienteNombre());
         p.setClienteEmail(s.getClienteEmail());
         p.setVehiculoTipo(vt);
-        if (piezaTipo != null && !piezaTipo.isBlank()) {
-            p.setPiezaTipo(piezaTipo.trim().toUpperCase());
-        } else {
-            p.setPiezaTipo(s.getTipoUnidad());
-        }
+        p.setPiezaTipo(piezaNormalizada); // <- ya viene validada contra la solicitud
         p.setEstado("PENDIENTE");
         p.setTotal(total);
         p = presupuestoRepo.save(p);
@@ -152,6 +188,10 @@ public class PresupuestoGestionService {
         return p;
     }
 
+    /** helper chiquito al final de la clase (si no lo tenés ya) */
+    private static boolean isBlank(String s) {
+        return s == null || s.trim().isEmpty();
+    }
 
 
     // ─────────── Consultas ───────────

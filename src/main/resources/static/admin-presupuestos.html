@@ -39,6 +39,7 @@
                 <div class="col-md-2">
                     <label class="form-label">Solicitud ID</label>
                     <input class="form-control" name="solicitudId" required>
+                    <div id="solicitudInfo" class="form-text text-muted"></div>
                 </div>
 
                 <div class="col-md-3">
@@ -159,6 +160,7 @@
     // ======= Estado UI =======
     let selectedServices = new Set();
     window.extras = [];
+    let solicitudActual = null;   // ⬅️ NUEVO: cache de la solicitud cargada
 
     function ensureExtrasContainer() {
         let c = document.getElementById("extrasChips");
@@ -229,18 +231,55 @@
         selectedServices = new Set(otros);
         renderServiciosGrid(pieza);
     }
+
     async function cargarPiezaDesdeSolicitud(sid) {
+        const infoEl = document.getElementById("solicitudInfo");
+        if (infoEl) {
+            infoEl.textContent = "";
+            infoEl.classList.remove("text-danger");
+        }
+        solicitudActual = null;
+
         if (!sid) return;
         try {
             const r = await fetch(`/public/presupuestos/solicitud/${encodeURIComponent(sid)}`);
             const j = await r.json().catch(() => ({}));
             if (!r.ok) throw new Error(j.message || `Solicitud ${sid} no encontrada`);
+
+            solicitudActual = j;
+
             const pieza = (j.tipoUnidad || "").toUpperCase();
-            if (pieza === "TAPA") document.getElementById("piezaTapa").checked = true;
-            else document.getElementById("piezaMotor").checked = true;
+            const motor = document.getElementById("piezaMotor");
+            const tapa  = document.getElementById("piezaTapa");
+
+            if (pieza === "TAPA") {
+                tapa.checked = true;
+                motor.disabled = true;
+                tapa.disabled = false;
+            } else {
+                motor.checked = true;
+                motor.disabled = false;
+                tapa.disabled = true;
+            }
             initServiciosForCurrentPieza();
+
+            if (infoEl) {
+                const marca  = (j.marca  || "").trim();
+                const modelo = (j.modelo || "").trim();
+                if (!marca && !modelo) {
+                    infoEl.textContent = `Solicitud #${j.id} · sin marca / modelo (recomendado completarlo antes de generar)`;
+                    infoEl.classList.add("text-danger");
+                } else {
+                    infoEl.textContent = `Solicitud #${j.id} · ${[j.tipoUnidad, marca, modelo].filter(Boolean).join(" ")}`;
+                    infoEl.classList.remove("text-danger");
+                }
+            }
         } catch (e) {
             console.warn("No se pudo leer la solicitud:", e.message || e);
+            if (infoEl) {
+                infoEl.textContent = "No se encontró la solicitud.";
+                infoEl.classList.add("text-danger");
+            }
         }
     }
 
@@ -308,6 +347,7 @@
                </a>`;
                     }
                 } else {
+                    const senaOK  = (p.senaEstado  || "").toUpperCase() === "ACREDITADA";
                     const chip = senaOK
                         ? `<span class="badge bg-success me-2">Seña acreditada</span>${p.senaPaymentId ? `<span class="text-muted me-2">#${p.senaPaymentId}</span>` : ""}`
                         : `<span class="badge bg-warning text-dark me-2">Seña pendiente</span>`;
@@ -316,7 +356,6 @@
                         ? `<div class="mt-2"><span class="badge text-bg-warning">OT: ${p.otNroOrden}</span></div>`
                         : "";
 
-                    // ✅ sólo habilitar crear OT si seña/final OK y aún no existe
                     const puedeCrearOT = (senaOK || finalOK) && !p.otNroOrden;
                     const btnCrearOT = puedeCrearOT
                         ? `<button type="button" class="btn btn-warning btn-sm mt-2"
@@ -594,17 +633,65 @@
         const vehiculoTipo = fd.get("vehiculoTipo");
         const piezaTipo = fd.get("piezaTipo") || "MOTOR";
         const servicios = Array.from(selectedServices);
+        const genErr = document.getElementById("genErr");
 
-        if (!solicitudId || servicios.length === 0) {
-            const el = document.getElementById("genErr");
-            el.classList.remove("d-none");
-            el.textContent = servicios.length === 0
-                ? "Seleccioná al menos un servicio."
-                : "Ingresá un Solicitud ID válido.";
-            return;
+        const showError = (msg) => {
+            genErr.classList.remove("d-none");
+            genErr.textContent = msg;
+        };
+
+        genErr.classList.add("d-none");
+
+        if (!solicitudId || Number.isNaN(solicitudId) || solicitudId <= 0) {
+            return showError("Ingresá un Solicitud ID válido.");
         }
 
+        // Normalizar solicitudActual por si no se cargó aún
+        if (!solicitudActual || Number(solicitudActual.id) !== solicitudId) {
+            await cargarPiezaDesdeSolicitud(String(solicitudId));
+        }
+
+        // Validar marca / modelo de la solicitud
+        if (!solicitudActual) {
+            return showError("No se pudo leer la solicitud. Verificá el ID.");
+        }
+        const marca  = (solicitudActual.marca  || "").trim();
+        const modelo = (solicitudActual.modelo || "").trim();
+        if (!marca && !modelo) {
+            return showError("La solicitud no tiene marca / modelo cargados. Completalos antes de generar el presupuesto.");
+        }
+
+        // Validar tipo de vehículo
+        const vehiculosValidos = ["CONVENCIONAL", "IMPORTADO"];
+        if (!vehiculosValidos.includes(vehiculoTipo)) {
+            return showError("Seleccioná un tipo de vehículo válido.");
+        }
+
+        // Validar tipo de pieza
+        const piezasValidas = ["MOTOR", "TAPA"];
+        if (!piezasValidas.includes(piezaTipo)) {
+            return showError("Seleccioná una pieza válida (Motor o Tapa).");
+        }
+
+        // Validar servicios / extras
         const extras = Array.isArray(window.extras) ? window.extras.slice() : [];
+
+        if (servicios.length === 0 && extras.length === 0) {
+            return showError("Seleccioná al menos un servicio o agregá un ítem extra.");
+        }
+
+        // Validar extras: nombre y precio > 0
+        for (const ex of extras) {
+            const nombre = (ex.nombre || "").trim();
+            const precio = Number(ex.precio);
+            if (!nombre) {
+                return showError("Hay un servicio extra sin nombre. Corregilo antes de generar.");
+            }
+            if (!(precio > 0)) {
+                return showError("Hay un servicio extra con precio inválido (debe ser mayor a 0).");
+            }
+        }
+
         const payload = { solicitudId, vehiculoTipo, piezaTipo, servicios, extras };
 
         try {
@@ -619,16 +706,14 @@
             const ok = document.getElementById("genOk");
             ok.classList.remove("d-none");
             ok.textContent = "Generado presupuesto #" + j.id + " por " + money(j.total) + ".";
-            document.getElementById("genErr").classList.add("d-none");
+            genErr.classList.add("d-none");
 
             selectedServices.clear();
             window.extras = [];
             initServiciosForCurrentPieza();
             cargar();
         } catch (err) {
-            const el = document.getElementById("genErr");
-            el.classList.remove("d-none");
-            el.textContent = err.message;
+            showError(err.message);
         }
     });
 
