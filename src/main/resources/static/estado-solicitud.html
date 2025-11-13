@@ -94,6 +94,10 @@
                 <div class="small text-muted">Monto: <span id="pagoMonto">-</span></div>
                 <div class="small text-muted">Pago #: <span id="pagoId">-</span></div>
 
+                <!-- Mensajes lindos -->
+                <div id="pagoAlert" class="alert alert-info mt-3 d-none"></div>
+                <div id="pagoError" class="alert alert-danger mt-3 d-none"></div>
+
                 <div id="pagarActions" class="mt-3">
                     <button id="btnPagar" class="btn btn-primary btn-sm">
                         <i class="bi bi-credit-card"></i> Pagar seña (30%)
@@ -103,7 +107,7 @@
                 <div id="mp-card-container" class="mt-3"></div>
                 <div id="mp-status" class="small mt-2 text-muted"></div>
 
-                <!-- NUEVO: botón de factura para el cliente -->
+                <!-- Botón de factura para el cliente -->
                 <div id="facturaActions" class="mt-3 d-none">
                     <button id="btnFactura" class="btn btn-outline-success btn-sm">
                         <i class="bi bi-download"></i> Descargar factura
@@ -112,7 +116,7 @@
             </div>
 
             <div id="pagoInfoNoDisponible" class="alert alert-info d-none mt-3">
-                Aún no hay un presupuesto aprobado asociado a esta solicitud, o la seña ya fue acreditada.
+                Aún no hay un presupuesto aprobado asociado a esta solicitud.
             </div>
         </div>
     </div>
@@ -144,7 +148,7 @@
     const bricksBuilder = mp.bricks();
     let currentBrick = null;
     let presupuestoIdForPay = null;
-    let currentSolicitudId = null; // NUEVO
+    let currentSolicitudId = null; // Para factura
 
     // =================== HU13: IN-APP NOTIFS (SSE) ===================
     let sseSource = null;
@@ -228,7 +232,6 @@
                 });
                 renderNotifList();
 
-                // mini toast
                 try {
                     const t = document.createElement('div');
                     t.className = 'toast align-items-center text-bg-success border-0 show position-fixed bottom-0 end-0 m-3';
@@ -284,7 +287,6 @@
         const j = await r.json().catch(()=> ({}));
         if (!r.ok) { alert(j.message || 'No se encontró la solicitud'); return; }
 
-        // 👉 HU13: suscribirse a SSE por email del cliente
         suscribirNotificaciones(j.clienteEmail || '');
 
         currentSolicitudId = Number(j.id ?? id);
@@ -305,15 +307,17 @@
         card.scrollIntoView({behavior:'smooth', block:'start'});
 
         if (j.presupuestoId) {
-            await cargarPagoInfo(j.presupuestoId);
+            await cargarPagoInfo(j.presupuestoId, j);
             return;
         }
 
         document.getElementById('pagoBox').classList.add('d-none');
-        document.getElementById('pagoInfoNoDisponible').classList.remove('d-none');
+        const infoMsg = document.getElementById('pagoInfoNoDisponible');
+        infoMsg.textContent = "Todavía no hay un presupuesto asociado a esta solicitud.";
+        infoMsg.classList.remove('d-none');
     }
 
-    async function cargarPagoInfo(presupuestoId) {
+    async function cargarPagoInfo(presupuestoId, solicitudInfo) {
         presupuestoIdForPay = null;
 
         const box          = document.getElementById('pagoBox');
@@ -321,6 +325,9 @@
         const pagarActions = document.getElementById('pagarActions');
         const estadoBadge  = document.getElementById('pagoEstado');
         const facturaBox   = document.getElementById('facturaActions');
+        const pagoAlert    = document.getElementById('pagoAlert');
+        const pagoError    = document.getElementById('pagoError');
+        const mpStatus     = document.getElementById('mp-status');
 
         box.classList.add('d-none');
         infoMsg.classList.add('d-none');
@@ -328,11 +335,18 @@
         facturaBox.classList.add('d-none');
         estadoBadge.className = 'badge bg-secondary';
         estadoBadge.textContent = 'Pendiente';
-        document.getElementById('mp-status').textContent = '';
+        mpStatus.textContent = '';
+
+        pagoAlert.classList.add('d-none');
+        pagoAlert.textContent = '';
+        pagoError.classList.add('d-none');
+        pagoError.textContent = '';
+        document.getElementById('mp-card-container').innerHTML = '';
 
         const r = await fetch(`/public/pagos/api/info-sena/${encodeURIComponent(presupuestoId)}`);
         const info = await r.json().catch(()=> ({}));
         if (!r.ok) {
+            infoMsg.textContent = info?.message || 'No se pudo obtener la información de pago.';
             infoMsg.classList.remove('d-none');
             return;
         }
@@ -346,12 +360,18 @@
         document.getElementById('pagoMonto').textContent = money(monto);
         document.getElementById('pagoId').textContent    = info.senaPaymentId || '-';
 
+        // Si el presupuesto NO está aprobado → no mostramos opciones de pago
+        if (estadoPres !== 'APROBADO') {
+            infoMsg.textContent = "Todavía no hay un presupuesto APROBADO asociado a esta solicitud.";
+            infoMsg.classList.remove('d-none');
+            return;
+        }
+
+        // Pago completo (FINAL acreditado o saldo cero) → solo factura
         if (finalEstado === 'ACREDITADA' || saldo <= 0) {
             estadoBadge.textContent = 'Pago completo';
             estadoBadge.className   = 'badge bg-success';
             pagarActions.classList.add('d-none');
-            document.getElementById('mp-card-container').innerHTML = '';
-            document.getElementById('mp-status').textContent = '';
             box.classList.remove('d-none');
 
             facturaBox.classList.remove('d-none');
@@ -378,41 +398,91 @@
                     alert('Error de red al descargar: ' + (err?.message || err));
                 }
             };
+
+            if (info.finalPaidAt) {
+                pagoAlert.textContent = "El pago final ya fue abonado el " + fmt(info.finalPaidAt) + ".";
+                pagoAlert.classList.remove('d-none');
+            }
             return;
         }
 
+        // Seña ya acreditada → NO se puede volver a pagar
         if (senaEstado === 'ACREDITADA') {
             estadoBadge.textContent = 'Seña acreditada';
             estadoBadge.className   = 'badge bg-success';
             pagarActions.classList.add('d-none');
             box.classList.remove('d-none');
+
+            if (info.senaPaidAt) {
+                pagoAlert.textContent = "La seña ya fue abonada el " + fmt(info.senaPaidAt) + ".";
+                pagoAlert.classList.remove('d-none');
+            } else {
+                pagoAlert.textContent = "La seña ya se encuentra acreditada.";
+                pagoAlert.classList.remove('d-none');
+            }
             return;
         }
 
+        // Si se puede pagar: presupuesto aprobado + saldo > 0 + seña no acreditada
         if (info.puedePagar && estadoPres === 'APROBADO') {
             estadoBadge.textContent = 'Pendiente';
             estadoBadge.className   = 'badge bg-warning text-dark';
             presupuestoIdForPay     = info.presupuestoId || presupuestoId;
             box.classList.remove('d-none');
         } else {
+            infoMsg.textContent = "Por el momento no es posible abonar la seña para esta solicitud.";
             infoMsg.classList.remove('d-none');
         }
     }
 
     async function montarBrickYPagar() {
+        const pagoAlert = document.getElementById('pagoAlert');
+        const pagoError = document.getElementById('pagoError');
+        const mpStatus  = document.getElementById('mp-status');
+
+        pagoAlert.classList.add('d-none');
+        pagoAlert.textContent = '';
+        pagoError.classList.add('d-none');
+        pagoError.textContent = '';
+        mpStatus.textContent = '';
+
         if (!presupuestoIdForPay) return;
 
         const cont = document.getElementById('mp-card-container');
-        const statusEl = document.getElementById('mp-status');
         cont.innerHTML = '';
-        statusEl.textContent = 'Complete los datos de tarjeta (MP Sandbox).';
 
         if (currentBrick) { try { await currentBrick.unmount(); } catch (_) {} }
 
+        // Revalidar con backend antes de mostrar Brick (evitar doble pago)
         const rInfo = await fetch(`/public/pagos/api/info-sena/${encodeURIComponent(presupuestoIdForPay)}`);
         const info  = await rInfo.json().catch(()=> ({}));
+        if (!rInfo.ok) {
+            pagoError.textContent = info?.message || 'No se pudo obtener información actualizada del pago.';
+            pagoError.classList.remove('d-none');
+            return;
+        }
+
+        const senaEstado = (info.senaEstado || '').toUpperCase();
+        const estadoPres = (info.presupuestoEstado || '').toUpperCase();
         const monto = Number(info.montoSena ?? info.monto ?? 0);
         const email = info.clienteEmail || info.emailSugerido || '';
+
+        if (estadoPres !== 'APROBADO') {
+            pagoAlert.textContent = "El presupuesto ya no se encuentra aprobado. No es posible pagar la seña.";
+            pagoAlert.classList.remove('d-none');
+            return;
+        }
+
+        if (senaEstado === 'ACREDITADA') {
+            pagoAlert.textContent = info.senaPaidAt
+                ? "La seña ya fue abonada el " + fmt(info.senaPaidAt) + "."
+                : "La seña ya se encuentra acreditada.";
+            pagoAlert.classList.remove('d-none');
+            return;
+        }
+
+        const statusEl = document.getElementById('mp-status');
+        statusEl.textContent = 'Complete los datos de tarjeta (MP Sandbox).';
 
         currentBrick = await bricksBuilder.create('cardPayment', 'mp-card-container', {
             initialization: {
@@ -447,12 +517,16 @@
                         let data; try { data = JSON.parse(text); } catch { data = { message: text }; }
 
                         if (!res.ok) {
-                            if (box) box.textContent = `No pudimos procesar el pago: ${data?.message || ('HTTP ' + res.status)}`;
+                            if (box) box.textContent = '';
+                            pagoError.textContent = data?.message || (`No pudimos procesar el pago (HTTP ${res.status}).`);
+                            pagoError.classList.remove('d-none');
                             return;
                         }
 
                         if ((data.status || '').toLowerCase() !== 'approved') {
-                            if (box) box.textContent = `Pago en estado: ${data.status || '-'}`;
+                            if (box) box.textContent = '';
+                            pagoAlert.textContent = `Pago procesado en estado: ${data.status || '-'}.`;
+                            pagoAlert.classList.remove('d-none');
                             return;
                         }
 
@@ -460,14 +534,16 @@
                         location.reload();
                     } catch (err) {
                         console.error(err);
-                        if (box) box.textContent = `Error: ${err?.message || err}`;
+                        if (box) box.textContent = '';
+                        pagoError.textContent = `Error inesperado al procesar el pago: ${err?.message || err}`;
+                        pagoError.classList.remove('d-none');
                     }
                 },
                 onError: (error) => {
                     const box = document.getElementById('mp-status');
                     if (box) {
                         box.classList.remove('d-none');
-                        box.textContent = `Error: ${error?.message || error}`;
+                        box.textContent = `Error del formulario de pago: ${error?.message || error}`;
                     }
                     console.error('[BRICK] onError', error);
                 }

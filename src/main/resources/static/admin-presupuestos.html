@@ -10,6 +10,11 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
 </head>
 <body>
+<!-- 🟦 BANNER FLOATING TOP (NUEVO) -->
+<div id="toastContainer"
+     class="position-fixed top-0 start-50 translate-middle-x p-3"
+     style="z-index:3000; width:100%; max-width:430px;">
+</div>
 <nav class="navbar navbar-expand-lg navbar-dark">
     <div class="container">
         <a class="navbar-brand" href="/presupuesto.html"><i class="bi bi-gear-fill me-2"></i>Rectificadora</a>
@@ -39,6 +44,7 @@
                 <div class="col-md-2">
                     <label class="form-label">Solicitud ID</label>
                     <input class="form-control" name="solicitudId" required>
+                    <div id="solicitudInfo" class="form-text text-muted"></div>
                 </div>
 
                 <div class="col-md-3">
@@ -144,6 +150,42 @@
     const fmt = (s) => (s ? s.replace("T", " ").substring(0, 19) : "-");
     const money = (n) => new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS" }).format(n || 0);
 
+    // ======= Banner flotante arriba (NUEVO) =======
+    const showBanner = (type, msg) => {
+        const container = document.getElementById("toastContainer");
+        if (!container) return alert(msg);
+
+        const wrapper = document.createElement("div");
+        wrapper.className = `alert alert-${type === "ok" ? "success" : "danger"} shadow fw-semibold border-0 fade show`;
+        wrapper.style.opacity = "0";
+        wrapper.style.transition = "opacity .25s ease";
+        wrapper.innerHTML = `
+        <div class="d-flex justify-content-between align-items-center">
+            <span>${msg}</span>
+            <button type="button" class="btn-close ms-2" aria-label="Close"></button>
+        </div>
+    `;
+
+        container.appendChild(wrapper);
+
+        // fade in
+        setTimeout(() => { wrapper.style.opacity = "1"; }, 20);
+
+        // close button
+        wrapper.querySelector(".btn-close").onclick = () => {
+            wrapper.style.opacity = "0";
+            setTimeout(() => wrapper.remove(), 250);
+        };
+
+        // remove auto after 4s
+        setTimeout(() => {
+            if (wrapper.parentNode) {
+                wrapper.style.opacity = "0";
+                setTimeout(() => wrapper.remove(), 250);
+            }
+        }, 4000);
+    };
+
     // ======= Servicios por tipo de pieza (solo UI) =======
     const MOTOR_SERVICES = [
         "Rectificación de cilindros","Bruñido de cilindros","Planeado de block","Cambio de camisas",
@@ -159,6 +201,7 @@
     // ======= Estado UI =======
     let selectedServices = new Set();
     window.extras = [];
+    let solicitudActual = null;   // cache de la solicitud cargada
 
     function ensureExtrasContainer() {
         let c = document.getElementById("extrasChips");
@@ -229,18 +272,55 @@
         selectedServices = new Set(otros);
         renderServiciosGrid(pieza);
     }
+
     async function cargarPiezaDesdeSolicitud(sid) {
+        const infoEl = document.getElementById("solicitudInfo");
+        if (infoEl) {
+            infoEl.textContent = "";
+            infoEl.classList.remove("text-danger");
+        }
+        solicitudActual = null;
+
         if (!sid) return;
         try {
             const r = await fetch(`/public/presupuestos/solicitud/${encodeURIComponent(sid)}`);
             const j = await r.json().catch(() => ({}));
             if (!r.ok) throw new Error(j.message || `Solicitud ${sid} no encontrada`);
+
+            solicitudActual = j;
+
             const pieza = (j.tipoUnidad || "").toUpperCase();
-            if (pieza === "TAPA") document.getElementById("piezaTapa").checked = true;
-            else document.getElementById("piezaMotor").checked = true;
+            const motor = document.getElementById("piezaMotor");
+            const tapa  = document.getElementById("piezaTapa");
+
+            if (pieza === "TAPA") {
+                tapa.checked = true;
+                motor.disabled = true;
+                tapa.disabled = false;
+            } else {
+                motor.checked = true;
+                motor.disabled = false;
+                tapa.disabled = true;
+            }
             initServiciosForCurrentPieza();
+
+            if (infoEl) {
+                const marca  = (j.marca  || "").trim();
+                const modelo = (j.modelo || "").trim();
+                if (!marca && !modelo) {
+                    infoEl.textContent = `Solicitud #${j.id} · sin marca / modelo (recomendado completarlo antes de generar)`;
+                    infoEl.classList.add("text-danger");
+                } else {
+                    infoEl.textContent = `Solicitud #${j.id} · ${[j.tipoUnidad, marca, modelo].filter(Boolean).join(" ")}`;
+                    infoEl.classList.remove("text-danger");
+                }
+            }
         } catch (e) {
             console.warn("No se pudo leer la solicitud:", e.message || e);
+            if (infoEl) {
+                infoEl.textContent = "No se encontró la solicitud.";
+                infoEl.classList.add("text-danger");
+            }
         }
     }
 
@@ -308,7 +388,8 @@
                </a>`;
                     }
                 } else {
-                    const chip = senaOK
+                    const senaOK2  = (p.senaEstado  || "").toUpperCase() === "ACREDITADA";
+                    const chip = senaOK2
                         ? `<span class="badge bg-success me-2">Seña acreditada</span>${p.senaPaymentId ? `<span class="text-muted me-2">#${p.senaPaymentId}</span>` : ""}`
                         : `<span class="badge bg-warning text-dark me-2">Seña pendiente</span>`;
 
@@ -316,8 +397,7 @@
                         ? `<div class="mt-2"><span class="badge text-bg-warning">OT: ${p.otNroOrden}</span></div>`
                         : "";
 
-                    // ✅ sólo habilitar crear OT si seña/final OK y aún no existe
-                    const puedeCrearOT = (senaOK || finalOK) && !p.otNroOrden;
+                    const puedeCrearOT = (senaOK2 || finalOK) && !p.otNroOrden;
                     const btnCrearOT = puedeCrearOT
                         ? `<button type="button" class="btn btn-warning btn-sm mt-2"
                        data-act="crear-ot" data-id="${p.id}">
@@ -386,8 +466,11 @@
             });
             btn.disabled = false;
             const j = await r.json().catch(() => ({}));
-            if (!r.ok) return alert("Error: " + (j.message || r.status));
-            alert("OK");
+            if (!r.ok) {
+                showBanner("err", j.message || `Error HTTP ${r.status}`);
+                return;
+            }
+            showBanner("ok", "Presupuesto " + act + " correctamente.");
             await cargar();
             return;
         }
@@ -411,15 +494,15 @@
                 const text = await r.text();
                 let j; try { j = JSON.parse(text); } catch { j = { message: text }; }
                 if (!r.ok) {
-                    alert("No se pudo generar la factura: " + (j.message || `HTTP ${r.status}`));
+                    showBanner("err", "No se pudo generar la factura: " + (j.message || `HTTP ${r.status}`));
                     btn.disabled = false;
                     return;
                 }
-                alert("Factura generada: " + (j.numero || "OK"));
+                showBanner("ok", "Factura generada: " + (j.numero || "OK"));
                 await cargar();
             } catch (err) {
                 btn.disabled = false;
-                alert("Error de red: " + (err?.message || err));
+                showBanner("err", "Error de red: " + (err?.message || err));
             }
             return;
         }
@@ -433,7 +516,7 @@
                 const r = await fetch(url, { headers: { ...getAuthHeader() } });
                 if (!r.ok) {
                     const txt = await r.text();
-                    alert("No se pudo descargar la factura: " + (txt || `HTTP ${r.status}`));
+                    showBanner("err", "No se pudo descargar la factura: " + (txt || `HTTP ${r.status}`));
                     btn.disabled = false;
                     return;
                 }
@@ -449,7 +532,7 @@
                 btn.disabled = false;
             } catch (err) {
                 btn.disabled = false;
-                alert("Error de red al descargar: " + (err?.message || err));
+                showBanner("err", "Error de red al descargar: " + (err?.message || err));
             }
             return;
         }
@@ -462,19 +545,25 @@
             const finalEstado = (btn.dataset.finalEstado || "").toUpperCase();
             const senaMonto = senaMontoDato === "" ? null : Number(senaMontoDato);
 
-            if (finalEstado === "ACREDITADA") return alert("Este presupuesto ya tiene el pago FINAL acreditado.");
+            if (finalEstado === "ACREDITADA") {
+                showBanner("err", "Ya existe un pago FINAL acreditado para este presupuesto.");
+                return;
+            }
 
             const tipoDefault = senaEstado === "ACREDITADA" ? "FINAL" : "SENA";
             const tipo = prompt("Tipo de pago manual (SENA o FINAL):", tipoDefault);
             if (!tipo) return;
             const T = tipo.trim().toUpperCase();
-            if (!["SENA", "FINAL"].includes(T)) return alert("Tipo inválido. Usá SENA o FINAL.");
+            if (!["SENA", "FINAL"].includes(T)) {
+                showBanner("err", "Tipo inválido. Usá SENA o FINAL.");
+                return;
+            }
 
             const round2 = (n) => Math.round((Number(n) + Number.EPSILON) * 100) / 100;
             const senaEsperada = round2(total * 0.3);
             const finalEsperado = round2(total - (senaMonto != null ? senaMonto : senaEsperada));
             if (T === "FINAL" && senaEstado !== "ACREDITADA") {
-                alert("Para registrar pago FINAL primero debe estar acreditada la seña.");
+                showBanner("err", "Para registrar pago FINAL primero debe estar acreditada la seña.");
                 return;
             }
 
@@ -495,10 +584,16 @@
             const medio = prompt("Medio (EFECTIVO/TRANSFERENCIA/TARJETA/OTRO):", "EFECTIVO");
             if (medio === null) return;
             const monto = Number(String(montoStr).replace(",", "."));
-            if (!(monto > 0)) return alert("Monto inválido");
+            if (!(monto > 0)) {
+                showBanner("err", "Monto inválido. Debe ser mayor a 0.");
+                return;
+            }
             let fechaPago = null;
             if (fechaStr && /^\d{4}-\d{2}-\d{2}$/.test(fechaStr)) fechaPago = fechaStr;
-            else if (fechaStr && fechaStr.trim() !== "") return alert("Fecha inválida.");
+            else if (fechaStr && fechaStr.trim() !== "") {
+                showBanner("err", "Fecha inválida. Usá formato YYYY-MM-DD.");
+                return;
+            }
 
             const payload = {
                 presupuestoId: Number(id),
@@ -521,14 +616,15 @@
                 let j; try { j = JSON.parse(text); } catch { j = { message: text }; }
                 if (!r.ok) {
                     btn.disabled = false;
-                    alert("Error al registrar: " + (j.message || r.status));
+                    const msg = j.message || `HTTP ${r.status}`;
+                    showBanner("err", "Error al registrar pago manual: " + msg);
                     return;
                 }
-                alert(`Pago ${T} manual registrado correctamente.`);
+                showBanner("ok", `Pago ${T} manual registrado correctamente.`);
                 await cargar();
             } catch (err) {
                 btn.disabled = false;
-                alert("Error de red: " + (err?.message || err));
+                showBanner("err", "Error de red al registrar pago manual: " + (err?.message || err));
             }
             return;
         }
@@ -561,12 +657,12 @@
                     const nro = j?.nroOrden || j?.otNroOrden;
                     if (nro) replaceBtnWithBadge(nro);
                     else await cargar();
-                    alert(j?.message || "Este presupuesto ya tiene una OT asociada o falta seña.");
+                    showBanner("err", j?.message || "Este presupuesto ya tiene una OT asociada o falta seña.");
                     return;
                 }
 
                 if (!r.ok) {
-                    alert(j?.message || `No se pudo crear la OT (HTTP ${r.status})`);
+                    showBanner("err", j?.message || `No se pudo crear la OT (HTTP ${r.status})`);
                     btn.dataset.busy = "0";
                     btn.disabled = false;
                     return;
@@ -576,9 +672,9 @@
                 if (!nro) { await cargar(); return; }
 
                 replaceBtnWithBadge(nro);
-                alert(`OT creada correctamente.\nNúmero: ${nro}`);
+                showBanner("ok", `OT creada correctamente. Número: ${nro}`);
             } catch (e) {
-                alert("Error de red: " + (e?.message || e));
+                showBanner("err", "Error de red: " + (e?.message || e));
                 btn.dataset.busy = "0";
                 btn.disabled = false;
             }
@@ -594,17 +690,65 @@
         const vehiculoTipo = fd.get("vehiculoTipo");
         const piezaTipo = fd.get("piezaTipo") || "MOTOR";
         const servicios = Array.from(selectedServices);
+        const genErr = document.getElementById("genErr");
 
-        if (!solicitudId || servicios.length === 0) {
-            const el = document.getElementById("genErr");
-            el.classList.remove("d-none");
-            el.textContent = servicios.length === 0
-                ? "Seleccioná al menos un servicio."
-                : "Ingresá un Solicitud ID válido.";
-            return;
+        const showError = (msg) => {
+            genErr.classList.remove("d-none");
+            genErr.textContent = msg;
+        };
+
+        genErr.classList.add("d-none");
+
+        if (!solicitudId || Number.isNaN(solicitudId) || solicitudId <= 0) {
+            return showError("Ingresá un Solicitud ID válido.");
         }
 
+        // Normalizar solicitudActual por si no se cargó aún
+        if (!solicitudActual || Number(solicitudActual.id) !== solicitudId) {
+            await cargarPiezaDesdeSolicitud(String(solicitudId));
+        }
+
+        // Validar marca / modelo de la solicitud
+        if (!solicitudActual) {
+            return showError("No se pudo leer la solicitud. Verificá el ID.");
+        }
+        const marca  = (solicitudActual.marca  || "").trim();
+        const modelo = (solicitudActual.modelo || "").trim();
+        if (!marca && !modelo) {
+            return showError("La solicitud no tiene marca / modelo cargados. Completalos antes de generar el presupuesto.");
+        }
+
+        // Validar tipo de vehículo
+        const vehiculosValidos = ["CONVENCIONAL", "IMPORTADO"];
+        if (!vehiculosValidos.includes(vehiculoTipo)) {
+            return showError("Seleccioná un tipo de vehículo válido.");
+        }
+
+        // Validar tipo de pieza
+        const piezasValidas = ["MOTOR", "TAPA"];
+        if (!piezasValidas.includes(piezaTipo)) {
+            return showError("Seleccioná una pieza válida (Motor o Tapa).");
+        }
+
+        // Validar servicios / extras
         const extras = Array.isArray(window.extras) ? window.extras.slice() : [];
+
+        if (servicios.length === 0 && extras.length === 0) {
+            return showError("Seleccioná al menos un servicio o agregá un ítem extra.");
+        }
+
+        // Validar extras: nombre y precio > 0
+        for (const ex of extras) {
+            const nombre = (ex.nombre || "").trim();
+            const precio = Number(ex.precio);
+            if (!nombre) {
+                return showError("Hay un servicio extra sin nombre. Corregilo antes de generar.");
+            }
+            if (!(precio > 0)) {
+                return showError("Hay un servicio extra con precio inválido (debe ser mayor a 0).");
+            }
+        }
+
         const payload = { solicitudId, vehiculoTipo, piezaTipo, servicios, extras };
 
         try {
@@ -619,16 +763,14 @@
             const ok = document.getElementById("genOk");
             ok.classList.remove("d-none");
             ok.textContent = "Generado presupuesto #" + j.id + " por " + money(j.total) + ".";
-            document.getElementById("genErr").classList.add("d-none");
+            genErr.classList.add("d-none");
 
             selectedServices.clear();
             window.extras = [];
             initServiciosForCurrentPieza();
             cargar();
         } catch (err) {
-            const el = document.getElementById("genErr");
-            el.classList.remove("d-none");
-            el.textContent = err.message;
+            showError(err.message);
         }
     });
 
