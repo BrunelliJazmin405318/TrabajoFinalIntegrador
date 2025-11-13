@@ -33,6 +33,10 @@
         <span class="badge">Panel Admin</span>
     </div>
 
+    <!-- BANNERS (NUEVO) -->
+    <div id="sucMsg" class="alert alert-success d-none"></div>
+    <div id="errMsg" class="alert alert-danger d-none"></div>
+
     <div class="row g-2 mb-3">
         <div class="col-md-4">
             <select id="filtro" class="form-select">
@@ -73,6 +77,25 @@
 <script type="module">
     import { getAuthHeader, isAuthenticated } from "/js/auth.js";
 
+    /* =======================
+       BANNERS (NUEVO)
+    ======================== */
+    const suc = document.getElementById("sucMsg");
+    const err = document.getElementById("errMsg");
+
+    function showBannerOk(msg){
+        suc.textContent = msg;
+        suc.classList.remove("d-none");
+        err.classList.add("d-none");
+    }
+    function showBannerErr(msg){
+        err.innerHTML = `<i class="bi bi-exclamation-triangle-fill me-2"></i>${msg}`;
+        err.classList.remove("d-none");
+        suc.classList.add("d-none");
+    }
+
+    /* ======================= */
+
     function badge(est){
         return est==='APROBADO' ? 'bg-success'
             : est==='RECHAZADO'? 'bg-danger'
@@ -95,7 +118,6 @@
         tb.innerHTML = '';
 
         list.forEach(s => {
-            // s.presupuestoGenerado debe venir del backend (boolean)
             const puedeGenerar = (s.estado === 'APROBADO') && (s.presupuestoGenerado !== true);
 
             const accionesHtml = `
@@ -137,26 +159,37 @@
     document.getElementById('tbody').addEventListener('click', async (e)=>{
         const btn = e.target.closest('button[data-act]');
         if (!btn) return;
+
         const id = btn.dataset.id;
         const act = btn.dataset.act;
         const nota = prompt(`${act.toUpperCase()}: nota/observación (opcional)`) || '';
-        const r = await fetch(`/admin/presupuestos/solicitudes/${id}/${act}`, {
-            method: 'PUT',
-            headers: { ...getAuthHeader(), 'Content-Type':'application/json' },
-            body: JSON.stringify({ nota })
-        });
-        if (!r.ok) {
-            const err = await r.json().catch(()=>({}));
-            alert('Error: ' + (err.message || r.status));
-            return;
+
+        try {
+            const r = await fetch(`/admin/presupuestos/solicitudes/${id}/${act}`, {
+                method: 'PUT',
+                headers: { ...getAuthHeader(), 'Content-Type':'application/json' },
+                body: JSON.stringify({ nota })
+            });
+
+            const j = await r.json().catch(()=>({}));
+
+            if (!r.ok) {
+                showBannerErr(j.message || `Error HTTP ${r.status}`);
+                return;
+            }
+
+            showBannerOk(`Solicitud #${id} ${act} correctamente.`);
+            cargar();
+
+        } catch (e){
+            showBannerErr("Error de red: " + (e?.message || e));
         }
-        alert('OK');
-        cargar(); // refrescar la grilla y que cambie lo de “Generar presupuesto”/“Presupuesto generado”
     });
 
     // primera carga
     cargar();
 </script>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
