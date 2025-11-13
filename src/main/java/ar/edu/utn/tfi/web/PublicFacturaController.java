@@ -21,10 +21,9 @@ public class PublicFacturaController {
      * Si no existe, la genera con tipo por defecto (query param ?tipo=A|B, default B).
      */
     @GetMapping("/pdf/by-solicitud/{solicitudId}")
-    public ResponseEntity<byte[]> pdfBySolicitud(@PathVariable Long solicitudId,
-                                                 @RequestParam(defaultValue = "B") String tipo) {
+    public ResponseEntity<byte[]> pdfBySolicitud(@PathVariable Long solicitudId) {
         try {
-            byte[] pdf = facturaService.renderPdfBySolicitud(solicitudId, tipo);
+            byte[] pdf = facturaService.renderPdfBySolicitud(solicitudId);
             String filename = "factura-solicitud-" + solicitudId + ".pdf";
 
             return ResponseEntity.ok()
@@ -35,19 +34,18 @@ public class PublicFacturaController {
         } catch (EntityNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(("""
-                           {"error":"NOT_FOUND","message":"%s"}
-                           """.formatted(e.getMessage())).getBytes());
+                       {"error":"NOT_FOUND","message":"%s"}
+                       """.formatted(e.getMessage())).getBytes());
         } catch (IllegalStateException e) {
-            // por ejemplo: final no acreditado aún
             return ResponseEntity.status(HttpStatus.CONFLICT)
                     .body(("""
-                           {"error":"CONFLICT","message":"%s"}
-                           """.formatted(e.getMessage())).getBytes());
+                       {"error":"CONFLICT","message":"%s"}
+                       """.formatted(e.getMessage())).getBytes());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(("""
-                           {"error":"INTERNAL_ERROR","message":"%s"}
-                           """.formatted(e.getMessage())).getBytes());
+                       {"error":"INTERNAL_ERROR","message":"%s"}
+                       """.formatted(e.getMessage())).getBytes());
         }
     }
 }
