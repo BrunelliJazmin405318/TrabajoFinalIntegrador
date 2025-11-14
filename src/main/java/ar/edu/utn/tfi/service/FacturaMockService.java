@@ -25,6 +25,7 @@ import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
+import ar.edu.utn.tfi.web.dto.RepuestoDTO;
 
 @Service
 public class FacturaMockService {
@@ -238,6 +239,7 @@ public class FacturaMockService {
             doc.add(Chunk.NEWLINE);
 
             // ───────────────── ITEMS ─────────────────
+            // ───────────────── ITEMS (SERVICIOS) ─────────────────
             PdfPTable tItems = new PdfPTable(new float[]{4f, 2f});
             tItems.setWidthPercentage(100);
 
@@ -248,7 +250,7 @@ public class FacturaMockService {
             tItems.addCell(h1);
             tItems.addCell(h2);
 
-            // Total servicios (como estaba antes)
+// Total servicios
             BigDecimal totalServicios = BigDecimal.ZERO;
             if (items != null && !items.isEmpty()) {
                 for (PresupuestoItem it : items) {
@@ -264,21 +266,68 @@ public class FacturaMockService {
                 totalServicios = p.getTotal() == null ? BigDecimal.ZERO : p.getTotal();
             }
 
-            // Repuestos
+            doc.add(tItems);
+
+// ───────────────── DETALLE DE REPUESTOS ─────────────────
             BigDecimal totalRepuestos = BigDecimal.ZERO;
             String otNro = p.getOtNroOrden();
+
             if (otNro != null && !otNro.isBlank()) {
-                totalRepuestos = ordenRepuestoService.totalPorNro(otNro);
-            }
+                List<RepuestoDTO> repuestos = ordenRepuestoService.listarPorNro(otNro);
 
-            if (totalRepuestos.compareTo(BigDecimal.ZERO) > 0) {
-                PdfPCell cDesc = new PdfPCell(new Phrase("Repuestos OT " + otNro, normal));
-                PdfPCell cVal  = new PdfPCell(new Phrase(money(totalRepuestos), normal));
-                tItems.addCell(cDesc);
-                tItems.addCell(cVal);
-            }
+                if (repuestos != null && !repuestos.isEmpty()) {
 
-            doc.add(tItems);
+                    doc.add(Chunk.NEWLINE);
+
+                    Paragraph repTitle = new Paragraph(
+                            "Repuestos utilizados (OT " + otNro + ")", normal
+                    );
+                    repTitle.setSpacingAfter(4f);
+                    doc.add(repTitle);
+
+                    PdfPTable repTable = new PdfPTable(new float[]{4f, 1f, 1.2f, 1.2f});
+                    repTable.setWidthPercentage(100);
+
+                    PdfPCell rh1 = new PdfPCell(new Phrase("Descripción", small));
+                    PdfPCell rh2 = new PdfPCell(new Phrase("Cant.", small));
+                    PdfPCell rh3 = new PdfPCell(new Phrase("Precio unit.", small));
+                    PdfPCell rh4 = new PdfPCell(new Phrase("Subtotal", small));
+
+                    rh1.setBackgroundColor(new Color(240, 240, 240));
+                    rh2.setBackgroundColor(new Color(240, 240, 240));
+                    rh3.setBackgroundColor(new Color(240, 240, 240));
+                    rh4.setBackgroundColor(new Color(240, 240, 240));
+
+                    repTable.addCell(rh1);
+                    repTable.addCell(rh2);
+                    repTable.addCell(rh3);
+                    repTable.addCell(rh4);
+
+                    for (RepuestoDTO r : repuestos) {
+                        BigDecimal cant = r.cantidad() != null ? r.cantidad() : BigDecimal.ONE;
+                        BigDecimal precio = r.precioUnit() != null ? r.precioUnit() : BigDecimal.ZERO;
+                        BigDecimal sub = r.subtotal() != null ? r.subtotal() : precio.multiply(cant);
+
+                        totalRepuestos = totalRepuestos.add(sub);
+
+                        PdfPCell cDesc = new PdfPCell(new Phrase(nv(r.descripcion()), normal));
+                        PdfPCell cCant = new PdfPCell(new Phrase(cant.toPlainString(), normal));
+                        PdfPCell cPrec = new PdfPCell(new Phrase(money(precio), normal));
+                        PdfPCell cSub  = new PdfPCell(new Phrase(money(sub), normal));
+
+                        cCant.setHorizontalAlignment(Element.ALIGN_RIGHT);
+                        cPrec.setHorizontalAlignment(Element.ALIGN_RIGHT);
+                        cSub.setHorizontalAlignment(Element.ALIGN_RIGHT);
+
+                        repTable.addCell(cDesc);
+                        repTable.addCell(cCant);
+                        repTable.addCell(cPrec);
+                        repTable.addCell(cSub);
+                    }
+
+                    doc.add(repTable);
+                }
+            }
 
             doc.add(Chunk.NEWLINE);
 
