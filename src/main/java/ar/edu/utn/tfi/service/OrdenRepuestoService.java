@@ -87,4 +87,36 @@ public class OrdenRepuestoService {
     private RepuestoDTO toDTO(OrdenRepuesto r) {
         return RepuestoDTO.from(r);
     }
+
+    @Transactional(readOnly = true)
+    public BigDecimal totalPorNro(String nroOrden) {
+        // Buscar la OT por número
+        OrdenTrabajo orden = ordenRepo.findByNroOrden(nroOrden)
+                .orElseThrow(() -> new EntityNotFoundException("Orden no encontrada: " + nroOrden));
+
+        // Sumar precioUnit * cantidad de todos los repuestos de esa orden
+        return repuestoRepo.findByOrdenIdOrderByIdAsc(orden.getId())
+                .stream()
+                .map(r -> {
+                    BigDecimal precio = r.getPrecioUnit() != null ? r.getPrecioUnit() : BigDecimal.ZERO;
+                    BigDecimal cant   = r.getCantidad() != null ? r.getCantidad() : BigDecimal.ONE;
+                    return precio.multiply(cant);
+                })
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+    // Calcula la suma de todos los repuestos de una OT por NRO de orden
+    @Transactional(readOnly = true)
+    public BigDecimal calcularTotalRepuestosPorNroOrden(String nroOrden) {
+        var orden = ordenRepo.findByNroOrden(nroOrden)
+                .orElseThrow(() -> new EntityNotFoundException("Orden no encontrada: " + nroOrden));
+
+        return repuestoRepo.findByOrdenIdOrderByIdAsc(orden.getId())
+                .stream()
+                .map(r -> {
+                    BigDecimal cant = (r.getCantidad() == null ? BigDecimal.ONE : r.getCantidad());
+                    BigDecimal precio = (r.getPrecioUnit() == null ? BigDecimal.ZERO : r.getPrecioUnit());
+                    return precio.multiply(cant);
+                })
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
 }

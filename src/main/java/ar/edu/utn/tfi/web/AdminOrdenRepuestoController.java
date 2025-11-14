@@ -91,4 +91,13 @@ public class AdminOrdenRepuestoController {
 
         return RepuestoDTO.from(rep);
     }
+    // Obtener el total de repuestos de una OT (por NRO de orden)
+    @GetMapping("/{nro}/repuestos/total")
+    public Map<String, Object> totalRepuestos(@PathVariable String nro) {
+        BigDecimal total = repuestoService.calcularTotalRepuestosPorNroOrden(nro);
+        return Map.of(
+                "nroOrden", nro,
+                "totalRepuestos", total
+        );
+    }
 }

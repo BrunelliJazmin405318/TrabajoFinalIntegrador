@@ -37,6 +37,7 @@ public class PresupuestoGestionService {
     private final MailService mailService;
     private final PaymentApiService paymentApiService;
     private final PagoManualRepository pagoManualRepo;
+    private final OrdenRepuestoService ordenRepuestoService;
 
     public PresupuestoGestionService(SolicitudPresupuestoRepository solicitudRepo,
                                      ServicioTarifaRepository tarifaRepo,
@@ -44,7 +45,8 @@ public class PresupuestoGestionService {
                                      PresupuestoItemRepository itemRepo,
                                      MailService mailService,
                                      PaymentApiService paymentApiService,
-                                     PagoManualRepository pagoManualRepo) {
+                                     PagoManualRepository pagoManualRepo,
+                                     OrdenRepuestoService ordenRepuestoService) {
         this.solicitudRepo = solicitudRepo;
         this.tarifaRepo = tarifaRepo;
         this.presupuestoRepo = presupuestoRepo;
@@ -52,6 +54,7 @@ public class PresupuestoGestionService {
         this.mailService = mailService;
         this.paymentApiService = paymentApiService;
         this.pagoManualRepo = pagoManualRepo;
+        this.ordenRepuestoService = ordenRepuestoService;
     }
 
     // ─────────── Helpers ───────────
@@ -351,18 +354,37 @@ public class PresupuestoGestionService {
         final String tipo = req.tipo().toUpperCase().trim();
         final LocalDateTime fechaPago = (req.fechaPago() != null) ? req.fechaPago().atStartOfDay() : LocalDateTime.now();
 
+        // Total de servicios (lo que vale el presupuesto original)
+        BigDecimal totalServicios = p.getTotal() != null ? p.getTotal() : BigDecimal.ZERO;
+
+        // Total de repuestos (si tiene OT asociada)
+        BigDecimal totalRepuestos = BigDecimal.ZERO;
+        if (p.getOtNroOrden() != null && !p.getOtNroOrden().isBlank()) {
+            // 👇 usamos el mismo service que ya usaste para la factura
+            totalRepuestos = ordenRepuestoService.calcularTotalRepuestosPorNroOrden(p.getOtNroOrden());
+            if (totalRepuestos == null) {
+                totalRepuestos = BigDecimal.ZERO;
+            }
+        }
+
         if ("SENA".equals(tipo)) {
             if ("ACREDITADA".equalsIgnoreCase(String.valueOf(p.getSenaEstado()))) {
                 throw new IllegalStateException("La seña ya está acreditada.");
             }
-            BigDecimal esperado = p.getTotal().multiply(BigDecimal.valueOf(0.30)).setScale(2, RoundingMode.HALF_UP);
+
+            // Seña SIEMPRE sobre total de servicios (sin repuestos)
+            BigDecimal esperado = totalServicios
+                    .multiply(BigDecimal.valueOf(0.30))
+                    .setScale(2, RoundingMode.HALF_UP);
+
             if (req.monto().setScale(2, RoundingMode.HALF_UP).compareTo(esperado) != 0) {
                 throw new IllegalArgumentException("Monto de seña inválido. Esperado: " + esperado);
             }
+
             p.setSenaEstado("ACREDITADA");
             p.setSenaMonto(esperado);
             p.setSenaPaymentStatus("manual");
-            p.setSenaPaymentId(ref100);           // ✅ usar referencia como “nro de pago”
+            p.setSenaPaymentId(ref100);
             p.setSenaPaidAt(fechaPago);
             presupuestoRepo.save(p);
 
@@ -373,17 +395,34 @@ public class PresupuestoGestionService {
             if ("ACREDITADA".equalsIgnoreCase(String.valueOf(p.getFinalEstado()))) {
                 throw new IllegalStateException("El pago FINAL ya está acreditado.");
             }
-            BigDecimal esperado = p.getTotal().subtract(
-                    p.getSenaMonto() != null ? p.getSenaMonto() : p.getTotal().multiply(BigDecimal.valueOf(0.30))
-            ).setScale(2, RoundingMode.HALF_UP);
 
-            if (req.monto().setScale(2, RoundingMode.HALF_UP).compareTo(esperado) != 0) {
-                throw new IllegalArgumentException("Monto FINAL inválido. Esperado: " + esperado);
+            // Seña registrada (si por algún motivo faltara, calculamos 30% de servicios como fallback)
+            BigDecimal senaRegistrada = p.getSenaMonto() != null
+                    ? p.getSenaMonto()
+                    : totalServicios.multiply(BigDecimal.valueOf(0.30)).setScale(2, RoundingMode.HALF_UP);
+
+            // Total REAL de la reparación = servicios + repuestos
+            BigDecimal totalReal = totalServicios.add(totalRepuestos);
+
+            // Monto esperado para FINAL = totalReal - seña
+            BigDecimal esperado = totalReal.subtract(senaRegistrada).setScale(2, RoundingMode.HALF_UP);
+            if (esperado.compareTo(BigDecimal.ZERO) < 0) {
+                esperado = BigDecimal.ZERO;
             }
+
+            BigDecimal montoReq = req.monto().setScale(2, RoundingMode.HALF_UP);
+            BigDecimal diff = montoReq.subtract(esperado).abs();
+
+            // tolerancia de 1 peso por si hay redondeos menores
+            if (diff.compareTo(new BigDecimal("1.00")) > 0) {
+                throw new IllegalArgumentException("Monto FINAL inválido. Esperado (aprox.): " + esperado);
+            }
+
             p.setFinalEstado("ACREDITADA");
-            p.setFinalMonto(esperado);
+            // guardamos el monto realmente pagado (ya validado)
+            p.setFinalMonto(montoReq);
             p.setFinalPaymentStatus("manual");
-            p.setFinalPaymentId(ref100);          // ✅ usar referencia como “nro de pago”
+            p.setFinalPaymentId(ref100);
             p.setFinalPaidAt(fechaPago);
             presupuestoRepo.save(p);
 

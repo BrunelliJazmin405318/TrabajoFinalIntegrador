@@ -360,14 +360,14 @@
                 const senaOK  = (p.senaEstado  || "").toUpperCase() === "ACREDITADA";
                 const finalOK = (p.finalEstado || "").toUpperCase() === "ACREDITADA";
 
-                // 🔧 Botón Repuestos reutilizable (solo si hay OT)
-                const btnRepuestos = p.otNroOrden
+                // 🔧 Botón Repuestos (solo si hay OT Y NO está el pago final acreditado)
+                const btnRepuestos = (!finalOK && p.otNroOrden)
                     ? `<button type="button"
-                               class="btn btn-outline-dark btn-sm ms-2"
-                               data-act="repuestos"
-                               data-ot-nro="${p.otNroOrden}">
-                           <i class="bi bi-tools"></i> Repuestos
-                       </button>`
+               class="btn btn-outline-dark btn-sm ms-2"
+               data-act="repuestos"
+               data-ot-nro="${p.otNroOrden}">
+           <i class="bi bi-tools"></i> Repuestos
+       </button>`
                     : "";
 
                 if (finalOK) {
@@ -431,14 +431,15 @@
                <i class="bi bi-box-arrow-up-right"></i> Página del cliente
              </a>
              <button type="button" class="btn btn-outline-primary btn-sm"
-                     data-act="pago-manual"
-                     data-id="${p.id}"
-                     data-total="${p.total ?? 0}"
-                     data-sena-monto="${p.senaMonto ?? ""}"
-                     data-sena-estado="${p.senaEstado ?? ""}"
-                     data-final-estado="${p.finalEstado ?? ""}">
-               <i class="bi bi-cash-coin"></i> Registrar pago manual
-             </button>
+                data-act="pago-manual"
+                data-id="${p.id}"
+                data-total="${p.total ?? 0}"
+                data-sena-monto="${p.senaMonto ?? ""}"
+                data-sena-estado="${p.senaEstado ?? ""}"
+                data-final-estado="${p.finalEstado ?? ""}"
+                data-ot-nro="${p.otNroOrden ?? ""}">
+            <i class="bi bi-cash-coin"></i> Registrar pago manual
+        </button>
              ${otBadge}
              ${btnCrearOT}`;
                 }
@@ -566,17 +567,19 @@
 
         // Pago manual
         if (act === "pago-manual") {
-            const total = Number(btn.dataset.total || 0);
+            const totalServicios = Number(btn.dataset.total || 0);      // sólo servicios
             const senaMontoDato = btn.dataset.senaMonto;
             const senaEstado = (btn.dataset.senaEstado || "").toUpperCase();
             const finalEstado = (btn.dataset.finalEstado || "").toUpperCase();
             const senaMonto = senaMontoDato === "" ? null : Number(senaMontoDato);
+            const otNro = btn.dataset.otNro || "";                      // ⬅️ nro de OT (si existe)
 
             if (finalEstado === "ACREDITADA") {
                 showBanner("err", "Ya existe un pago FINAL acreditado para este presupuesto.");
                 return;
             }
 
+            // 1) Determinar tipo de pago (SENA / FINAL)
             const tipoDefault = senaEstado === "ACREDITADA" ? "FINAL" : "SENA";
             const tipo = prompt("Tipo de pago manual (SENA o FINAL):", tipoDefault);
             if (!tipo) return;
@@ -586,14 +589,41 @@
                 return;
             }
 
+            // 2) Calcular montos sugeridos (sólo servicios para seña, servicios+repuestos para FINAL)
             const round2 = (n) => Math.round((Number(n) + Number.EPSILON) * 100) / 100;
-            const senaEsperada = round2(total * 0.3);
-            const finalEsperado = round2(total - (senaMonto != null ? senaMonto : senaEsperada));
+
+            let totalConRepuestos = totalServicios;
+
+            // Si hay OT, intentamos traer el total de repuestos
+            if (otNro) {
+                try {
+                    const rTot = await fetch(`/admin/ordenes/${encodeURIComponent(otNro)}/repuestos/total`, {
+                        headers: { ...getAuthHeader() }
+                    });
+                    if (rTot.ok) {
+                        const jt = await rTot.json();
+                        const totalRepuestos = Number(jt.totalRepuestos || 0);
+                        totalConRepuestos = totalServicios + totalRepuestos;
+                    }
+                } catch (e) {
+                    console.warn("No se pudo obtener total de repuestos para", otNro, e);
+                }
+            }
+
+            // Seña esperada siempre sobre SERVICIOS
+            const senaEsperada = round2(totalServicios * 0.30);
+
+            // Final esperado = servicios + repuestos - seña (si ya se pagó)
+            const finalEsperado = round2(
+                totalConRepuestos - (senaMonto != null ? senaMonto : senaEsperada)
+            );
+
             if (T === "FINAL" && senaEstado !== "ACREDITADA") {
                 showBanner("err", "Para registrar pago FINAL primero debe estar acreditada la seña.");
                 return;
             }
 
+            // 3) Resto del flujo igual que antes (referencia, fecha, medio, etc.)
             let referencia = null;
             while (true) {
                 const r = prompt("Referencia (OBLIGATORIA — ej: recibo/transferencia):");
@@ -696,10 +726,15 @@
                 }
 
                 const nro = j?.nroOrden;
-                if (!nro) { await cargar(); return; }
+                if (nro) {
+                    replaceBtnWithBadge(nro);
+                    showBanner("ok", `OT creada correctamente. Número: ${nro}`);
+                } else {
+                    showBanner("ok", "OT creada correctamente.");
+                }
 
-                replaceBtnWithBadge(nro);
-                showBanner("ok", `OT creada correctamente. Número: ${nro}`);
+                // 🔁 recarga la tabla para que aparezca el botón Repuestos
+                await cargar();
             } catch (e) {
                 showBanner("err", "Error de red: " + (e?.message || e));
                 btn.dataset.busy = "0";

@@ -163,6 +163,9 @@ public class PublicPresupuestoController {
             out.put("senaPaymentId", p.getSenaPaymentId());
             out.put("senaPaymentStatus", p.getSenaPaymentStatus());
             out.put("senaPaidAt", p.getSenaPaidAt());
+
+            // 🟢 NUEVO: número de OT asociada al presupuesto (para mostrar repuestos)
+            out.put("otNroOrden", p.getOtNroOrden());
         }
 
         return ResponseEntity.ok(out);
