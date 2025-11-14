@@ -114,7 +114,45 @@
                     </button>
                 </div>
             </div>
+            <hr class="my-4">
 
+            <div id="repuestosBox" class="d-none">
+                <h6 class="fw-semibold mb-3">Repuestos utilizados</h6>
+
+                <div class="table-responsive">
+                    <table class="table table-sm table-bordered align-middle">
+                        <thead>
+                        <tr>
+                            <th>Descripción</th>
+                            <th style="width: 80px;">Cant.</th>
+                            <th style="width: 120px;">Precio</th>
+                            <th style="width: 120px;">Subtotal</th>
+                        </tr>
+                        </thead>
+                        <tbody id="repBody"></tbody>
+                    </table>
+                </div>
+
+                <div class="mt-3">
+                    <div class="d-flex justify-content-between">
+                        <span>Total mano de obra:</span>
+                        <span id="repTotalMo">-</span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span>Total repuestos:</span>
+                        <span id="repTotalRep">-</span>
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between fw-bold">
+                        <span>Total final:</span>
+                        <span id="repTotalFinal">-</span>
+                    </div>
+
+                    <p class="small text-muted mt-3">
+                        Este total incluye el costo de los repuestos utilizados durante la reparación.
+                    </p>
+                </div>
+            </div>
             <div id="pagoInfoNoDisponible" class="alert alert-info d-none mt-3">
                 Aún no hay un presupuesto aprobado asociado a esta solicitud.
             </div>
@@ -308,13 +346,21 @@
 
         if (j.presupuestoId) {
             await cargarPagoInfo(j.presupuestoId, j);
-            return;
-        }
+            await cargarRepuestosCliente(j.presupuestoId, j);
+        } else {
+            document.getElementById('pagoBox').classList.add('d-none');
+            const infoMsg = document.getElementById('pagoInfoNoDisponible');
+            infoMsg.textContent = "Todavía no hay un presupuesto asociado a esta solicitud.";
+            infoMsg.classList.remove('d-none');
 
-        document.getElementById('pagoBox').classList.add('d-none');
-        const infoMsg = document.getElementById('pagoInfoNoDisponible');
-        infoMsg.textContent = "Todavía no hay un presupuesto asociado a esta solicitud.";
-        infoMsg.classList.remove('d-none');
+            // Ocultar también repuestos por las dudas
+            const repBox = document.getElementById('repuestosBox');
+            const repBody = document.getElementById('repBody');
+            if (repBox && repBody) {
+                repBox.classList.add('d-none');
+                repBody.innerHTML = "";
+            }
+        }
     }
 
     async function cargarPagoInfo(presupuestoId, solicitudInfo) {
@@ -435,6 +481,62 @@
         }
     }
 
+    async function cargarRepuestosCliente(presupuestoId, solicitudInfo) {
+        const box = document.getElementById("repuestosBox");
+        const body = document.getElementById("repBody");
+        const tMo = document.getElementById("repTotalMo");
+        const tRep = document.getElementById("repTotalRep");
+        const tFinal = document.getElementById("repTotalFinal");
+
+        body.innerHTML = "";
+        box.classList.add("d-none");
+
+        // Si no hay OT → no hay repuestos
+        if (!solicitudInfo.otNroOrden) return;
+
+        try {
+            const nro = solicitudInfo.otNroOrden;
+
+            // 1) Traer repuestos de la OT
+            const r = await fetch(`/admin/ordenes/${nro}/repuestos`);
+            if (!r.ok) return;
+
+            const arr = await r.json();
+
+            if (!Array.isArray(arr) || arr.length === 0) return;
+
+            let totalRepuestos = 0;
+
+            arr.forEach(rep => {
+                const cant = rep.cantidad ?? 1;
+                const precio = Number(rep.precioUnit ?? 0);
+                const sub = cant * precio;
+                totalRepuestos += sub;
+
+                body.insertAdjacentHTML("beforeend", `
+                <tr>
+                    <td>${rep.descripcion}</td>
+                    <td class="text-end">${cant}</td>
+                    <td class="text-end">${money(precio)}</td>
+                    <td class="text-end">${money(sub)}</td>
+                </tr>
+            `);
+            });
+
+            // Total mano de obra = presupuesto original
+            const totalServicios = Number(solicitudInfo.total ?? 0);
+            const totalFinal = totalServicios + totalRepuestos;
+
+            tMo.textContent = money(totalServicios);
+            tRep.textContent = money(totalRepuestos);
+            tFinal.textContent = money(totalFinal);
+
+            box.classList.remove("d-none");
+
+        } catch (e) {
+            console.error("Error cargando repuestos:", e);
+        }
+    }
     async function montarBrickYPagar() {
         const pagoAlert = document.getElementById('pagoAlert');
         const pagoError = document.getElementById('pagoError');

@@ -8,7 +8,6 @@ import ar.edu.utn.tfi.repository.PresupuestoItemRepository;
 import ar.edu.utn.tfi.repository.PresupuestoRepository;
 import com.lowagie.text.Image;
 import com.lowagie.text.Rectangle;
-import com.lowagie.text.pdf.draw.LineSeparator;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,6 +25,7 @@ import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
+import ar.edu.utn.tfi.web.dto.RepuestoDTO;
 
 @Service
 public class FacturaMockService {
@@ -34,15 +34,18 @@ public class FacturaMockService {
     private final FacturaMockRepository facturaRepo;
     private final PresupuestoItemRepository itemRepo;
     private final MailService mailService;
+    private final OrdenRepuestoService ordenRepuestoService;
 
     public FacturaMockService(PresupuestoRepository presupuestoRepo,
                               FacturaMockRepository facturaRepo,
                               PresupuestoItemRepository itemRepo,
-                              MailService mailService) {
+                              MailService mailService,
+                              OrdenRepuestoService ordenRepuestoService) {
         this.presupuestoRepo = presupuestoRepo;
         this.facturaRepo = facturaRepo;
         this.itemRepo = itemRepo;
         this.mailService = mailService;
+        this.ordenRepuestoService = ordenRepuestoService;
     }
 
     /**
@@ -80,12 +83,23 @@ public class FacturaMockService {
         long count = facturaRepo.count() + 1;
         String numero = String.format("%s%06d", prefijo, count);
 
+        // ─── CALCULAR TOTAL SERVICIOS + REPUESTOS ─────────────────────
+        BigDecimal totalServicios = p.getTotal() != null ? p.getTotal() : BigDecimal.ZERO;
+
+        BigDecimal totalRepuestos = BigDecimal.ZERO;
+        String otNro = p.getOtNroOrden();
+        if (otNro != null && !otNro.isBlank()) {
+            totalRepuestos = ordenRepuestoService.totalPorNro(otNro);
+        }
+
+        BigDecimal totalFactura = totalServicios.add(totalRepuestos);
+
         FacturaMock f = new FacturaMock();
         f.setPresupuesto(p);
         f.setTipo(t);
         f.setNumero(numero);
         f.setFechaEmision(LocalDateTime.now());
-        f.setTotal(p.getTotal());
+        f.setTotal(totalFactura); // ⬅️ AHORA usa servicios + repuestos
         f.setClienteNombre(p.getClienteNombre());
         f.setClienteEmail(p.getClienteEmail());
 
@@ -162,7 +176,7 @@ public class FacturaMockService {
                                 getClass().getResource("/static/img/logo-fondo-transparente.png")
                         )
                 );
-                logo.scaleToFit(180, 80);   // ⬅️ tamaño del logo
+                logo.scaleToFit(180, 80);
                 logo.setAlignment(Image.LEFT);
                 left.addElement(logo);
             } catch (Exception ex) {
@@ -225,6 +239,7 @@ public class FacturaMockService {
             doc.add(Chunk.NEWLINE);
 
             // ───────────────── ITEMS ─────────────────
+            // ───────────────── ITEMS (SERVICIOS) ─────────────────
             PdfPTable tItems = new PdfPTable(new float[]{4f, 2f});
             tItems.setWidthPercentage(100);
 
@@ -235,21 +250,84 @@ public class FacturaMockService {
             tItems.addCell(h1);
             tItems.addCell(h2);
 
-            BigDecimal totalNeto = BigDecimal.ZERO;
+// Total servicios
+            BigDecimal totalServicios = BigDecimal.ZERO;
             if (items != null && !items.isEmpty()) {
                 for (PresupuestoItem it : items) {
                     tItems.addCell(new Phrase(nv(it.getServicioNombre()), normal));
                     tItems.addCell(new Phrase(money(it.getPrecioUnitario()), normal));
                     if (it.getPrecioUnitario() != null) {
-                        totalNeto = totalNeto.add(it.getPrecioUnitario());
+                        totalServicios = totalServicios.add(it.getPrecioUnitario());
                     }
                 }
             } else {
                 tItems.addCell(new Phrase("Servicios según presupuesto", normal));
                 tItems.addCell(new Phrase(money(p.getTotal()), normal));
-                totalNeto = p.getTotal() == null ? BigDecimal.ZERO : p.getTotal();
+                totalServicios = p.getTotal() == null ? BigDecimal.ZERO : p.getTotal();
             }
+
             doc.add(tItems);
+
+// ───────────────── DETALLE DE REPUESTOS ─────────────────
+            BigDecimal totalRepuestos = BigDecimal.ZERO;
+            String otNro = p.getOtNroOrden();
+
+            if (otNro != null && !otNro.isBlank()) {
+                List<RepuestoDTO> repuestos = ordenRepuestoService.listarPorNro(otNro);
+
+                if (repuestos != null && !repuestos.isEmpty()) {
+
+                    doc.add(Chunk.NEWLINE);
+
+                    Paragraph repTitle = new Paragraph(
+                            "Repuestos utilizados (OT " + otNro + ")", normal
+                    );
+                    repTitle.setSpacingAfter(4f);
+                    doc.add(repTitle);
+
+                    PdfPTable repTable = new PdfPTable(new float[]{4f, 1f, 1.2f, 1.2f});
+                    repTable.setWidthPercentage(100);
+
+                    PdfPCell rh1 = new PdfPCell(new Phrase("Descripción", small));
+                    PdfPCell rh2 = new PdfPCell(new Phrase("Cant.", small));
+                    PdfPCell rh3 = new PdfPCell(new Phrase("Precio unit.", small));
+                    PdfPCell rh4 = new PdfPCell(new Phrase("Subtotal", small));
+
+                    rh1.setBackgroundColor(new Color(240, 240, 240));
+                    rh2.setBackgroundColor(new Color(240, 240, 240));
+                    rh3.setBackgroundColor(new Color(240, 240, 240));
+                    rh4.setBackgroundColor(new Color(240, 240, 240));
+
+                    repTable.addCell(rh1);
+                    repTable.addCell(rh2);
+                    repTable.addCell(rh3);
+                    repTable.addCell(rh4);
+
+                    for (RepuestoDTO r : repuestos) {
+                        BigDecimal cant = r.cantidad() != null ? r.cantidad() : BigDecimal.ONE;
+                        BigDecimal precio = r.precioUnit() != null ? r.precioUnit() : BigDecimal.ZERO;
+                        BigDecimal sub = r.subtotal() != null ? r.subtotal() : precio.multiply(cant);
+
+                        totalRepuestos = totalRepuestos.add(sub);
+
+                        PdfPCell cDesc = new PdfPCell(new Phrase(nv(r.descripcion()), normal));
+                        PdfPCell cCant = new PdfPCell(new Phrase(cant.toPlainString(), normal));
+                        PdfPCell cPrec = new PdfPCell(new Phrase(money(precio), normal));
+                        PdfPCell cSub  = new PdfPCell(new Phrase(money(sub), normal));
+
+                        cCant.setHorizontalAlignment(Element.ALIGN_RIGHT);
+                        cPrec.setHorizontalAlignment(Element.ALIGN_RIGHT);
+                        cSub.setHorizontalAlignment(Element.ALIGN_RIGHT);
+
+                        repTable.addCell(cDesc);
+                        repTable.addCell(cCant);
+                        repTable.addCell(cPrec);
+                        repTable.addCell(cSub);
+                    }
+
+                    doc.add(repTable);
+                }
+            }
 
             doc.add(Chunk.NEWLINE);
 
@@ -266,6 +344,7 @@ public class FacturaMockService {
             doc.add(Chunk.NEWLINE);
 
             // ───────────────── TOTALES SEGÚN TIPO ─────────────────
+            BigDecimal totalNeto = f.getTotal() != null ? f.getTotal() : totalServicios.add(totalRepuestos);
             if (totalNeto == null) totalNeto = BigDecimal.ZERO;
 
             BigDecimal iva21 = BigDecimal.ZERO;
