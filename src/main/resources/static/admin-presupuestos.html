@@ -150,7 +150,7 @@
     const fmt = (s) => (s ? s.replace("T", " ").substring(0, 19) : "-");
     const money = (n) => new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS" }).format(n || 0);
 
-    // ======= Banner flotante arriba (NUEVO) =======
+    // ======= Banner flotante arriba =======
     const showBanner = (type, msg) => {
         const container = document.getElementById("toastContainer");
         if (!container) return alert(msg);
@@ -168,16 +168,13 @@
 
         container.appendChild(wrapper);
 
-        // fade in
         setTimeout(() => { wrapper.style.opacity = "1"; }, 20);
 
-        // close button
         wrapper.querySelector(".btn-close").onclick = () => {
             wrapper.style.opacity = "0";
             setTimeout(() => wrapper.remove(), 250);
         };
 
-        // remove auto after 4s
         setTimeout(() => {
             if (wrapper.parentNode) {
                 wrapper.style.opacity = "0";
@@ -213,6 +210,7 @@
             grid.parentElement.appendChild(wrap);
         }
     }
+
     function renderExtrasChips() {
         ensureExtrasContainer();
         const cont = document.getElementById("extrasChips");
@@ -232,6 +230,7 @@
             );
         });
     }
+
     function renderServiciosGrid(pieza) {
         const grid = document.getElementById("serviciosGrid");
         grid.innerHTML = "";
@@ -252,6 +251,7 @@
         });
         renderExtrasChips();
     }
+
     function toggleChip(btn) {
         const nombre = btn.dataset.nombre;
         if (selectedServices.has(nombre)) {
@@ -264,6 +264,7 @@
             btn.classList.add("btn-primary");
         }
     }
+
     function initServiciosForCurrentPieza() {
         const pieza = document.querySelector('input[name="piezaTipo"]:checked')?.value || "MOTOR";
         const otros = Array.from(selectedServices).filter(
@@ -359,6 +360,16 @@
                 const senaOK  = (p.senaEstado  || "").toUpperCase() === "ACREDITADA";
                 const finalOK = (p.finalEstado || "").toUpperCase() === "ACREDITADA";
 
+                // 🔧 Botón Repuestos reutilizable (solo si hay OT)
+                const btnRepuestos = p.otNroOrden
+                    ? `<button type="button"
+                               class="btn btn-outline-dark btn-sm ms-2"
+                               data-act="repuestos"
+                               data-ot-nro="${p.otNroOrden}">
+                           <i class="bi bi-tools"></i> Repuestos
+                       </button>`
+                    : "";
+
                 if (finalOK) {
                     const tieneFactura = !!p.facturaNumero;
                     if (tieneFactura) {
@@ -373,7 +384,8 @@
                   href="/estado-solicitud.html?id=${p.solicitudId ?? ""}">
                  <i class="bi bi-box-arrow-up-right"></i> Página del cliente
                </a>
-               <span class="text-muted ms-2">${p.facturaNumero}</span>`;
+               <span class="text-muted ms-2">${p.facturaNumero}</span>
+               ${btnRepuestos}`;
                     } else {
                         acciones =
                             `<span class="badge bg-success me-2">Monto total pagado</span>
@@ -385,7 +397,8 @@
                <a class="btn btn-outline-primary btn-sm ms-2" target="_blank"
                   href="/estado-solicitud.html?id=${p.solicitudId ?? ""}">
                  <i class="bi bi-box-arrow-up-right"></i> Página del cliente
-               </a>`;
+               </a>
+               ${btnRepuestos}`;
                     }
                 } else {
                     const senaOK2  = (p.senaEstado  || "").toUpperCase() === "ACREDITADA";
@@ -394,8 +407,11 @@
                         : `<span class="badge bg-warning text-dark me-2">Seña pendiente</span>`;
 
                     const otBadge = p.otNroOrden
-                        ? `<div class="mt-2"><span class="badge text-bg-warning">OT: ${p.otNroOrden}</span></div>`
-                        : "";
+                        ? `<div class="mt-2">
+                             <span class="badge text-bg-warning me-2">OT: ${p.otNroOrden}</span>
+                             ${btnRepuestos}
+                           </div>`
+                        : btnRepuestos;
 
                     const puedeCrearOT = (senaOK2 || finalOK) && !p.otNroOrden;
                     const btnCrearOT = puedeCrearOT
@@ -429,7 +445,7 @@
             }
 
             const solicitudTxt = p.solicitudId != null ? p.solicitudId : "-";
-            document.getElementById("tbody").insertAdjacentHTML(
+            tb.insertAdjacentHTML(
                 "beforeend",
                 `<tr data-row-id="${p.id}">
            <td>${p.id}</td>
@@ -472,6 +488,17 @@
             }
             showBanner("ok", "Presupuesto " + act + " correctamente.");
             await cargar();
+            return;
+        }
+
+        // Abrir pantalla de repuestos de la OT
+        if (act === "repuestos") {
+            const nroOt = btn.dataset.otNro;
+            if (!nroOt) {
+                showBanner("err", "No se encontró el número de OT.");
+                return;
+            }
+            location.href = `/admin-orden-repuestos.html?nro=${encodeURIComponent(nroOt)}`;
             return;
         }
 
@@ -631,7 +658,7 @@
 
         // ===== NUEVO: Crear OT =====
         if (act === "crear-ot") {
-            if (btn.dataset.busy === "1") return; // evita doble click
+            if (btn.dataset.busy === "1") return;
             if (!confirm("¿Crear Orden de Trabajo para este presupuesto?")) return;
 
             btn.dataset.busy = "1";
@@ -703,12 +730,10 @@
             return showError("Ingresá un Solicitud ID válido.");
         }
 
-        // Normalizar solicitudActual por si no se cargó aún
         if (!solicitudActual || Number(solicitudActual.id) !== solicitudId) {
             await cargarPiezaDesdeSolicitud(String(solicitudId));
         }
 
-        // Validar marca / modelo de la solicitud
         if (!solicitudActual) {
             return showError("No se pudo leer la solicitud. Verificá el ID.");
         }
@@ -718,26 +743,22 @@
             return showError("La solicitud no tiene marca / modelo cargados. Completalos antes de generar el presupuesto.");
         }
 
-        // Validar tipo de vehículo
         const vehiculosValidos = ["CONVENCIONAL", "IMPORTADO"];
         if (!vehiculosValidos.includes(vehiculoTipo)) {
             return showError("Seleccioná un tipo de vehículo válido.");
         }
 
-        // Validar tipo de pieza
         const piezasValidas = ["MOTOR", "TAPA"];
         if (!piezasValidas.includes(piezaTipo)) {
             return showError("Seleccioná una pieza válida (Motor o Tapa).");
         }
 
-        // Validar servicios / extras
         const extras = Array.isArray(window.extras) ? window.extras.slice() : [];
 
         if (servicios.length === 0 && extras.length === 0) {
             return showError("Seleccioná al menos un servicio o agregá un ítem extra.");
         }
 
-        // Validar extras: nombre y precio > 0
         for (const ex of extras) {
             const nombre = (ex.nombre || "").trim();
             const precio = Number(ex.precio);
@@ -814,6 +835,7 @@
         document.getElementById("srvOtro").value = "";
         document.getElementById("srvOtroPrecio").value = "";
     });
+
     document.getElementById("srvOtro").addEventListener("keydown", (e) => {
         if (e.key === "Enter") { e.preventDefault(); document.getElementById("btnSrvOtro").click(); }
     });

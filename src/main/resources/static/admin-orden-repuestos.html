@@ -1,0 +1,357 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Admin | Repuestos de OT</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/styles.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark">
+    <div class="container">
+        <a class="navbar-brand" href="/admin-presupuestos.html">
+            <i class="bi bi-gear-fill me-2"></i>Rectificadora
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div id="nav" class="collapse navbar-collapse">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item"><a class="nav-link" href="/admin-solicitudes.html">Solicitudes</a></li>
+                <li class="nav-item"><a class="nav-link" href="/admin-presupuestos.html">Presupuestos</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<!-- Banner flotante -->
+<div id="toastContainer"
+     class="position-fixed top-0 start-50 translate-middle-x p-3"
+     style="z-index:3000; width:100%; max-width:430px;">
+</div>
+
+<main class="container page-wrap my-3">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div class="page-title d-flex align-items-center gap-2">
+            <h1 class="m-0">Repuestos de Orden</h1>
+            <span class="badge text-bg-warning" id="badgeNro">OT: -</span>
+        </div>
+        <a href="javascript:history.back()" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left"></i> Volver
+        </a>
+    </div>
+
+    <!-- Form alta repuesto -->
+    <div class="card mb-3">
+        <div class="card-body">
+            <h5 class="card-title mb-3">Agregar repuesto</h5>
+
+            <form id="formRepuesto" class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label">Descripción *</label>
+                    <input type="text" class="form-control" id="repDesc" required maxlength="200">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Cantidad *</label>
+                    <input type="number" class="form-control" id="repCant" required min="0.01" step="0.01" value="1">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Precio unitario (ARS) *</label>
+                    <input type="number" class="form-control" id="repPrecio" required min="0.01" step="0.01">
+                </div>
+                <div class="col-12 d-flex justify-content-end">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-plus-lg"></i> Agregar
+                    </button>
+                </div>
+            </form>
+
+            <div id="formErr" class="alert alert-danger mt-2 d-none"></div>
+        </div>
+    </div>
+
+    <!-- Tabla de repuestos -->
+    <div class="card">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h5 class="card-title m-0">Listado de repuestos</h5>
+                <span class="fw-semibold">Total repuestos: <span id="totalRepuestos">$0,00</span></span>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-sm table-bordered align-middle mb-0">
+                    <thead class="table-light">
+                    <tr>
+                        <th>#</th>
+                        <th>Descripción</th>
+                        <th class="text-end">Cantidad</th>
+                        <th class="text-end">Precio unit.</th>
+                        <th class="text-end">Subtotal</th>
+                        <th style="width: 70px;">Acciones</th>
+                    </tr>
+                    </thead>
+                    <tbody id="tbRepuestos"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</main>
+
+<footer class="site-footer">
+    <div class="container d-flex justify-content-between">
+        <span>©️ Rectificadora — demo académica</span>
+        <span class="muted">Negro/Gris/Blanco + Rojo</span>
+    </div>
+</footer>
+
+<script type="module">
+    import { getAuthHeader, isAuthenticated } from "/js/auth.js";
+
+    const badgeNro   = document.getElementById("badgeNro");
+    const tb         = document.getElementById("tbRepuestos");
+    const totalEl    = document.getElementById("totalRepuestos");
+    const formErr    = document.getElementById("formErr");
+
+    const money = (n) => new Intl.NumberFormat("es-AR", {
+        style: "currency",
+        currency: "ARS"
+    }).format(n || 0);
+
+    const showBanner = (type, msg) => {
+        const container = document.getElementById("toastContainer");
+        if (!container) return alert(msg);
+
+        const wrapper = document.createElement("div");
+        wrapper.className = `alert alert-${type === "ok" ? "success" : "danger"} shadow fw-semibold border-0 fade show`;
+        wrapper.style.opacity = "0";
+        wrapper.style.transition = "opacity .25s ease";
+        wrapper.innerHTML = `
+            <div class="d-flex justify-content-between align-items-center">
+                <span>${msg}</span>
+                <button type="button" class="btn-close ms-2" aria-label="Close"></button>
+            </div>
+        `;
+        container.appendChild(wrapper);
+        setTimeout(() => { wrapper.style.opacity = "1"; }, 20);
+        wrapper.querySelector(".btn-close").onclick = () => {
+            wrapper.style.opacity = "0";
+            setTimeout(() => wrapper.remove(), 250);
+        };
+        setTimeout(() => {
+            if (wrapper.parentNode) {
+                wrapper.style.opacity = "0";
+                setTimeout(() => wrapper.remove(), 250);
+            }
+        }, 4000);
+    };
+
+    const qp  = new URLSearchParams(location.search);
+    const nro = qp.get("nro");
+
+    if (!nro) {
+        alert("Falta parámetro 'nro' en la URL.");
+    } else {
+        badgeNro.textContent = "OT: " + nro;
+    }
+
+    // ====== Cargar lista de repuestos ======
+    async function cargarRepuestos() {
+        if (!nro) return;
+        if (!isAuthenticated()) {
+            alert("Iniciá sesión admin.");
+            location.href = "/login.html";
+            return;
+        }
+
+        const url = `/admin/ordenes/${encodeURIComponent(nro)}/repuestos`;
+        const r   = await fetch(url, { headers: { ...getAuthHeader() } });
+        const list = await r.json().catch(() => []);
+
+        tb.innerHTML = "";
+        let total = 0;
+
+        list.forEach((rep, idx) => {
+            total += Number(rep.subtotal || 0);
+            tb.insertAdjacentHTML(
+                "beforeend",
+                `<tr>
+                    <td>${idx + 1}</td>
+                    <td>${rep.descripcion}</td>
+                    <td class="text-end">
+                        <input type="number"
+                               class="form-control form-control-sm text-end"
+                               min="0.01" step="0.01"
+                               value="${rep.cantidad}"
+                               data-field="cantidad"
+                               data-id="${rep.id}">
+                    </td>
+                    <td class="text-end">
+                        <input type="number"
+                               class="form-control form-control-sm text-end"
+                               min="0.01" step="0.01"
+                               value="${rep.precioUnit}"
+                               data-field="precioUnit"
+                               data-id="${rep.id}">
+                    </td>
+                    <td class="text-end">${money(rep.subtotal)}</td>
+                    <td class="text-center">
+                        <button type="button" class="btn btn-sm btn-outline-danger"
+                                data-act="del" data-id="${rep.id}">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </td>
+                </tr>`
+            );
+        });
+
+        totalEl.textContent = money(total);
+    }
+
+    // ====== Alta repuesto ======
+    document.getElementById("formRepuesto").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        formErr.classList.add("d-none");
+        formErr.textContent = "";
+
+        const desc   = document.getElementById("repDesc").value.trim();
+        const cant   = Number(document.getElementById("repCant").value);
+        const precio = Number(document.getElementById("repPrecio").value);
+
+        if (!desc) {
+            formErr.textContent = "La descripción es obligatoria.";
+            formErr.classList.remove("d-none");
+            return;
+        }
+        if (!(cant > 0)) {
+            formErr.textContent = "La cantidad debe ser mayor a 0.";
+            formErr.classList.remove("d-none");
+            return;
+        }
+        if (!(precio > 0)) {
+            formErr.textContent = "El precio debe ser mayor a 0.";
+            formErr.classList.remove("d-none");
+            return;
+        }
+
+        try {
+            const r = await fetch(`/admin/ordenes/${encodeURIComponent(nro)}/repuestos`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    ...getAuthHeader()
+                },
+                body: JSON.stringify({
+                    descripcion: desc,
+                    cantidad: cant,
+                    precioUnit: precio
+                })
+            });
+
+            const text = await r.text();
+            let j; try { j = JSON.parse(text); } catch { j = {}; }
+
+            if (!r.ok) {
+                formErr.textContent = j.message || `Error HTTP ${r.status}`;
+                formErr.classList.remove("d-none");
+                return;
+            }
+
+            showBanner("ok", "Repuesto agregado correctamente.");
+            document.getElementById("repDesc").value   = "";
+            document.getElementById("repCant").value   = "1";
+            document.getElementById("repPrecio").value = "";
+            await cargarRepuestos();
+        } catch (err) {
+            formErr.textContent = "Error de red: " + (err?.message || err);
+            formErr.classList.remove("d-none");
+        }
+    });
+
+    // ====== Eliminar repuesto ======
+    tb.addEventListener("click", async (e) => {
+        const btn = e.target.closest("button[data-act='del']");
+        if (!btn) return;
+        const id = btn.dataset.id;
+        if (!confirm("¿Eliminar este repuesto?")) return;
+
+        try {
+            const r = await fetch(`/admin/ordenes/${encodeURIComponent(nro)}/repuestos/${id}`, {
+                method: "DELETE",
+                headers: { ...getAuthHeader() }
+            });
+            const text = await r.text();
+            let j; try { j = JSON.parse(text); } catch { j = {}; }
+
+            if (!r.ok) {
+                showBanner("err", j.message || `Error HTTP ${r.status}`);
+                return;
+            }
+            showBanner("ok", "Repuesto eliminado.");
+            await cargarRepuestos();
+        } catch (err) {
+            showBanner("err", "Error de red: " + (err?.message || err));
+        }
+    });
+
+    // ====== Editar cantidad / precio (PUT) ======
+    tb.addEventListener("change", async (e) => {
+        const input = e.target.closest("input[data-field]");
+        if (!input) return;
+
+        const repId = input.dataset.id;
+        const field = input.dataset.field;
+        const raw   = input.value;
+
+        const num = Number(raw);
+        if (!(num > 0)) {
+            showBanner("err", "El valor debe ser mayor a 0.");
+            return;
+        }
+
+        const payload = {};
+        if (field === "cantidad") {
+            payload.cantidad = num;
+        } else if (field === "precioUnit") {
+            payload.precioUnit = num;
+        }
+
+        try {
+            const r = await fetch(`/admin/ordenes/${encodeURIComponent(nro)}/repuestos/${repId}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    ...getAuthHeader()
+                },
+                body: JSON.stringify(payload)
+            });
+
+            const text = await r.text();
+            let j; try { j = JSON.parse(text); } catch { j = {}; }
+
+            if (!r.ok) {
+                showBanner("err", j.message || `Error HTTP ${r.status}`);
+                return;
+            }
+            // recargamos todo para refrescar subtotal + total
+            await cargarRepuestos();
+        } catch (err) {
+            showBanner("err", "Error de red: " + (err?.message || err));
+        }
+    });
+
+    // ====== Init ======
+    window.addEventListener("DOMContentLoaded", async () => {
+        if (!isAuthenticated()) {
+            alert("Iniciá sesión admin.");
+            location.href = "/login.html";
+            return;
+        }
+        await cargarRepuestos();
+    });
+</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
