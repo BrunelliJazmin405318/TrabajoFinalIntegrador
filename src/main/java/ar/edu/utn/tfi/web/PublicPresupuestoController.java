@@ -39,14 +39,23 @@ public class PublicPresupuestoController {
         Map<String, String> errors = new LinkedHashMap<>();
 
         // Normalizo todo
-        String nombre  = s(dto.clienteNombre());
-        String tel     = s(dto.clienteTelefono());
-        String email   = s(dto.clienteEmail());
-        String tipo    = s(dto.tipoUnidad()).toUpperCase();
-        String marca   = s(dto.marca());
-        String modelo  = s(dto.modelo());
-        String motor   = s(dto.nroMotor());
-        String desc    = s(dto.descripcion());
+        String nombre       = s(dto.clienteNombre());
+        String tel          = s(dto.clienteTelefono());
+        String email        = s(dto.clienteEmail());
+        String tipoUnidad   = s(dto.tipoUnidad()).toUpperCase();
+        String marca        = s(dto.marca());
+        String modelo       = s(dto.modelo());
+        String motor        = s(dto.nroMotor());
+        String desc         = s(dto.descripcion());
+        String tipoConsulta = s(dto.tipoConsulta()).toUpperCase();  // ⬅️ NUEVO
+
+        // ===== tipoConsulta: default & validación =====
+        if (tipoConsulta.isBlank()) {
+            tipoConsulta = "COTIZACION";  // valor por defecto
+        } else if (!tipoConsulta.equals("COTIZACION") && !tipoConsulta.equals("DIAGNOSTICO")) {
+            errors.put("tipoConsulta", "El tipo de consulta debe ser COTIZACION o DIAGNOSTICO.");
+        }
+        boolean esDiagnostico = "DIAGNOSTICO".equals(tipoConsulta);
 
         // ===== Validaciones campo por campo =====
 
@@ -68,28 +77,46 @@ public class PublicPresupuestoController {
             errors.put("clienteEmail", "El email no tiene un formato válido.");
         }
 
-        if (tipo.isBlank()) {
+        if (tipoUnidad.isBlank()) {
             errors.put("tipoUnidad", "El tipo de unidad es obligatorio.");
-        } else if (!tipo.equals("MOTOR") && !tipo.equals("TAPA")) {
+        } else if (!tipoUnidad.equals("MOTOR") && !tipoUnidad.equals("TAPA")) {
             errors.put("tipoUnidad", "El tipo de unidad debe ser MOTOR o TAPA.");
         }
 
-        if (marca.isBlank()) {
-            errors.put("marca", "La marca es obligatoria.");
-        } else if (marca.length() > 50) {
-            errors.put("marca", "La marca no puede superar los 50 caracteres.");
-        }
+        // 🔴 Diferen­cia clave:
+        //  - COTIZACION → marca/modelo/motor OBLIGATORIOS (como antes)
+        //  - DIAGNOSTICO → solo validamos longitudes si los completa
 
-        if (modelo.isBlank()) {
-            errors.put("modelo", "El modelo es obligatorio.");
-        } else if (modelo.length() > 50) {
-            errors.put("modelo", "El modelo no puede superar los 50 caracteres.");
-        }
+        if (!esDiagnostico) {
+            // === flujo COTIZACION: obligatorio ===
+            if (marca.isBlank()) {
+                errors.put("marca", "La marca es obligatoria.");
+            } else if (marca.length() > 50) {
+                errors.put("marca", "La marca no puede superar los 50 caracteres.");
+            }
 
-        if (motor.isBlank()) {
-            errors.put("nroMotor", "El número de motor es obligatorio.");
-        } else if (motor.length() > 50) {
-            errors.put("nroMotor", "El número de motor no puede superar los 50 caracteres.");
+            if (modelo.isBlank()) {
+                errors.put("modelo", "El modelo es obligatorio.");
+            } else if (modelo.length() > 50) {
+                errors.put("modelo", "El modelo no puede superar los 50 caracteres.");
+            }
+
+            if (motor.isBlank()) {
+                errors.put("nroMotor", "El número de motor es obligatorio.");
+            } else if (motor.length() > 50) {
+                errors.put("nroMotor", "El número de motor no puede superar los 50 caracteres.");
+            }
+        } else {
+            // === flujo DIAGNOSTICO: opcionales, solo límites de longitud ===
+            if (!marca.isBlank() && marca.length() > 50) {
+                errors.put("marca", "La marca no puede superar los 50 caracteres.");
+            }
+            if (!modelo.isBlank() && modelo.length() > 50) {
+                errors.put("modelo", "El modelo no puede superar los 50 caracteres.");
+            }
+            if (!motor.isBlank() && motor.length() > 50) {
+                errors.put("nroMotor", "El número de motor no puede superar los 50 caracteres.");
+            }
         }
 
         if (desc.isBlank()) {
@@ -111,11 +138,12 @@ public class PublicPresupuestoController {
                 nombre,
                 tel,
                 email,
-                tipo,      // MOTOR | TAPA en mayúsculas
+                tipoUnidad,   // MOTOR | TAPA en mayúsculas
                 marca,
                 modelo,
                 motor,
-                desc
+                desc,
+                tipoConsulta  // ⬅️ NUEVO
         );
 
         var s = service.crearSolicitud(cleanDto);
@@ -147,6 +175,7 @@ public class PublicPresupuestoController {
         out.put("modelo", s.getModelo());
         out.put("nroMotor", s.getNroMotor());
         out.put("descripcion", s.getDescripcion());
+        out.put("tipoConsulta", s.getTipoConsulta());
         out.put("estado", s.getEstado());
         out.put("creadaEn", s.getCreadaEn());
         out.put("decisionUsuario", s.getDecisionUsuario());

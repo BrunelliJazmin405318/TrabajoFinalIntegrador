@@ -47,7 +47,8 @@ public class SolicitudPresupuesto {
     @Column(name="decision_motivo")
     private String decisionMotivo;
 
-
+    @Column(name = "tipo_consulta", length = 20)
+    private String tipoConsulta;   // COTIZACION | DIAGNOSTICO
 
     @PrePersist
     void pre() {
