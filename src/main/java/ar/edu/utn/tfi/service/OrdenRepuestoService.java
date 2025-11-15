@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Set;
 
 @Service
 public class OrdenRepuestoService {
@@ -19,10 +20,27 @@ public class OrdenRepuestoService {
     private final OrdenTrabajoRepository ordenRepo;
     private final OrdenRepuestoRepository repuestoRepo;
 
+    // 👇 ETAPAS donde SÍ se pueden tocar repuestos
+    private static final Set<String> ETAPAS_PERMITEN_REPUESTOS = Set.of(
+            "DESPIECE_LAVADO",
+            "DIAGNOSTICO",
+            "MAQUINADO",
+            "SEMI_ARMADO"
+    );
+
     public OrdenRepuestoService(OrdenTrabajoRepository ordenRepo,
                                 OrdenRepuestoRepository repuestoRepo) {
         this.ordenRepo = ordenRepo;
         this.repuestoRepo = repuestoRepo;
+    }
+    // 🔹 Helper interno
+    private void validarEtapaParaRepuestos(OrdenTrabajo orden) {
+        String etapa = (orden.getEstadoActual() == null ? "" : orden.getEstadoActual().toUpperCase());
+        if (!ETAPAS_PERMITEN_REPUESTOS.contains(etapa)) {
+            throw new IllegalStateException(
+                    "No se pueden gestionar repuestos en la etapa actual: " + etapa
+            );
+        }
     }
 
     @Transactional(readOnly = true)
@@ -56,12 +74,15 @@ public class OrdenRepuestoService {
         OrdenTrabajo orden = ordenRepo.findByNroOrden(nroOrden)
                 .orElseThrow(() -> new EntityNotFoundException("Orden no encontrada: " + nroOrden));
 
+        // ✅ NUEVO: validar etapa antes de tocar repuestos
+        validarEtapaParaRepuestos(orden);
+
         OrdenRepuesto r = new OrdenRepuesto();
         r.setOrdenId(orden.getId());
         r.setDescripcion(desc);
         r.setCantidad(cantidad);
         r.setPrecioUnit(precio);
-        r.setSubtotal(precio.multiply(cantidad));  // ⬅️ calcular subtotal
+        r.setSubtotal(precio.multiply(cantidad));
         r.setCreatedBy(usuario);
 
         r = repuestoRepo.save(r);
@@ -72,6 +93,7 @@ public class OrdenRepuestoService {
     public void eliminar(String nroOrden, Long repuestoId, String usuario) {
         OrdenTrabajo orden = ordenRepo.findByNroOrden(nroOrden)
                 .orElseThrow(() -> new EntityNotFoundException("Orden no encontrada: " + nroOrden));
+        validarEtapaParaRepuestos(orden);
 
         OrdenRepuesto r = repuestoRepo.findById(repuestoId)
                 .orElseThrow(() -> new EntityNotFoundException("Repuesto no encontrado: " + repuestoId));
@@ -81,7 +103,6 @@ public class OrdenRepuestoService {
         }
 
         repuestoRepo.delete(r);
-        // Si querés, acá podrías meter auditoría de cambios de repuestos.
     }
 
     private RepuestoDTO toDTO(OrdenRepuesto r) {
@@ -118,5 +139,12 @@ public class OrdenRepuestoService {
                     return precio.multiply(cant);
                 })
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    @Transactional(readOnly = true)
+    public String getEtapaActualPorNroOrden(String nroOrden) {
+        OrdenTrabajo orden = ordenRepo.findByNroOrden(nroOrden)
+                .orElseThrow(() -> new EntityNotFoundException("Orden no encontrada: " + nroOrden));
+        return orden.getEstadoActual();
     }
 }

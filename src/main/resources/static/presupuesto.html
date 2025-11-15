@@ -59,11 +59,41 @@
         </div>
         <div class="col-md-4">
             <label class="form-label">Modelo</label>
-            <input class="form-control" name="modelo" placeholder="Ej: Palio 1.6">
+            <input class="form-control" name="modelo" placeholder="Ej: Palio">
         </div>
         <div class="col-md-4">
-            <label class="form-label">N° motor</label>
+            <label class="form-label">Cilindrada de motor</label>
             <input class="form-control" name="nroMotor" placeholder="Ej:1.6 - 2.0">
+        </div>
+        <div class="col-12 bg-dark p-3 rounded-3">
+            <label class="form-label d-block">¿Qué necesitás?</label>
+
+            <div class="form-check form-check-inline">
+                <input class="form-check-input"
+                       type="radio"
+                       name="tipoConsulta"
+                       id="tipoCoti"
+                       value="COTIZACION"
+                       checked>
+                <label class="form-check-label" for="tipoCoti">
+                    Cotización estimada
+                </label>
+            </div>
+
+            <div class="form-check form-check-inline">
+                <input class="form-check-input"
+                       type="radio"
+                       name="tipoConsulta"
+                       id="tipoDiag"
+                       value="DIAGNOSTICO">
+                <label class="form-check-label" for="tipoDiag">
+                    No sé qué tiene / Quiero diagnóstico presencial
+                </label>
+            </div>
+
+            <div class="form-text">
+                Si elegís diagnóstico presencial, te vamos a contactar para coordinar un turno y ver la pieza en el taller.
+            </div>
         </div>
         <div class="col-12">
             <label class="form-label">Descripción del trabajo</label>

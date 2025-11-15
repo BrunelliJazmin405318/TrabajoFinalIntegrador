@@ -24,10 +24,16 @@ public class PresupuestoService {
     // Público
     @Transactional
     public SolicitudPresupuesto crearSolicitud(SolicitudCreateDTO dto) {
-        if (dto.clienteNombre() == null || dto.clienteNombre().isBlank())
+        if (dto == null) {
+            throw new IllegalArgumentException("La solicitud no puede ser nula");
+        }
+
+        if (dto.clienteNombre() == null || dto.clienteNombre().isBlank()) {
             throw new IllegalArgumentException("clienteNombre es obligatorio");
-        if (dto.tipoUnidad() == null || dto.tipoUnidad().isBlank())
+        }
+        if (dto.tipoUnidad() == null || dto.tipoUnidad().isBlank()) {
             throw new IllegalArgumentException("tipoUnidad es obligatorio (MOTOR|TAPA)");
+        }
 
         SolicitudPresupuesto s = new SolicitudPresupuesto();
         s.setClienteNombre(dto.clienteNombre().trim());
@@ -38,10 +44,19 @@ public class PresupuestoService {
         s.setModelo(dto.modelo());
         s.setNroMotor(dto.nroMotor());
         s.setDescripcion(dto.descripcion());
+
+        // ✅ Nuevo: tipoConsulta con default COTIZACION
+        String tipoConsulta = dto.tipoConsulta();
+        if (tipoConsulta == null || tipoConsulta.isBlank()) {
+            tipoConsulta = "COTIZACION";
+        } else {
+            tipoConsulta = tipoConsulta.trim().toUpperCase();
+        }
+        s.setTipoConsulta(tipoConsulta);
+
         s.setEstado("PENDIENTE");
         return repo.save(s);
     }
-
     // Público
     @Transactional(readOnly = true)
     public SolicitudPresupuesto getById(Long id) {

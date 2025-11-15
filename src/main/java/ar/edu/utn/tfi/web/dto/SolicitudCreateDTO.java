@@ -41,6 +41,7 @@ public record SolicitudCreateDTO(
 
         @NotBlank(message = "La descripción del trabajo es obligatoria.")
         @Size(max = 1000, message = "La descripción no puede superar los 1000 caracteres.")
-        String descripcion
+        String descripcion,
+        String tipoConsulta
 ) {
 }

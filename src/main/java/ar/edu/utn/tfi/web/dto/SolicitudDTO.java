@@ -9,19 +9,22 @@ public record SolicitudDTO(
         String clienteNombre,
         String clienteTelefono,
         String clienteEmail,
-        String tipoUnidad,     // MOTOR | TAPA
+        String tipoUnidad,
         String marca,
         String modelo,
         String nroMotor,
         String descripcion,
-        String estado,         // PENDIENTE | APROBADO | RECHAZADO
+        String tipoConsulta,       // ✅ NUEVO
+        String estado,
         LocalDateTime creadaEn,
-        String decisionUsuario,
-        LocalDateTime decisionFecha,
-        String decisionMotivo,
         boolean presupuestoGenerado
 ) {
     public static SolicitudDTO from(SolicitudPresupuesto s, boolean presupuestoGenerado) {
+        String tipo = s.getTipoConsulta();
+        if (tipo == null || tipo.isBlank()) {
+            tipo = "COTIZACION"; // default para registros viejos
+        }
+
         return new SolicitudDTO(
                 s.getId(),
                 s.getClienteNombre(),
@@ -32,11 +35,9 @@ public record SolicitudDTO(
                 s.getModelo(),
                 s.getNroMotor(),
                 s.getDescripcion(),
+                tipo,
                 s.getEstado(),
                 s.getCreadaEn(),
-                s.getDecisionUsuario(),
-                s.getDecisionFecha(),
-                s.getDecisionMotivo(),
                 presupuestoGenerado
         );
     }

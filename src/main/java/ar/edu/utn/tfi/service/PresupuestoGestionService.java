@@ -56,6 +56,23 @@ public class PresupuestoGestionService {
         this.pagoManualRepo = pagoManualRepo;
         this.ordenRepuestoService = ordenRepuestoService;
     }
+    private static final Set<String> ETAPAS_PERMITEN_PAGO_FINAL = Set.of(
+            "LISTO_RETIRAR",
+            "ENTREGADO"
+    );
+
+    private boolean puedePagarFinalSegunEtapa(Presupuesto p) {
+        if (p.getOtNroOrden() == null || p.getOtNroOrden().isBlank()) {
+            // Si no hay OT asociada todavía, dejamos como estaba
+            return true;
+        }
+
+        String etapa = ordenRepuestoService
+                .getEtapaActualPorNroOrden(p.getOtNroOrden());
+
+        String e = (etapa == null ? "" : etapa.toUpperCase());
+        return ETAPAS_PERMITEN_PAGO_FINAL.contains(e);
+    }
 
     // ─────────── Helpers ───────────
     private static BigDecimal calcularSena(BigDecimal total) {
@@ -395,7 +412,12 @@ public class PresupuestoGestionService {
             if ("ACREDITADA".equalsIgnoreCase(String.valueOf(p.getFinalEstado()))) {
                 throw new IllegalStateException("El pago FINAL ya está acreditado.");
             }
-
+            // ✅ NUEVO: validar etapa de la OT si corresponde
+            if (!puedePagarFinalSegunEtapa(p)) {
+                throw new IllegalStateException(
+                        "No se puede registrar el pago FINAL mientras la OT no esté LISTO_RETIRAR/ENTREGADO."
+                );
+            }
             // Seña registrada (si por algún motivo faltara, calculamos 30% de servicios como fallback)
             BigDecimal senaRegistrada = p.getSenaMonto() != null
                     ? p.getSenaMonto()

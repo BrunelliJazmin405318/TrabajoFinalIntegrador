@@ -57,7 +57,14 @@
                 <table class="table table-bordered align-middle mb-0">
                     <thead>
                     <tr>
-                        <th>ID</th><th>Cliente</th><th>Tel</th><th>Unidad</th><th>Estado</th><th>Creada</th><th>Acciones</th>
+                        <th>ID</th>
+                        <th>Cliente</th>
+                        <th>Tel</th>
+                        <th>Unidad</th>
+                        <th>Tipo consulta</th>
+                        <th>Estado</th>
+                        <th>Creada</th>
+                        <th>Acciones</th>
                     </tr>
                     </thead>
                     <tbody id="tbody"></tbody>
@@ -120,6 +127,17 @@
         list.forEach(s => {
             const puedeGenerar = (s.estado === 'APROBADO') && (s.presupuestoGenerado !== true);
 
+            // Traducimos el tipo de consulta a algo lindo para la tabla
+            let tipoConsultaLabel = '-';
+            if (s.tipoConsulta === 'COTIZACION') {
+                tipoConsultaLabel = 'Cotización estimada';
+            } else if (s.tipoConsulta === 'DIAGNOSTICO') {
+                tipoConsultaLabel = 'Diagnóstico presencial';
+            } else if (s.tipoConsulta) {
+                // fallback por si en BD hay otro texto
+                tipoConsultaLabel = s.tipoConsulta;
+            }
+
             const accionesHtml = `
                 ${s.estado === 'PENDIENTE' ? `
                     <button class="btn btn-success btn-sm me-1" data-act="aprobar" data-id="${s.id}">
@@ -146,6 +164,7 @@
                   <td>${s.clienteNombre}</td>
                   <td>${s.clienteTelefono || '-'}</td>
                   <td>${s.tipoUnidad} ${s.marca || ''} ${s.modelo || ''}</td>
+                  <td>${tipoConsultaLabel}</td>
                   <td><span class="badge ${badge(s.estado)}">${s.estado}</span></td>
                   <td>${(s.creadaEn || '').replace('T',' ').substring(0,19)}</td>
                   <td>${accionesHtml}</td>

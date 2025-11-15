@@ -105,7 +105,12 @@ public class OrderAdvanceService {
         //     System.out.println("🔔 Notificación: orden " + orden.getNroOrden() + " lista para retirar.");
         // }
         if ("LISTO_RETIRAR".equalsIgnoreCase(nuevoEstado)) {
-            notificationService.emitirListoRetirar(orden, null);
+            try {
+                notificationService.emitirListoRetirar(orden, null);
+            } catch (Exception e) {
+                // Por ahora no rompemos el avance de etapa si falla la notificación
+                System.err.println("⚠ No se pudo emitir notificación LISTO_RETIRAR: " + e.getMessage());
+            }
         }
     }
 }

@@ -44,6 +44,9 @@
 
     <div id="cardResultado" class="card d-none">
         <div class="card-body">
+
+            <!-- 🔔 Mensaje con N° de orden (se completa por JS) -->
+            <div id="otInfoBox" class="alert alert-primary mt-3 d-none"></div>
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h5 class="card-title m-0">Detalle</h5>
                 <span id="chipEstado" class="status"><span class="dot"></span><span class="label">-</span></span>
@@ -340,6 +343,25 @@
         document.getElementById('dec_fecha').textContent   = fmt(j.decisionFecha);
         document.getElementById('dec_motivo').textContent  = j.decisionMotivo || '-';
         paintStatus(document.getElementById('chipEstado'), j.estado);
+
+        // ===== ✨ Mensaje UX con N° de OT ✨ =====
+        const otBox = document.getElementById('otInfoBox');
+        if (otBox) {
+            if (j.otNroOrden) {
+                otBox.innerHTML = `
+                <strong>Tu número de orden es ${j.otNroOrden}.</strong><br>
+                Podés seguir el avance en la página de
+                <a href="/consulta.html?nro=${encodeURIComponent(j.otNroOrden)}" class="fw-bold">
+                    Consulta de estado
+                </a>.
+            `;
+                otBox.classList.remove('d-none');
+            } else {
+                otBox.classList.add('d-none');
+                otBox.innerHTML = '';
+            }
+        }
+        // ===== FIN BLOQUE UX =====
 
         card.classList.remove('d-none');
         card.scrollIntoView({behavior:'smooth', block:'start'});
