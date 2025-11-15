@@ -60,7 +60,16 @@ public class FacturaMockService {
         if (!"ACREDITADA".equalsIgnoreCase(p.getFinalEstado())) {
             throw new IllegalStateException("Solo se puede facturar si el pago FINAL está acreditado.");
         }
+        // OPCIONAL: Validar etapa ENTREGADO antes de facturar
+        if (p.getOtNroOrden() != null && !p.getOtNroOrden().isBlank()) {
+            String etapa = ordenRepuestoService.getEtapaActualPorNroOrden(p.getOtNroOrden());
 
+            if (!"ENTREGADO".equalsIgnoreCase(etapa)) {
+                throw new IllegalStateException(
+                        "Solo se puede emitir factura cuando la OT está ENTREGADO. (Actual: " + etapa + ")"
+                );
+            }
+        }
         if (facturaRepo.findByPresupuestoId(presupuestoId).isPresent()) {
             throw new IllegalStateException("Ya existe una factura para este presupuesto.");
         }

@@ -11,6 +11,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class NotificationService {
@@ -26,7 +28,7 @@ public class NotificationService {
         this.hub = hub;
     }
 
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void emitirListoRetirar(OrdenTrabajo ot, String destinoClienteOpt) {
         String etapa = "LISTO_RETIRAR";  // etapa actual
 
