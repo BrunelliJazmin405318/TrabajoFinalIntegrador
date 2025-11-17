@@ -1,0 +1,388 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Rectificadora | Inicio</title>
+
+    <!-- Íconos para la lupita -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+
+    <style>
+        :root {
+            --recti-red: #e53935;
+            --recti-red-dark: #c62828;
+            --recti-black: #111111;
+            --recti-gray-light: #f5f5f5;
+            --recti-gray-mid: #dcdcdc;
+            --recti-white: #ffffff;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background-color: var(--recti-gray-light);
+            color: var(--recti-black);
+        }
+
+        a {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        /* ===== TOPBAR ===== */
+
+        .topbar {
+            height: 64px;
+            padding: 0 32px;
+            background-color: var(--recti-white);
+            border-bottom: 1px solid var(--recti-gray-mid);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .topbar-logo {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            font-size: 1.1rem;
+        }
+
+        .topbar-logo-mark {
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            background: var(--recti-red);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--recti-white);
+            font-size: 0.9rem;
+        }
+
+        .topbar-search-block {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .topbar-search-label {
+            font-size: 0.9rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #555;
+        }
+
+        .topbar-search-form {
+            display: flex;
+            align-items: stretch;
+            background: var(--recti-white);
+            border-radius: 999px;
+            border: 1px solid var(--recti-gray-mid);
+            overflow: hidden;
+        }
+
+        .topbar-search-input {
+            border: none;
+            padding: 8px 14px;
+            min-width: 160px;
+            max-width: 260px;
+            font-size: 0.9rem;
+            outline: none;
+        }
+
+        .topbar-search-btn {
+            border: none;
+            background: var(--recti-red);
+            color: var(--recti-white);
+            padding: 0 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        .topbar-search-btn:hover {
+            background: var(--recti-red-dark);
+        }
+
+        /* ===== HERO / LANDING ===== */
+
+        /* Contenedor general: ocupa toda la pantalla debajo del header */
+        .hero {
+            min-height: calc(100vh - 64px - 60px); /* alto viewport - topbar - footer */
+            margin: 0;
+            padding: 0;
+            width: 100%;
+        }
+
+        /* Bloque con la imagen de fondo: FULL ancho */
+        .hero-inner {
+            width: 100%;
+            min-height: calc(100vh - 64px - 60px);
+            background-image: url("/img/fondo-figura.png");
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            display: flex;
+            align-items: center;
+            padding: 40px 60px;
+            position: relative;
+            overflow: hidden;
+
+            /* Animación de entrada */
+            opacity: 0;
+            transform: translateY(16px);
+            animation: heroEnter 0.6s ease-out forwards;
+        }
+
+        /* fondo alternativo cuando pasás por el botón */
+        .hero-inner.hero-empleados {
+            background-image: url("/img/empleados-trabajando.png");
+        }
+
+        @keyframes heroEnter {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .hero-overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(
+                    90deg,
+                    rgba(0,0,0,0.75),
+                    rgba(0,0,0,0.25),
+                    rgba(0,0,0,0.05)
+            );
+            transition: background 0.3s ease;
+        }
+
+        /* un pelín más clara cuando estás sobre el botón */
+        .hero-inner.hero-empleados .hero-overlay {
+            background: linear-gradient(
+                    90deg,
+                    rgba(0,0,0,0.6),
+                    rgba(0,0,0,0.2),
+                    rgba(0,0,0,0.05)
+            );
+        }
+
+        .hero-content {
+            position: relative;
+            max-width: 420px;
+            color: var(--recti-white);
+            z-index: 1;
+        }
+
+        .hero-kicker {
+            font-size: 0.85rem;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            color: #ffb3b3;
+            margin-bottom: 8px;
+        }
+
+        .hero-title {
+            font-size: 2.4rem;
+            line-height: 1.1;
+            margin: 0 0 12px;
+        }
+
+        .hero-subtitle {
+            font-size: 0.98rem;
+            line-height: 1.5;
+            max-width: 380px;
+            color: #f5f5f5;
+            margin-bottom: 24px;
+        }
+
+        .hero-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 28px;
+            border-radius: 999px;
+            border: none;
+            cursor: pointer;
+            font-size: 0.98rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            background: var(--recti-white);
+            color: var(--recti-black);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.25);
+            transition: transform 0.15s ease, box-shadow 0.15s ease,
+            background 0.15s ease, color 0.15s ease;
+        }
+
+        .hero-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 16px 30px rgba(0,0,0,0.35);
+            background: var(--recti-red);
+            color: var(--recti-white);
+        }
+
+        .hero-button span.icon {
+            font-size: 1.1rem;
+        }
+
+        /* ===== FOOTER ===== */
+
+        footer {
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            color: #777;
+            background: var(--recti-white);
+            border-top: 1px solid var(--recti-gray-mid);
+        }
+
+        footer a {
+            color: #777;
+            text-decoration: underline;
+            text-decoration-thickness: 1px;
+        }
+
+        /* ===== RESPONSIVE ===== */
+
+        @media (max-width: 900px) {
+            .topbar {
+                padding: 0 16px;
+            }
+            .topbar-search-label {
+                display: none;
+            }
+            .topbar-search-input {
+                min-width: 130px;
+            }
+            .hero-inner {
+                padding: 32px 20px; /* menos padding para no achicar la imagen */
+            }
+            .hero-title {
+                font-size: 2rem;
+            }
+            .hero-content {
+                max-width: 100%;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .hero-inner {
+                padding: 28px 16px;
+            }
+            .hero-subtitle {
+                font-size: 0.9rem;
+            }
+        }
+
+        /*cositas para el n de motor*/
+        @keyframes glow-breath {
+            0% { box-shadow: 0 0 6px rgba(229,57,53,0.3); }
+            50% { box-shadow: 0 0 14px rgba(229,57,53,0.55); }
+            100% { box-shadow: 0 0 6px rgba(229,57,53,0.3); }
+        }
+
+        @keyframes float-icon {
+            0% { transform: rotate(0deg) translateY(0); }
+            50% { transform: rotate(8deg) translateY(-1px); }
+            100% { transform: rotate(0deg) translateY(0); }
+        }
+
+        .topbar-search-form:has(.topbar-search-input:focus) {
+            animation: glow-breath 1.5s infinite ease-in-out;
+        }
+
+        .topbar-search-form:has(.topbar-search-input:focus) .topbar-search-btn i {
+            animation: float-icon 1.3s infinite ease-in-out;
+        }
+
+    </style>
+</head>
+<body>
+
+<header class="topbar">
+    <a href="/index.html" class="topbar-logo">
+        <div class="topbar-logo-mark">R</div>
+        <span>RECTIFICADORA CORNEJO</span>
+    </a>
+
+    <div class="topbar-search-block">
+        <span class="topbar-search-label">SEGUÍ TU MOTOR</span>
+        <form class="topbar-search-form" method="get" action="/consulta.html">
+            <input
+                    class="topbar-search-input"
+                    type="text"
+                    name="nro"
+                    placeholder="N° de orden (ej: OT-0001)" />
+            <button class="topbar-search-btn" type="submit" aria-label="Buscar">
+                <i class="bi bi-search"></i>
+            </button>
+        </form>
+    </div>
+</header>
+
+<main class="hero">
+    <section class="hero-inner" id="heroBox">
+        <div class="hero-overlay"></div>
+
+        <div class="hero-content">
+            <div class="hero-kicker">RECTIFICADORA</div>
+            <h1 class="hero-title">Logística para motores que vuelven a vivir.</h1>
+            <p class="hero-subtitle">
+                Gestioná solicitudes, seguí el estado de tu motor y organizá el trabajo del taller
+                desde un solo lugar, con la precisión de una rectificadora moderna.
+            </p>
+
+            <button id="btnLogistica" class="hero-button" type="button"
+                    onclick="location.href='/home.html'">
+                <span>Logística general</span>
+                <span class="icon">➜</span>
+            </button>
+        </div>
+    </section>
+</main>
+
+<footer>
+    <span>© 2025 Rectificadora Cornejo. Todos los derechos reservados.</span>
+    &nbsp;&nbsp;•&nbsp;&nbsp;
+    <a href="#">Aviso legal</a>
+</footer>
+
+<script>
+    // Cambiar la imagen de fondo cuando pasás por el botón
+    document.addEventListener("DOMContentLoaded", () => {
+        const heroBox = document.getElementById("heroBox");
+        const btnLog = document.getElementById("btnLogistica");
+
+        if (!heroBox || !btnLog) return;
+
+        btnLog.addEventListener("mouseenter", () => {
+            heroBox.classList.add("hero-empleados");
+        });
+
+        btnLog.addEventListener("mouseleave", () => {
+            heroBox.classList.remove("hero-empleados");
+        });
+    });
+</script>
+</body>
+</html>

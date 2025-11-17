@@ -1,0 +1,919 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Rectificadora | Logística general</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+
+    <style>
+        :root {
+            --recti-red: #e53935;
+            --recti-red-dark: #c62828;
+            --recti-black: #111111;
+            --recti-gray-light: #f5f5f5;
+            --recti-gray-mid: #dcdcdc;
+            --recti-white: #ffffff;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            color: var(--recti-black);
+            background: #f3f3f3;
+        }
+
+        a { color: inherit; text-decoration: none; }
+
+        /* ============= NAVBAR ============= */
+
+        .main-header {
+            background: var(--recti-white);
+            border-bottom: none;
+            box-shadow: 0 1px 0 rgba(0,0,0,0.03);
+            position: sticky;
+            top: 0;
+            z-index: 1050;
+        }
+
+        .main-header-inner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 24px;
+            padding: 0.6rem 1.5rem;
+        }
+
+        .nav-logo {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 800;
+            letter-spacing: .08em;
+            font-size: 1rem;
+            text-transform: uppercase;
+            color: var(--recti-black);
+        }
+
+        .nav-logo-mark {
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            background: var(--recti-red);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--recti-white);
+            font-size: .9rem;
+        }
+
+        .nav-main {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+        }
+
+        .nav-list {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        .nav-item { position: relative; }
+
+        .nav-link,
+        .nav-link-toggle {
+            border: none;
+            background: transparent;
+            padding: .25rem 0;
+            font-size: .92rem;
+            font-weight: 500;
+            color: #444;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .nav-link-toggle i { font-size: .75rem; }
+
+        .nav-link:hover,
+        .nav-link-toggle:hover {
+            color: var(--recti-red-dark);
+        }
+
+        .btn-login {
+            border-radius: 999px;
+            border: 1px solid var(--recti-red);
+            padding: .35rem 1rem;
+            font-size: .9rem;
+            font-weight: 600;
+            color: var(--recti-red);
+            white-space: nowrap;
+            transition: all .15s ease;
+        }
+
+        .btn-login:hover {
+            background: var(--recti-red);
+            color: var(--recti-white);
+        }
+
+        /* Submenú desktop */
+
+        .submenu {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            min-width: 230px;
+            padding: .5rem 0;
+            background: var(--recti-white);
+            border-radius: 10px;
+            box-shadow: 0 14px 30px rgba(0, 0, 0, .12);
+            opacity: 0;
+            pointer-events: none;
+            transform: translateY(8px);
+            transition: all .18s ease-out;
+            z-index: 1060;
+        }
+
+        .nav-item.submenu-open .submenu {
+            opacity: 1;
+            pointer-events: auto;
+            transform: translateY(0);
+        }
+
+        .submenu-group-title {
+            font-size: .75rem;
+            text-transform: uppercase;
+            letter-spacing: .14em;
+            color: #999;
+            padding: .25rem 1rem .1rem;
+        }
+
+        .submenu a {
+            display: block;
+            padding: .35rem 1rem;
+            font-size: .9rem;
+            color: #444;
+            white-space: nowrap;
+        }
+
+        .submenu a:hover {
+            background: var(--recti-gray-light);
+            color: var(--recti-red-dark);
+        }
+
+        .nav-toggle {
+            display: none;
+            border: none;
+            background: transparent;
+            font-size: 1.4rem;
+            cursor: pointer;
+            color: #444;
+        }
+
+        /* ========= RESPONSIVE NAV ========= */
+
+        @media (max-width: 992px) {
+            .main-header-inner { padding-inline: 1rem; }
+
+            .nav-toggle { display: inline-flex; }
+
+            .nav-main {
+                position: fixed;
+                inset: 64px 0 auto 0;
+                background: var(--recti-white);
+                flex-direction: column;
+                align-items: stretch;
+                gap: 0;
+                max-height: 0;
+                overflow: hidden;
+                transition: max-height .25s ease;
+                box-shadow: 0 12px 30px rgba(0, 0, 0, .18);
+            }
+
+            .nav-main.nav-open { max-height: 80vh; }
+
+            .nav-list {
+                flex-direction: column;
+                align-items: stretch;
+                padding: .75rem 1rem;
+                gap: .25rem;
+            }
+
+            .nav-link-toggle,
+            .nav-link {
+                justify-content: space-between;
+                width: 100%;
+                text-align: left;
+            }
+
+            .nav-item {
+                border-bottom: 1px solid #f0f0f0;
+                padding-bottom: .3rem;
+            }
+
+            .submenu {
+                position: static;
+                box-shadow: none;
+                border-radius: 0;
+                transform: none;
+                opacity: 1;
+                pointer-events: auto;
+                padding: .25rem 0 .5rem;
+                display: none;
+                margin-left: .5rem;
+                border-left: 2px solid #eee;
+            }
+
+            .nav-item.submenu-open .submenu { display: block; }
+
+            .btn-login {
+                margin: .4rem 1rem 1rem;
+                align-self: flex-start;
+            }
+        }
+
+        /* ============= HERO SLIDER ============= */
+
+        main {
+            min-height: calc(100vh - 64px - 60px);
+        }
+
+        .home-hero {
+            position: relative;
+            width: 100%;
+            min-height: 420px;
+            background-color: #000;
+            color: #fff;
+            overflow: hidden;
+        }
+
+        .home-hero-slide {
+            position: absolute;
+            inset: 0;
+            background-size: cover;
+            background-position: center;
+            opacity: 0;
+            transition: opacity 0.8s ease;
+        }
+
+        .home-hero-slide.is-active {
+            opacity: 1;
+        }
+
+        .home-hero-overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(90deg, rgba(0,0,0,.75), rgba(0,0,0,.25), rgba(0,0,0,0.05));
+        }
+
+        .home-hero-inner {
+            position: relative;
+            z-index: 1;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 72px 24px 80px;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        .home-hero-kicker {
+            font-size: .85rem;
+            letter-spacing: .18em;
+            text-transform: uppercase;
+            color: #ffb3b3;
+        }
+
+        .home-hero-title {
+            font-size: 2.6rem;
+            max-width: 510px;
+            line-height: 1.1;
+        }
+
+        .home-hero-text {
+            max-width: 480px;
+            font-size: 1rem;
+            color: #f5f5f5;
+        }
+
+        .home-hero-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 8px;
+        }
+
+        .btn-primary-recti,
+        .btn-ghost-recti {
+            border-radius: 999px;
+            padding: .7rem 1.6rem;
+            font-size: .9rem;
+            font-weight: 600;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+            border: 1px solid transparent;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-primary-recti {
+            background: var(--recti-red);
+            border-color: var(--recti-red);
+            color: #fff;
+            box-shadow: 0 14px 28px rgba(0,0,0,.35);
+        }
+
+        .btn-primary-recti:hover {
+            background: var(--recti-red-dark);
+        }
+
+        .btn-ghost-recti {
+            background: rgba(0,0,0,.45);
+            border-color: rgba(255,255,255,.7);
+            color: #fff;
+        }
+
+        .btn-ghost-recti:hover {
+            background: rgba(0,0,0,.7);
+        }
+
+        /* ============= SECCIONES GENERALES ============= */
+
+        .home-section {
+            padding: 56px 16px;
+            background: #f6f6f6;
+        }
+
+        .home-section:nth-of-type(even) {
+            background: #ffffff;
+        }
+
+        .home-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* ¿Quiénes somos? */
+
+        .home-about {
+            display: grid;
+            grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.1fr);
+            gap: 40px;
+            align-items: center;
+        }
+
+        .home-section-kicker {
+            font-size: .8rem;
+            letter-spacing: .18em;
+            text-transform: uppercase;
+            color: var(--recti-red);
+            margin-bottom: 6px;
+        }
+
+        .home-section-title {
+            font-size: 2rem;
+            margin: 0 0 14px;
+        }
+
+        .home-section-text {
+            font-size: .96rem;
+            line-height: 1.6;
+            color: #555;
+        }
+
+        .home-about-img,
+        .home-tech-img {
+            border-radius: 18px;
+            overflow: hidden;
+            box-shadow: 0 18px 38px rgba(0,0,0,.18);
+        }
+
+        .home-about-img img,
+        .home-tech-img img {
+            display: block;
+            width: 100%;
+            height: auto;
+        }
+
+        /* Tecnología */
+
+        .home-tech {
+            display: grid;
+            grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.1fr);
+            gap: 40px;
+            align-items: center;
+        }
+
+        /* Por qué nos eligen */
+
+        .home-why-wrapper {
+            display: grid;
+            grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+            gap: 40px;
+            align-items: center;
+        }
+
+        .home-why-tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 18px 0 16px;
+        }
+
+        .home-why-tab {
+            padding: .45rem .95rem;
+            border-radius: 999px;
+            border: 1px solid #ddd;
+            background: #f8f8f8;
+            font-size: .86rem;
+            cursor: pointer;
+            color: #555;
+        }
+
+        .home-why-tab.is-active {
+            background: var(--recti-red);
+            border-color: var(--recti-red);
+            color: #fff;
+        }
+
+        .home-why-detail {
+            font-size: .95rem;
+            line-height: 1.6;
+            color: #555;
+        }
+
+        .home-why-img {
+            border-radius: 18px;
+            overflow: hidden;
+            box-shadow: 0 18px 38px rgba(0,0,0,.18);
+        }
+
+        .home-why-img img {
+            width: 100%;
+            display: block;
+        }
+
+        /* FOOTER */
+
+        .site-footer {
+            background: #111;
+            color: #ccc;
+            font-size: .8rem;
+            padding: 16px 0;
+        }
+
+        .site-footer-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding-inline: 16px;
+            display: flex;
+            justify-content: space-between;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .site-footer a { color: #ccc; text-decoration: underline; }
+
+        /* RESPONSIVE SECCIONES */
+
+        @media (max-width: 900px) {
+            .home-hero-inner {
+                padding-top: 60px;
+                padding-bottom: 60px;
+            }
+
+            .home-hero-title { font-size: 2.2rem; }
+
+            .home-about,
+            .home-tech,
+            .home-why-wrapper {
+                grid-template-columns: 1fr;
+            }
+
+            .home-tech-img { order: -1; } /* imagen arriba en mobile */
+        }
+
+        @media (max-width: 600px) {
+            .home-hero-title { font-size: 1.9rem; }
+        }
+
+        /* =============== FOOTER =============== */
+
+        .site-footer {
+            background: #111;
+            color: #ccc;
+            padding: 40px 0 24px;
+            font-size: .9rem;
+        }
+
+        .footer-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 16px;
+        }
+
+        /* TOP */
+        .footer-top {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            gap: 40px;
+            padding-bottom: 32px;
+        }
+
+        /* LOGO */
+        .footer-brand {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .footer-logo-mark {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            background: var(--recti-red);
+            color: white;
+            font-weight: 800;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .footer-logo-text {
+            font-size: 1.1rem;
+            font-weight: 700;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+        }
+
+        /* LINKS */
+        .footer-links {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 40px;
+        }
+
+        .footer-column h4 {
+            font-size: .85rem;
+            color: #eee;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            margin-bottom: 10px;
+        }
+
+        .footer-column a {
+            display: block;
+            color: #bbb;
+            font-size: .85rem;
+            margin-bottom: 6px;
+            text-decoration: none;
+        }
+
+        .footer-column a:hover {
+            color: var(--recti-red);
+        }
+
+        /* BOTTOM STRIP */
+        .footer-bottom {
+            border-top: 1px solid rgba(255,255,255,0.1);
+            padding-top: 16px;
+            margin-top: 16px;
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            font-size: .8rem;
+            color: #888;
+        }
+
+        @media (max-width: 768px) {
+            .footer-links {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<header class="main-header">
+    <div class="main-header-inner">
+        <a href="/index.html" class="nav-logo">
+            <span class="nav-logo-mark">R</span>
+            <span>RECTIFICADORA CORNEJO</span>
+        </a>
+
+        <button class="nav-toggle" type="button" aria-label="Abrir menú" aria-expanded="false">
+            <i class="bi bi-list"></i>
+        </button>
+
+        <nav id="mainNav" class="nav-main">
+            <ul class="nav-list">
+                <!-- SEGUÍ TU MOTOR -->
+                <li class="nav-item has-submenu">
+                    <button class="nav-link-toggle">
+                        Seguimientos
+                        <i class="bi bi-chevron-down"></i>
+                    </button>
+                    <div class="submenu">
+                        <div class="submenu-group-title">Informacion extendida</div>
+                        <a href="/consulta.html">Estado de mi orden de motor</a>
+                        <a href="/historial.html">Historial de mi motor</a>
+                        <a href="/estado-solicitud.html">Estado de mi solicitud</a>
+                    </div>
+                </li>
+
+                <!-- SERVICIOS -->
+                <li class="nav-item has-submenu">
+                    <button class="nav-link-toggle">
+                        Servicios
+                        <i class="bi bi-chevron-down"></i>
+                    </button>
+                    <div class="submenu">
+                        <div class="submenu-group-title">Motor</div>
+                        <a href="#servicios">Rectificación integral</a>
+                        <a href="#servicios">Banco de pruebas</a>
+                        <div class="submenu-group-title">Tapa de cilindros</div>
+                        <a href="#servicios">Ajuste y planeo</a>
+                        <a href="#servicios">Cambio de guías y asientos</a>
+                    </div>
+                </li>
+
+                <!-- NOSOTROS -->
+                <li class="nav-item has-submenu">
+                    <button class="nav-link-toggle">
+                        Nosotros
+                        <i class="bi bi-chevron-down"></i>
+                    </button>
+                    <div class="submenu">
+                        <a href="#nosotros">Quiénes somos</a>
+                        <a href="#por-que">Por qué nos eligen</a>
+                    </div>
+                </li>
+
+                <!-- CONTACTO -->
+                <li class="nav-item has-submenu">
+                    <button class="nav-link-toggle">
+                        Contacto
+                        <i class="bi bi-chevron-down"></i>
+                    </button>
+                    <div class="submenu">
+                        <a href="/presupuesto.html">Pedir cotización</a>
+                        <a href="#contacto">Quiero trabajar con ustedes</a>
+                    </div>
+                </li>
+            </ul>
+
+            <a href="/login.html" class="btn-login">Login taller</a>
+        </nav>
+    </div>
+</header>
+
+<main>
+    <!-- HERO SLIDER -->
+    <section class="home-hero">
+        <div class="home-hero-slide is-active"
+             style="background-image:url('/img/entregando-motorr.png')"></div>
+        <div class="home-hero-slide"
+             style="background-image:url('/img/camion.png')"></div>
+        <div class="home-hero-slide"
+             style="background-image:url('/img/mecanico-traba.png')"></div>
+
+        <div class="home-hero-overlay"></div>
+
+        <div class="home-hero-inner">
+            <span class="home-hero-kicker">LOGÍSTICA GENERAL</span>
+            <h1 class="home-hero-title">Logística para motores que vuelven a vivir.</h1>
+            <p class="home-hero-text">
+                Centralizá el seguimiento de tus órdenes, la planificación del taller y las
+                notificaciones a tus clientes en una sola plataforma pensada para rectificadoras.
+            </p>
+
+            <div class="home-hero-actions">
+                <button class="btn-primary-recti" onclick="location.href='/presupuesto.html'">
+                    Pedir cotización
+                    <i class="bi bi-arrow-right-short"></i>
+                </button>
+                <button class="btn-ghost-recti" onclick="location.href='/consulta.html'">
+                    Seguir mi motor
+                    <i class="bi bi-search"></i>
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- QUIÉNES SOMOS -->
+    <section id="nosotros" class="home-section">
+        <div class="home-container home-about">
+            <div>
+                <div class="home-section-kicker">QUIÉNES SOMOS</div>
+                <h2 class="home-section-title">Rectificadora Cornejo, taller de confianza.</h2>
+                <p class="home-section-text">
+                    Somos una rectificadora familiar especializada en motores y tapas de cilindros.
+                    Combinamos experiencia de taller con herramientas digitales para que cada orden
+                    tenga trazabilidad clara, desde el ingreso hasta la entrega.
+                </p>
+                <p class="home-section-text">
+                    Nuestro objetivo es que tanto los clientes como el equipo del taller sepan siempre
+                    en qué etapa está cada motor, qué trabajos se realizaron y qué garantía tiene.
+                </p>
+            </div>
+
+            <div class="home-about-img">
+                <img src="/img/equipo.png" alt="Equipo de la rectificadora trabajando">
+            </div>
+        </div>
+    </section>
+
+    <!-- TECNOLOGÍA AL SERVICIO DEL MOTOR -->
+    <section id="servicios" class="home-section">
+        <div class="home-container home-tech">
+            <div class="home-tech-img">
+                <img src="/img/tecnologia.png" alt="Tecnología en el banco de rectificación">
+            </div>
+
+            <div>
+                <div class="home-section-kicker">TECNOLOGÍA</div>
+                <h2 class="home-section-title">Tecnología al servicio de cada reparación.</h2>
+                <p class="home-section-text">
+                    El sistema registra solicitudes, órdenes de trabajo, repuestos utilizados, pagos y
+                    facturas, manteniendo todo organizado por número de motor y número de orden.
+                </p>
+                <p class="home-section-text">
+                    De esta forma el taller puede enfocarse en el trabajo técnico mientras la plataforma
+                    se encarga de la logística: avisos de seña, demoras, listo para retirar y seguimiento
+                    completo del historial.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- POR QUÉ NOS ELIGEN -->
+    <section id="por-que" class="home-section">
+        <div class="home-container home-why-wrapper">
+            <div>
+                <div class="home-section-kicker">VALOR</div>
+                <h2 class="home-section-title">Por qué los clientes nos eligen.</h2>
+                <div class="home-why-tabs">
+                    <button class="home-why-tab is-active" data-reason="innovacion">Innovación</button>
+                    <button class="home-why-tab" data-reason="claridad">Claridad en el estado</button>
+                    <button class="home-why-tab" data-reason="tiempos">Compromiso con los tiempos</button>
+                    <button class="home-why-tab" data-reason="garantia">Historial y garantía</button>
+                </div>
+                <p id="whyDetail" class="home-why-detail">
+                    Exploramos nuevas formas de combinar la experiencia de taller con herramientas
+                    digitales, para que la gestión de cada motor sea más simple, ordenada y transparente.
+                </p>
+            </div>
+
+            <div class="home-why-img">
+                <img src="/img/siguiendo-motor.png" alt="Cliente siguiendo el estado de su motor desde el celular">
+            </div>
+        </div>
+    </section>
+
+    <!-- CONTACTO SIMPLE ABAJO (anchor para el menú) -->
+    <section id="contacto" class="home-section" style="padding-top:32px;">
+        <div class="home-container">
+            <div class="home-section-kicker">CONTACTO</div>
+            <h2 class="home-section-title">¿Querés trabajar con nosotros?</h2>
+            <p class="home-section-text">
+                Si sos mecánico, tornero o trabajás con motores y querés sumarte a nuestro equipo,
+                podés enviarnos tu CV y datos de contacto al correo
+                <strong>cv@rectificadoracornejo.com</strong> o acercarte al taller para conocernos.
+            </p>
+        </div>
+    </section>
+</main>
+
+<footer class="site-footer">
+    <div class="footer-container">
+
+        <div class="footer-top">
+            <div class="footer-brand">
+                <div class="footer-logo-mark">R</div>
+                <span class="footer-logo-text">RECTIFICADORA CORNEJO</span>
+            </div>
+
+            <div class="footer-links">
+                <div class="footer-column">
+                    <h4>Soluciones</h4>
+                    <a href="#servicios">Rectificación integral</a>
+                    <a href="#servicios">Tapa de cilindros</a>
+                    <a href="#servicios">Banco de pruebas</a>
+                </div>
+
+                <div class="footer-column">
+                    <h4>Nosotros</h4>
+                    <a href="#nosotros">Quiénes somos</a>
+                    <a href="#por-que">Por qué nos eligen</a>
+                </div>
+
+                <div class="footer-column">
+                    <h4>Contacto</h4>
+                    <a href="/presupuesto.html">Pedir cotización</a>
+                    <a href="#contacto">Trabajá con nosotros</a>
+                </div>
+
+                <div class="footer-column">
+                    <h4>Seguimientos</h4>
+                    <a href="/consulta.html">Estado del motor</a>
+                    <a href="/historial.html">Historial del motor</a>
+                    <a href="/estado-solicitud.html">Estado de solicitud</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer-bottom">
+            <span>© 2025 Rectificadora Cornejo. Todos los derechos reservados.
+  •
+Aviso legal</span>
+            <span>2025</span>
+        </div>
+
+    </div>
+</footer>
+
+<script>
+    // ====== NAVBAR JS ======
+    const navToggle = document.querySelector('.nav-toggle');
+    const mainNav   = document.getElementById('mainNav');
+
+    if (navToggle && mainNav) {
+        navToggle.addEventListener('click', () => {
+            const open = mainNav.classList.toggle('nav-open');
+            navToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+        });
+    }
+
+    const submenuParents = document.querySelectorAll('.nav-item.has-submenu');
+
+    submenuParents.forEach(item => {
+        const btn = item.querySelector('.nav-link-toggle');
+        if (!btn) return;
+
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const isOpen = item.classList.contains('submenu-open');
+            submenuParents.forEach(i => i.classList.remove('submenu-open'));
+            if (!isOpen) item.classList.add('submenu-open');
+        });
+    });
+
+    document.addEventListener('click', (e) => {
+        const insideNav = e.target.closest('.main-header');
+        if (!insideNav) submenuParents.forEach(i => i.classList.remove('submenu-open'));
+    });
+
+    // ====== HERO SLIDER SIMPLE ======
+    const slides = Array.from(document.querySelectorAll('.home-hero-slide'));
+    let currentSlide = 0;
+
+    function showSlide(idx) {
+        slides.forEach((s, i) => s.classList.toggle('is-active', i === idx));
+    }
+
+    if (slides.length > 1) {
+        setInterval(() => {
+            currentSlide = (currentSlide + 1) % slides.length;
+            showSlide(currentSlide);
+        }, 6000);
+    }
+
+    // ====== POR QUÉ NOS ELIGEN (tabs) ======
+    const whyTabs   = document.querySelectorAll('.home-why-tab');
+    const whyDetail = document.getElementById('whyDetail');
+
+    const whyTexts = {
+        innovacion:
+            'Exploramos nuevas formas de combinar la experiencia de taller con herramientas digitales, para que la gestión de cada motor sea más simple, ordenada y transparente.',
+        claridad:
+            'Cada orden tiene un número y un estado claro: ingreso, diagnóstico, en reparación, listo para retirar o irreparable. El cliente puede seguir todo online, sin llamados eternos.',
+        tiempos:
+            'Registramos demoras, avisos de repuestos y fechas de entrega estimadas, para que el taller pueda organizar mejor la carga de trabajo y el cliente sepa qué esperar.',
+        garantia:
+            'Guardamos el historial completo del motor, trabajos realizados y fechas de garantía, facilitando reclamos, seguimientos y próximas intervenciones.'
+    };
+
+    whyTabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            const key = tab.dataset.reason;
+            whyTabs.forEach(t => t.classList.remove('is-active'));
+            tab.classList.add('is-active');
+            whyDetail.textContent = whyTexts[key] || '';
+        });
+    });
+</script>
+
+</body>
+</html>
