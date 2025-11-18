@@ -9,6 +9,7 @@ import ar.edu.utn.tfi.repository.OrdenTrabajoRepository;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
+import ar.edu.utn.tfi.repository.UnidadTrabajoRepository;
 
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -20,17 +21,20 @@ public class OrderAdvanceService {
     private final EtapaCatalogoRepository etapaRepo;
     private final AuditoriaService auditoria;
     private final NotificationService notificationService;
+    private final UnidadTrabajoRepository unidadRepo;
 
     public OrderAdvanceService(OrdenTrabajoRepository ordenRepo,
                                OrdenEtapaHistorialRepository historialRepo,
                                EtapaCatalogoRepository etapaRepo,
                                AuditoriaService auditoria,
-                               NotificationService notificationService) {
+                               NotificationService notificationService,
+                               UnidadTrabajoRepository unidadRepo) {
         this.ordenRepo = ordenRepo;
         this.historialRepo = historialRepo;
         this.etapaRepo = etapaRepo;
         this.auditoria = auditoria;
         this.notificationService = notificationService;
+        this.unidadRepo = unidadRepo;
     }
 
     // ✅ Agregá este helper acá mismo:
@@ -105,8 +109,21 @@ public class OrderAdvanceService {
         //     System.out.println("🔔 Notificación: orden " + orden.getNroOrden() + " lista para retirar.");
         // }
         if ("LISTO_RETIRAR".equalsIgnoreCase(nuevoEstado)) {
+
+            String telefonoDestino = null;
             try {
-                notificationService.emitirListoRetirar(orden, null);
+                // Buscamos la unidad de trabajo de la OT
+                var unidadOpt = unidadRepo.findById(orden.getUnidadId());
+                if (unidadOpt.isPresent() && unidadOpt.get().getCliente() != null) {
+                    telefonoDestino = unidadOpt.get().getCliente().getTelefono();
+                }
+            } catch (Exception e) {
+                System.err.println("⚠ No se pudo obtener teléfono del cliente para la OT "
+                        + orden.getNroOrden() + ": " + e.getMessage());
+            }
+
+            try {
+                notificationService.emitirListoRetirar(orden, telefonoDestino);
             } catch (Exception e) {
                 // Por ahora no rompemos el avance de etapa si falla la notificación
                 System.err.println("⚠ No se pudo emitir notificación LISTO_RETIRAR: " + e.getMessage());

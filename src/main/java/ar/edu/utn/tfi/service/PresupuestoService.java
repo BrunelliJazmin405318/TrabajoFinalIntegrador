@@ -7,6 +7,7 @@ import ar.edu.utn.tfi.web.dto.SolicitudCreateDTO;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ar.edu.utn.tfi.service.NotificationService;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -15,10 +16,12 @@ import java.util.List;
 public class PresupuestoService {
     private final SolicitudPresupuestoRepository repo;
     private final PresupuestoRepository repository;
+    private final NotificationService notificationService;
 
-    public PresupuestoService(SolicitudPresupuestoRepository repo,  PresupuestoRepository repository) {
+    public PresupuestoService(SolicitudPresupuestoRepository repo,  PresupuestoRepository repository, NotificationService notificationService) {
         this.repo = repo;
         this.repository = repository;
+        this.notificationService = notificationService;
     }
 
     // Público
@@ -84,10 +87,8 @@ public class PresupuestoService {
         s.setDecisionMotivo(nota);
         SolicitudPresupuesto saved = repo.save(s);
 
-        // Mock WhatsApp
-        System.out.println("📲 [WA MOCK] Aprobada solicitud #" + saved.getId() +
-                " - Cliente: " + saved.getClienteNombre() +
-                " - Tel: " + saved.getClienteTelefono());
+        // 🔄 antes: sout mock
+        notificationService.notificarDecisionSolicitud(saved);
 
         return saved;
     }
@@ -105,10 +106,8 @@ public class PresupuestoService {
         s.setDecisionMotivo(nota);
         SolicitudPresupuesto saved = repo.save(s);
 
-        // Mock WhatsApp
-        System.out.println("📲 [WA MOCK] Rechazada solicitud #" + saved.getId() +
-                " - Cliente: " + saved.getClienteNombre() +
-                " - Tel: " + saved.getClienteTelefono());
+        // 🔄 antes: sout mock
+        notificationService.notificarDecisionSolicitud(saved);
 
         return saved;
     }
