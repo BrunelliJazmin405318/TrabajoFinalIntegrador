@@ -6,26 +6,213 @@
     <title>Admin | Repuestos de OT</title>
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="/css/styles.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+
+    <style>
+        :root {
+            --recti-red: #e53935;
+            --recti-red-dark: #c62828;
+            --recti-black: #111111;
+            --recti-white: #ffffff;
+            --recti-bg-light: #f3f3f3;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background: var(--recti-bg-light) url("/img/fondo-figura.png") repeat;
+            background-size: 260px;
+            color: var(--recti-black);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ===== MINI NAV SUPERIOR ===== */
+        .mini-nav {
+            position: sticky;
+            top: 0;
+            z-index: 1100;
+            background: rgba(255,255,255,0.92);
+            backdrop-filter: blur(8px);
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+        .mini-nav-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: .45rem 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: .85rem;
+        }
+        .mini-nav-left a {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: .25rem .7rem;
+            border-radius: 999px;
+            border: 1px solid rgba(0,0,0,0.08);
+            background: #fff;
+            text-decoration: none;
+            color: inherit;
+        }
+        .mini-nav-left a:hover {
+            border-color: rgba(0,0,0,0.18);
+        }
+        .mini-nav-pill {
+            padding: .25rem .7rem;
+            border-radius: 999px;
+            background: #111;
+            color: #fff;
+            font-size: .8rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* ===== PAGE WRAP ===== */
+        main.page-wrap {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 30px 16px 40px;
+            flex: 1 0 auto;
+            width: 100%;
+        }
+
+        .page-header {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 18px;
+        }
+        .page-header-left h1 {
+            margin: 0;
+            font-size: 1.8rem;
+            font-weight: 700;
+            letter-spacing: .03em;
+        }
+        .page-header-left p {
+            margin: 3px 0 0;
+            font-size: .9rem;
+            color: #555;
+        }
+
+        .badge-ot {
+            border-radius: 999px;
+            padding: .3rem .7rem;
+            font-size: .78rem;
+            border: 1px solid var(--recti-red);
+        }
+
+        .btn-back {
+            border-radius: 999px;
+        }
+        /* Botón principal en rojo rectificadora */
+        .btn-primary {
+            background-color: var(--recti-red);
+            border-color: var(--recti-red);
+        }
+
+        .btn-primary:hover,
+        .btn-primary:focus {
+            background-color: var(--recti-red-dark);
+            border-color: var(--recti-red-dark);
+        }
+
+        /* ===== CARDS ===== */
+        .card {
+            border-radius: 16px;
+            background: rgba(255,255,255,0.97);
+            border: 1px solid rgba(0,0,0,0.04);
+            box-shadow: 0 12px 30px rgba(0,0,0,0.08);
+        }
+        .card-form {
+            margin-bottom: 16px;
+            animation: fadeIn .4s ease-out;
+        }
+        .card-table {
+            animation: fadeIn .5s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ===== FORM ===== */
+        #formRepuesto .form-label {
+            font-size: .85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            color: #555;
+        }
+
+        /* ===== TABLE ===== */
+        .table thead th {
+            font-size: .78rem;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            color: #555;
+            background: #fafafa;
+        }
+        .table tbody td {
+            font-size: .87rem;
+            vertical-align: middle;
+        }
+        .table-hover > tbody > tr:hover > * {
+            background-color: #f7f7f7;
+        }
+        .table-sm input.form-control-sm {
+            padding-inline: .25rem;
+        }
+
+        /* ===== TOAST / BANNER ===== */
+        #toastContainer .alert {
+            border-radius: 999px;
+        }
+
+        /* ===== FOOTER ===== */
+        footer.site-footer {
+            border-top: 1px solid rgba(0,0,0,0.06);
+            padding: 12px 16px;
+            font-size: .8rem;
+            color: #666;
+            background: rgba(255,255,255,0.9);
+        }
+        footer .footer-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+    </style>
 </head>
 <body>
-<nav class="navbar navbar-expand-lg navbar-dark">
-    <div class="container">
-        <a class="navbar-brand" href="/admin-presupuestos.html">
-            <i class="bi bi-gear-fill me-2"></i>Rectificadora
-        </a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div id="nav" class="collapse navbar-collapse">
-            <ul class="navbar-nav ms-auto">
-                <li class="nav-item"><a class="nav-link" href="/admin-solicitudes.html">Solicitudes</a></li>
-                <li class="nav-item"><a class="nav-link" href="/admin-presupuestos.html">Presupuestos</a></li>
-            </ul>
+
+<!-- MINI NAV -->
+<div class="mini-nav">
+    <div class="mini-nav-inner">
+        <div class="mini-nav-left">
+            <a href="/admin-presupuestos.html">
+                <i class="bi bi-arrow-left-short"></i>
+                Volver a presupuestos
+            </a>
+        </div>
+        <div class="mini-nav-right">
+            <span class="mini-nav-pill">
+                <i class="bi bi-tools"></i> Repuestos de OT
+            </span>
         </div>
     </div>
-</nav>
+</div>
 
 <!-- Banner flotante -->
 <div id="toastContainer"
@@ -34,20 +221,28 @@
 </div>
 
 <main class="container page-wrap my-3">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <div class="page-title d-flex align-items-center gap-2">
-            <h1 class="m-0">Repuestos de Orden</h1>
-            <span class="badge text-bg-warning" id="badgeNro">OT: -</span>
+
+    <!-- HEADER -->
+    <div class="page-header">
+        <div class="page-header-left">
+            <h1>Repuestos de Orden</h1>
+            <p>Gestioná los repuestos asociados a la orden de trabajo seleccionada.</p>
         </div>
-        <a href="javascript:history.back()" class="btn btn-outline-secondary btn-sm">
-            <i class="bi bi-arrow-left"></i> Volver
-        </a>
+        <div class="d-flex align-items-center gap-2">
+            <span class="badge text-bg-warning badge-ot" id="badgeNro">OT: -</span>
+            <a href="javascript:history.back()" class="btn btn-outline-secondary btn-sm btn-back">
+                <i class="bi bi-arrow-left"></i> Volver
+            </a>
+        </div>
     </div>
 
     <!-- Form alta repuesto -->
-    <div class="card mb-3">
+    <div class="card card-form mb-3">
         <div class="card-body">
-            <h5 class="card-title mb-3">Agregar repuesto</h5>
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="card-title mb-0">Agregar repuesto</h5>
+                <small class="text-secondary">Completá descripción, cantidad y precio unitario.</small>
+            </div>
 
             <form id="formRepuesto" class="row g-3">
                 <div class="col-md-6">
@@ -69,28 +264,36 @@
                 </div>
             </form>
 
-            <div id="formErr" class="alert alert-danger mt-2 d-none"></div>
+            <div id="formErr" class="alert alert-danger mt-3 d-none"></div>
         </div>
     </div>
 
     <!-- Tabla de repuestos -->
-    <div class="card">
+    <div class="card card-table">
         <div class="card-body">
             <div class="d-flex justify-content-between align-items-center mb-2">
-                <h5 class="card-title m-0">Listado de repuestos</h5>
-                <span class="fw-semibold">Total repuestos: <span id="totalRepuestos">$0,00</span></span>
+                <div>
+                    <h6 class="mb-0 text-uppercase text-muted" style="letter-spacing:.08em; font-size:.78rem;">
+                        Listado de repuestos
+                    </h6>
+                    <small class="text-secondary">Podés editar cantidad y precio desde la tabla.</small>
+                </div>
+                <span class="fw-semibold">
+                    Total repuestos:
+                    <span id="totalRepuestos" style="color: var(--recti-red-dark);">$0,00</span>
+                </span>
             </div>
 
             <div class="table-responsive">
-                <table class="table table-sm table-bordered align-middle mb-0">
-                    <thead class="table-light">
+                <table class="table table-sm table-bordered table-hover align-middle mb-0">
+                    <thead>
                     <tr>
-                        <th>#</th>
+                        <th style="width:60px;">#</th>
                         <th>Descripción</th>
-                        <th class="text-end">Cantidad</th>
-                        <th class="text-end">Precio unit.</th>
-                        <th class="text-end">Subtotal</th>
-                        <th style="width: 70px;">Acciones</th>
+                        <th class="text-end" style="width:120px;">Cantidad</th>
+                        <th class="text-end" style="width:140px;">Precio unit.</th>
+                        <th class="text-end" style="width:140px;">Subtotal</th>
+                        <th style="width:80px;">Acciones</th>
                     </tr>
                     </thead>
                     <tbody id="tbRepuestos"></tbody>
@@ -101,9 +304,9 @@
 </main>
 
 <footer class="site-footer">
-    <div class="container d-flex justify-content-between">
-        <span>©️ Rectificadora — demo académica</span>
-        <span class="muted">Negro/Gris/Blanco + Rojo</span>
+    <div class="footer-inner">
+        <span>©️ 2025 Rectificadora Cornejo — demo académica</span>
+        <span>Panel administrativo — UTN FRC</span>
     </div>
 </footer>
 

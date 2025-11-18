@@ -481,9 +481,14 @@
     async function load(){
         const qs = qsFromTo();
         try {
-            const r = await fetch(ENDPOINT + qs, { headers: { "Accept":"application/json", ...(getAuthHeader?.()||{}) }});
+            const r = await fetch(ENDPOINT + qs, {
+                headers: { "Accept":"application/json", ...(getAuthHeader?.()||{}) }
+            });
             if (!r.ok) throw new Error("HTTP " + r.status);
             const j = await r.json();
+
+            console.log("DEBUG reporte motores vs tapas:", j);  // 👈 AGREGAR
+
             const m = Number(j.motores ?? 0);
             const t = Number(j.tapas   ?? 0);
             setKPIs(m, t);
