@@ -4,41 +4,429 @@
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Estado de tu solicitud | Rectificadora</title>
+
+    <!-- Bootstrap + íconos + MP -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="/css/styles.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
     <script src="https://sdk.mercadopago.com/js/v2"></script>
+
+    <style>
+        :root {
+            --recti-red: #e53935;
+            --recti-red-dark: #c62828;
+            --recti-black: #111111;
+            --recti-gray-light: #f5f5f5;
+            --recti-gray-mid: #dcdcdc;
+            --recti-white: #ffffff;
+        }
+
+        * { box-sizing: border-box; }
+
+        html, body {
+            height: 100%;
+        }
+
+        body {
+            margin: 0;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            color: var(--recti-black);
+            background: #f3f3f3 url("/img/fondo-figura.png") repeat;
+            background-size: 260px 260px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        a { color: inherit; text-decoration: none; }
+
+        /* ===== NAVBAR (igual home/consulta/historial) ===== */
+
+        .main-header {
+            background: var(--recti-white);
+            border-bottom: none;
+            box-shadow: 0 1px 0 rgba(0,0,0,0.05);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .main-header-inner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.6rem 1.5rem;
+            gap: 24px;
+        }
+
+        .nav-logo {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            color: var(--recti-black);
+        }
+
+        .nav-logo-mark {
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            background: var(--recti-red);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: .9rem;
+        }
+
+        .nav-main {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .nav-list {
+            display: flex;
+            list-style: none;
+            gap: 18px;
+            margin: 0;
+            padding: 0;
+        }
+
+        .nav-link {
+            border: none;
+            background: transparent;
+            padding: .25rem 0;
+            font-size: .92rem;
+            font-weight: 500;
+            color: #444;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        .nav-link:hover {
+            color: var(--recti-red-dark);
+        }
+
+        .nav-link.is-active {
+            color: var(--recti-red-dark);
+            font-weight: 600;
+        }
+
+        .btn-login {
+            border-radius: 999px;
+            border: 1px solid var(--recti-red);
+            padding: .35rem 1rem;
+            font-size: .9rem;
+            font-weight: 600;
+            color: var(--recti-red);
+            white-space: nowrap;
+            transition: all .15s ease;
+        }
+
+        .btn-login:hover {
+            background: var(--recti-red);
+            color: var(--recti-white);
+        }
+
+        .nav-toggle {
+            display: none;
+            border: none;
+            background: transparent;
+            font-size: 1.4rem;
+            cursor: pointer;
+            color: #444;
+        }
+
+        @media (max-width: 992px) {
+            .main-header-inner { padding-inline: 1rem; }
+
+            .nav-toggle { display: inline-flex; }
+
+            .nav-main {
+                position: fixed;
+                inset: 64px 0 auto 0;
+                background: var(--recti-white);
+                flex-direction: column;
+                align-items: stretch;
+                gap: 0;
+                max-height: 0;
+                overflow: hidden;
+                transition: max-height .25s ease;
+                box-shadow: 0 12px 30px rgba(0, 0, 0, .18);
+            }
+
+            .nav-main.nav-open { max-height: 80vh; }
+
+            .nav-list {
+                flex-direction: column;
+                align-items: stretch;
+                padding: .75rem 1rem;
+                gap: .25rem;
+            }
+
+            .nav-link {
+                justify-content: space-between;
+                width: 100%;
+                text-align: left;
+            }
+
+            .btn-login {
+                margin: .4rem 1rem 1rem;
+                align-self: flex-start;
+            }
+        }
+
+        /* ===== PAGE WRAP ===== */
+
+        main.page-wrap {
+            flex: 1 0 auto;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 80px 16px 96px;
+            min-height: calc(100vh - 64px - 260px);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .page-title {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 24px;
+        }
+
+        .page-title h1 {
+            font-size: 1.9rem;
+            margin: 0;
+            font-weight: 700;
+        }
+
+        .badge {
+            background: var(--recti-red);
+            color: white;
+            border-radius: 6px;
+            padding: .3rem .6rem;
+            font-size: .8rem;
+        }
+
+        /* FORM */
+
+        #frm {
+            margin-bottom: 24px;
+        }
+
+        #id {
+            border-radius: 14px;
+            padding: 14px 18px;
+            font-size: 1rem;
+            border: 1px solid #ddd;
+            height: 54px;
+        }
+
+        .btn-primary {
+            background: var(--recti-red);
+            border-color: var(--recti-red);
+            border-radius: 14px;
+            font-size: 1rem;
+            font-weight: 600;
+            height: 54px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-primary:hover {
+            background: var(--recti-red-dark);
+            border-color: var(--recti-red-dark);
+        }
+
+        /* CARD RESULTADO */
+
+        #cardResultado.card {
+            border-radius: 22px;
+            border: 1px solid rgba(0,0,0,0.04);
+            box-shadow: 0 14px 30px rgba(0,0,0,.08);
+            margin-top: 8px;
+            animation: fadeIn .35s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .card-body {
+            padding: 24px 28px;
+        }
+
+        .prewrap {
+            white-space: pre-wrap;
+        }
+
+        /* CHIP ESTADO (mismo diseño que otras páginas) */
+
+        .status {
+            padding: .35rem .75rem;
+            border-radius: 999px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: .85rem;
+            font-weight: 600;
+            background: #eee;
+            color: #333;
+        }
+
+        .status .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: currentColor;
+        }
+
+        .status.ok { background: #d4edda; color: #2e7d32; }
+        .status.warn { background: #fff3cd; color: #ff8f00; }
+        .status.stop { background: #f8d7da; color: #c62828; }
+
+        .muted {
+            color: #777;
+            font-size: .9rem;
+        }
+
+        /* ===== FOOTER (igual a home/historial) ===== */
+
+        .site-footer {
+            background: #111;
+            color: #ccc;
+            padding: 40px 0 24px;
+            font-size: .9rem;
+        }
+
+        .footer-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 16px;
+        }
+
+        .footer-top {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            gap: 40px;
+            padding-bottom: 32px;
+        }
+
+        .footer-brand {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .footer-logo-mark {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            background: var(--recti-red);
+            color: white;
+            font-weight: 800;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .footer-logo-text {
+            font-size: 1.1rem;
+            font-weight: 700;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+        }
+
+        .footer-links {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 40px;
+        }
+
+        .footer-column h4 {
+            font-size: .85rem;
+            color: #eee;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            margin-bottom: 10px;
+        }
+
+        .footer-column a {
+            display: block;
+            color: #bbb;
+            font-size: .85rem;
+            margin-bottom: 6px;
+            text-decoration: none;
+        }
+
+        .footer-column a:hover {
+            color: var(--recti-red);
+        }
+
+        .footer-bottom {
+            border-top: 1px solid rgba(255,255,255,0.1);
+            padding-top: 16px;
+            margin-top: 16px;
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            font-size: .8rem;
+            color: #888;
+        }
+
+        @media (max-width: 768px) {
+            .footer-links {
+                flex-direction: column;
+            }
+        }
+    </style>
 </head>
 <body>
-<nav class="navbar navbar-expand-lg navbar-dark">
-    <div class="container">
-        <a class="navbar-brand" href="/presupuesto.html"><i class="bi bi-gear-fill me-2"></i>Rectificadora</a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div id="nav" class="collapse navbar-collapse">
-            <ul class="navbar-nav ms-auto">
-                <li class="nav-item"><a class="nav-link" href="/presupuesto.html">Solicitar presupuesto</a></li>
-                <li class="nav-item"><a class="nav-link active" href="/estado-solicitud.html">Estado de solicitud</a></li>
-                <li class="nav-item"><a class="nav-link" href="/admin-solicitudes.html">Admin</a></li>
-            </ul>
-        </div>
-    </div>
-</nav>
 
-<main class="container page-wrap">
+<!-- ===== NAVBAR ===== -->
+<header class="main-header">
+    <div class="main-header-inner">
+        <a href="/home.html" class="nav-logo">
+            <span class="nav-logo-mark">R</span>
+            <span>RECTIFICADORA CORNEJO</span>
+        </a>
+
+        <button class="nav-toggle" type="button" aria-label="Abrir menú" aria-expanded="false">
+            <i class="bi bi-list"></i>
+        </button>
+
+        <nav id="mainNav" class="nav-main">
+            <ul class="nav-list">
+                <li><a href="/consulta.html" class="nav-link">Consulta</a></li>
+                <li><a href="/historial.html" class="nav-link">Historial</a></li>
+                <li><a href="/estado-solicitud.html" class="nav-link is-active">Solicitud</a></li>
+                <li><a id="logoutLink" class="nav-link" href="#">Salir</a></li>
+            </ul>
+            <a href="/login.html" class="btn-login">Login taller</a>
+        </nav>
+    </div>
+</header>
+
+<!-- ===== CONTENIDO ===== -->
+<main class="page-wrap">
     <div class="page-title">
         <h1 class="m-0">Estado de tu solicitud</h1>
         <span class="badge">Presupuestos</span>
     </div>
 
     <form id="frm" class="row g-3 mb-3">
-        <div class="col-lg-6">
+        <div class="col-lg-6 col-md-8 col-12">
             <label class="form-label">N° de solicitud</label>
-            <input type="number" min="1" class="form-control form-control-lg" name="id" id="id" placeholder="Ej: 4">
+            <input type="number" min="1" class="form-control" name="id" id="id" placeholder="Ej: 4">
         </div>
-        <div class="col-lg-3 d-grid align-items-end">
-            <button class="btn btn-primary btn-lg" type="submit">Consultar</button>
+        <div class="col-lg-3 col-md-4 col-12 d-grid align-items-end">
+            <button class="btn btn-primary" type="submit">Consultar</button>
         </div>
     </form>
 
@@ -47,6 +435,7 @@
 
             <!-- 🔔 Mensaje con N° de orden (se completa por JS) -->
             <div id="otInfoBox" class="alert alert-primary mt-3 d-none"></div>
+
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h5 class="card-title m-0">Detalle</h5>
                 <span id="chipEstado" class="status"><span class="dot"></span><span class="label">-</span></span>
@@ -163,24 +552,104 @@
     </div>
 </main>
 
+<!-- ===== FOOTER ===== -->
 <footer class="site-footer">
-    <div class="container d-flex justify-content-between">
-        <span>© Rectificadora — demo académica</span>
-        <span class="muted">Negro/Gris/Blanco + Rojo</span>
+    <div class="footer-container">
+
+        <div class="footer-top">
+            <div class="footer-brand">
+                <div class="footer-logo-mark">R</div>
+                <span class="footer-logo-text">RECTIFICADORA CORNEJO</span>
+            </div>
+
+            <div class="footer-links">
+                <div class="footer-column">
+                    <h4>Soluciones</h4>
+                    <a href="/consulta.html">Estado del motor</a>
+                    <a href="/historial.html">Historial</a>
+                    <a href="/estado-solicitud.html">Estado de solicitud</a>
+                </div>
+
+                <div class="footer-column">
+                    <h4>Nosotros</h4>
+                    <a href="/home.html#nosotros">Quiénes somos</a>
+                    <a href="/home.html#por-que">Por qué nos eligen</a>
+                </div>
+
+                <div class="footer-column">
+                    <h4>Contacto</h4>
+                    <a href="/presupuesto.html">Pedir cotización</a>
+                    <a href="/home.html#contacto">Trabajá con nosotros</a>
+                </div>
+
+                <div class="footer-column">
+                    <h4>Seguimientos</h4>
+                    <a href="/consulta.html">Estado del motor</a>
+                    <a href="/historial.html">Historial del motor</a>
+                    <a href="/estado-solicitud.html">Solicitud</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer-bottom">
+            <span>© 2025 Rectificadora Cornejo. Todos los derechos reservados. • Aviso legal</span>
+            <span>2025</span>
+        </div>
+
     </div>
 </footer>
 
 <script>
-    const fmt = s => s ? s.replace('T',' ').substring(0,19) : '-';
+    // ===== NAVBAR público (Consulta / Historial / Solicitud) =====
+    const navToggle = document.querySelector('.nav-toggle');
+    const mainNav   = document.getElementById('mainNav');
+
+    if (navToggle && mainNav) {
+        navToggle.addEventListener('click', () => {
+            const isOpen = mainNav.classList.toggle('nav-open');
+            navToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+        });
+
+        mainNav.addEventListener('click', (e) => {
+            if (e.target.classList.contains('nav-link')) {
+                mainNav.classList.remove('nav-open');
+                navToggle.setAttribute('aria-expanded', 'false');
+            }
+        });
+    }
+
+    // ===== Manejo logout + módulo de auth =====
+    let authModule = null;  // acá guardamos el módulo para usarlo en repuestos / notifs
+
+    (async () => {
+        try {
+            authModule = await import("/js/auth.js");
+            const { getAuth, clearAuth } = authModule;
+
+            const link = document.getElementById("logoutLink");
+            if (link) {
+                if (!getAuth()) link.classList.add("d-none");
+                link.addEventListener("click", (e)=>{
+                    e.preventDefault();
+                    clearAuth();
+                    window.location.href = "/login.html";
+                });
+            }
+        } catch {}
+    })();
+</script>
+
+<script>
+    const fmt   = s => s ? s.replace('T',' ').substring(0,19) : '-';
     const money = n => new Intl.NumberFormat('es-AR',{style:'currency',currency:'ARS'}).format(Number(n||0));
 
     function paintStatus(el, estado) {
         el.classList.remove('ok','warn','stop');
         const label = el.querySelector('.label');
         const e = (estado||'').toUpperCase();
-        if (e === 'APROBADO') el.classList.add('ok');
-        else if (e === 'RECHAZADO') el.classList.add('stop');
-        else el.classList.add('warn');
+        if (e === 'APROBADO')      el.classList.add('ok');
+        else if (e === 'RECHAZADO')el.classList.add('stop');
+        else                       el.classList.add('warn');
         label.textContent = estado || '-';
     }
 
@@ -197,7 +666,7 @@
     let notifsCache = [];
 
     function renderNotifList() {
-        const list = document.getElementById('notifList');
+        const list  = document.getElementById('notifList');
         const count = document.getElementById('notifCount');
         if (!list || !count) return;
 
@@ -220,8 +689,9 @@
             <div>${n.message || '-'}</div>
           </div>
           <div class="ms-3">
-            ${n.readAt ? '<span class="badge bg-secondary">Leída</span>' :
-                `<button class="btn btn-sm btn-outline-secondary" data-mark-read="${n.id}">Marcar leída</button>`}
+            ${n.readAt
+                ? '<span class="badge bg-secondary">Leída</span>'
+                : `<button class="btn btn-sm btn-outline-secondary" data-mark-read="${n.id}">Marcar leída</button>`}
           </div>
         </div>
       `);
@@ -231,6 +701,9 @@
     }
 
     async function cargarNoLeidas(email) {
+        // 👉 Solo admin: si no hay authModule o no está logueado, no pide nada
+        if (!authModule || !authModule.isAuthenticated || !authModule.isAuthenticated()) return;
+
         try {
             const r = await fetch(`/api/notificaciones/unread?email=${encodeURIComponent(email)}`);
             const arr = await r.json().catch(()=>[]);
@@ -242,7 +715,14 @@
     }
 
     function suscribirNotificaciones(email) {
-        const bar = document.getElementById('notifBar');
+        const bar  = document.getElementById('notifBar');
+
+        // 👉 Solo admin: si no está logueado, no hay barra ni SSE
+        if (!authModule || !authModule.isAuthenticated || !authModule.isAuthenticated()) {
+            if (bar) bar.style.display = 'none';
+            return;
+        }
+
         if (!email) {
             if (sseSource) { try { sseSource.close(); } catch {} sseSource = null; }
             sseEmailActual = null;
@@ -296,12 +776,11 @@
             sseSource = null;
         };
 
-        const btn = document.getElementById('btnNotif');
+        const btn  = document.getElementById('btnNotif');
         const list = document.getElementById('notifList');
         btn?.addEventListener('click', () => {
             if (!list) return;
-            if (list.classList.contains('d-none')) list.classList.remove('d-none');
-            else list.classList.add('d-none');
+            list.classList.toggle('d-none');
         });
 
         document.addEventListener('click', async (e) => {
@@ -328,8 +807,7 @@
         const j = await r.json().catch(()=> ({}));
         if (!r.ok) { alert(j.message || 'No se encontró la solicitud'); return; }
 
-        suscribirNotificaciones(j.clienteEmail || '');
-
+        // 👉 Cliente y admin ven estos datos:
         currentSolicitudId = Number(j.id ?? id);
 
         document.getElementById('c_nombre').textContent = j.clienteNombre || '-';
@@ -344,7 +822,7 @@
         document.getElementById('dec_motivo').textContent  = j.decisionMotivo || '-';
         paintStatus(document.getElementById('chipEstado'), j.estado);
 
-        // ===== ✨ Mensaje UX con N° de OT ✨ =====
+        // ===== Mensaje UX con N° de OT (cliente lo sigue viendo) =====
         const otBox = document.getElementById('otInfoBox');
         if (otBox) {
             if (j.otNroOrden) {
@@ -366,16 +844,18 @@
         card.classList.remove('d-none');
         card.scrollIntoView({behavior:'smooth', block:'start'});
 
+        // 🔔 Notificaciones HU13: solo para admin
+        suscribirNotificaciones(j.clienteEmail || '');
+
         if (j.presupuestoId) {
-            await cargarPagoInfo(j.presupuestoId, j);
-            await cargarRepuestosCliente(j.presupuestoId, j);
+            await cargarPagoInfo(j.presupuestoId, j);       // cliente + admin
+            await cargarRepuestosCliente(j.presupuestoId, j); // 👈 solo mostrará algo si está logueado
         } else {
             document.getElementById('pagoBox').classList.add('d-none');
             const infoMsg = document.getElementById('pagoInfoNoDisponible');
             infoMsg.textContent = "Todavía no hay un presupuesto asociado a esta solicitud.";
             infoMsg.classList.remove('d-none');
 
-            // Ocultar también repuestos por las dudas
             const repBox = document.getElementById('repuestosBox');
             const repBody = document.getElementById('repBody');
             if (repBox && repBody) {
@@ -386,6 +866,7 @@
     }
 
     async function cargarPagoInfo(presupuestoId, solicitudInfo) {
+        // 👉 TODO igual que antes (cliente lo sigue viendo)
         presupuestoIdForPay = null;
 
         const box          = document.getElementById('pagoBox');
@@ -428,14 +909,12 @@
         document.getElementById('pagoMonto').textContent = money(monto);
         document.getElementById('pagoId').textContent    = info.senaPaymentId || '-';
 
-        // Si el presupuesto NO está aprobado → no mostramos opciones de pago
         if (estadoPres !== 'APROBADO') {
             infoMsg.textContent = "Todavía no hay un presupuesto APROBADO asociado a esta solicitud.";
             infoMsg.classList.remove('d-none');
             return;
         }
 
-        // Pago completo (FINAL acreditado o saldo cero) → solo factura
         if (finalEstado === 'ACREDITADA' || saldo <= 0) {
             estadoBadge.textContent = 'Pago completo';
             estadoBadge.className   = 'badge bg-success';
@@ -474,7 +953,6 @@
             return;
         }
 
-        // Seña ya acreditada → NO se puede volver a pagar
         if (senaEstado === 'ACREDITADA') {
             estadoBadge.textContent = 'Seña acreditada';
             estadoBadge.className   = 'badge bg-success';
@@ -491,7 +969,6 @@
             return;
         }
 
-        // Si se puede pagar: presupuesto aprobado + saldo > 0 + seña no acreditada
         if (info.puedePagar && estadoPres === 'APROBADO') {
             estadoBadge.textContent = 'Pendiente';
             estadoBadge.className   = 'badge bg-warning text-dark';
@@ -504,11 +981,11 @@
     }
 
     async function cargarRepuestosCliente(presupuestoId, solicitudInfo) {
-        const box = document.getElementById("repuestosBox");
-        const body = document.getElementById("repBody");
-        const tMo = document.getElementById("repTotalMo");
-        const tRep = document.getElementById("repTotalRep");
-        const tFinal = document.getElementById("repTotalFinal");
+        const box   = document.getElementById("repuestosBox");
+        const body  = document.getElementById("repBody");
+        const tMo   = document.getElementById("repTotalMo");
+        const tRep  = document.getElementById("repTotalRep");
+        const tFinal= document.getElementById("repTotalFinal");
 
         body.innerHTML = "";
         box.classList.add("d-none");
@@ -516,23 +993,29 @@
         // Si no hay OT → no hay repuestos
         if (!solicitudInfo.otNroOrden) return;
 
+        // 👉 Solo admin ve repuestos: si no está logueado, salimos y el cliente ni se entera
+        if (!authModule || !authModule.isAuthenticated || !authModule.isAuthenticated()) {
+            return;
+        }
+
         try {
             const nro = solicitudInfo.otNroOrden;
 
-            // 1) Traer repuestos de la OT
-            const r = await fetch(`/admin/ordenes/${nro}/repuestos`);
+            const r = await fetch(`/admin/ordenes/${nro}/repuestos`, {
+                // añadimos header si existe
+                headers: authModule.getAuthHeader ? authModule.getAuthHeader() : {}
+            });
             if (!r.ok) return;
 
             const arr = await r.json();
-
             if (!Array.isArray(arr) || arr.length === 0) return;
 
             let totalRepuestos = 0;
 
             arr.forEach(rep => {
-                const cant = rep.cantidad ?? 1;
+                const cant   = rep.cantidad ?? 1;
                 const precio = Number(rep.precioUnit ?? 0);
-                const sub = cant * precio;
+                const sub    = cant * precio;
                 totalRepuestos += sub;
 
                 body.insertAdjacentHTML("beforeend", `
@@ -545,12 +1028,11 @@
             `);
             });
 
-            // Total mano de obra = presupuesto original
             const totalServicios = Number(solicitudInfo.total ?? 0);
-            const totalFinal = totalServicios + totalRepuestos;
+            const totalFinal     = totalServicios + totalRepuestos;
 
-            tMo.textContent = money(totalServicios);
-            tRep.textContent = money(totalRepuestos);
+            tMo.textContent    = money(totalServicios);
+            tRep.textContent   = money(totalRepuestos);
             tFinal.textContent = money(totalFinal);
 
             box.classList.remove("d-none");
@@ -559,6 +1041,7 @@
             console.error("Error cargando repuestos:", e);
         }
     }
+
     async function montarBrickYPagar() {
         const pagoAlert = document.getElementById('pagoAlert');
         const pagoError = document.getElementById('pagoError');
@@ -577,7 +1060,6 @@
 
         if (currentBrick) { try { await currentBrick.unmount(); } catch (_) {} }
 
-        // Revalidar con backend antes de mostrar Brick (evitar doble pago)
         const rInfo = await fetch(`/public/pagos/api/info-sena/${encodeURIComponent(presupuestoIdForPay)}`);
         const info  = await rInfo.json().catch(()=> ({}));
         if (!rInfo.ok) {
@@ -588,8 +1070,8 @@
 
         const senaEstado = (info.senaEstado || '').toUpperCase();
         const estadoPres = (info.presupuestoEstado || '').toUpperCase();
-        const monto = Number(info.montoSena ?? info.monto ?? 0);
-        const email = info.clienteEmail || info.emailSugerido || '';
+        const monto      = Number(info.montoSena ?? info.monto ?? 0);
+        const email      = info.clienteEmail || info.emailSugerido || '';
 
         if (estadoPres !== 'APROBADO') {
             pagoAlert.textContent = "El presupuesto ya no se encuentra aprobado. No es posible pagar la seña.";

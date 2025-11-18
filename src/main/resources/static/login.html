@@ -1,79 +1,282 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <title>Login | Rectificadora</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="/css/styles.css" rel="stylesheet">
+    <meta charset="UTF-8">
+    <title>Login | Rectificadora</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+        :root {
+            --recti-red: #e53935;
+            --recti-red-dark: #c62828;
+            --recti-black: #111;
+            --recti-white: #fff;
+            --recti-bg-light: #f3f3f3;
+        }
+
+        /* ===== NAV MINI ===== */
+        .mini-nav {
+            width: 100%;
+            padding: 0.55rem 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255,255,255,0.85);
+            border-bottom: 1px solid rgba(0,0,0,0.08);
+            backdrop-filter: blur(6px);
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 2000;
+        }
+
+        .mini-nav a {
+            text-decoration: none;
+            font-weight: 600;
+            font-size: .9rem;
+            color: var(--recti-red-dark);
+        }
+
+        .mini-nav a:hover {
+            color: var(--recti-red);
+        }
+
+        /* ===== LOGIN LAYOUT ===== */
+        body.login-body {
+            margin: 0;
+            padding-top: 72px; /* para que no tape el mini-nav */
+            font-family: system-ui;
+            background: var(--recti-bg-light) url("/img/fondo-figura.png") repeat;
+            background-size: 260px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            color: var(--recti-black);
+        }
+
+        /* ===== CARD ANIMATION ===== */
+        .card-login {
+            border-radius: 18px;
+            border: 1px solid rgba(0,0,0,0.06);
+            background: white;
+            box-shadow: 0 16px 40px rgba(0,0,0,0.12);
+            opacity: 0;
+            transform: translateY(14px);
+            animation: fadeInUp .6s forwards;
+        }
+
+        @keyframes fadeInUp {
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ===== LOGO ANIMADO ===== */
+        .logo-mark {
+            width: 56px;
+            height: 56px;
+            border-radius: 16px;
+            background: var(--recti-red);
+            color: white;
+            font-weight: 700;
+            font-size: 1.4rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 12px;
+            animation: pulse 2.4s ease-out infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(229,57,53,0.6); }
+            60%{ transform: scale(1.06); box-shadow: 0 0 18px 12px rgba(229,57,53,0); }
+            100%{ transform: scale(1); }
+        }
+
+        /* ===== FOOTER ===== */
+        footer {
+            text-align: center;
+            margin-top: auto;
+            padding: 14px;
+            font-size: .85rem;
+            color: #666;
+        }
+
+        /* ===== BOTÓN PRIMARIO ===== */
+        .btn-primary {
+            background: var(--recti-red);
+            border-color: var(--recti-red);
+        }
+
+        .btn-primary:hover {
+            background: var(--recti-red-dark);
+            border-color: var(--recti-red-dark);
+        }
+
+        /* ===== MODO OSCURO ===== */
+        body.dark-mode {
+            background: radial-gradient(circle at top, #1e1e1e, #050608);
+            color: white;
+        }
+
+        body.dark-mode .card-login {
+            background: #151515;
+            border-color: rgba(229,57,53,0.4);
+            box-shadow: 0 0 28px rgba(229,57,53,0.25);
+        }
+
+        body.dark-mode .form-control {
+            background: #222;
+            border-color: #444;
+            color: white;
+        }
+
+        /* Toggle botón */
+        #btnDark {
+            position: fixed;
+            top: 86px;
+            right: 12px;
+            z-index: 2000;
+            border-radius: 999px;
+            padding: 0.35rem .8rem;
+            font-size: .85rem;
+        }
+    </style>
 </head>
-<body class="d-flex align-items-center" style="min-height:100vh;">
-  <div class="container">
+
+<body class="login-body">
+
+<!-- MINI NAV -->
+<div class="mini-nav">
+    <a href="/home.html">⟵ Volver</a>
+    <a href="/consulta.html">Consulta pública</a>
+</div>
+
+<!-- BOTÓN MODO OSCURO -->
+<button id="btnDark" class="btn btn-outline-secondary btn-sm">
+    <span id="darkIcon">🌙</span> <span id="darkText">Modo oscuro</span>
+</button>
+
+<!-- LOGIN CARD -->
+<div class="container">
     <div class="row justify-content-center">
-      <div class="col-sm-10 col-md-7 col-lg-5">
-        <div class="card p-4">
-          <h1 class="mb-3 text-center">Rectificadora</h1>
-          <p class="text-center text-muted mb-4">Acceso administrativo</p>
+        <div class="col-sm-10 col-md-7 col-lg-5">
 
-          <form id="loginForm" class="vstack gap-3">
-            <div>
-              <label class="form-label">Usuario</label>
-              <input id="user" type="text" class="form-control form-control-lg" placeholder="admin" required>
+            <div class="card p-4 card-login">
+
+                <div class="text-center mb-3">
+                    <div class="logo-mark">R</div>
+                    <h1 class="fw-bold" style="font-size:1.2rem; letter-spacing:.06em;">RECTIFICADORA CORNEJO</h1>
+                    <p class="text-muted">Acceso administrativo</p>
+                </div>
+
+                <form id="loginForm" class="vstack gap-3">
+
+                    <div>
+                        <label class="form-label">Usuario</label>
+                        <input id="user" type="text" class="form-control form-control-lg" placeholder="admin" required>
+                    </div>
+
+                    <div>
+                        <label class="form-label">Contraseña</label>
+                        <input id="pass" type="password" class="form-control form-control-lg" placeholder="********" required>
+                    </div>
+
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="checkbox" id="remember">
+                        <label class="form-check-label" for="remember">Recordarme en este equipo</label>
+                    </div>
+
+                    <button class="btn btn-primary btn-lg w-100 d-flex align-items-center justify-content-center" type="submit" id="btnLogin">
+                        <span id="btnSpinner" class="spinner-border spinner-border-sm me-2 d-none"></span>
+                        Ingresar
+                    </button>
+
+                    <div id="error" class="text-danger small d-none text-center">Usuario o contraseña inválidos.</div>
+                </form>
+
+                <hr>
+                <p class="text-center mb-0">
+                    ¿Querés consultar tu orden?
+                    <a href="/consulta.html" class="fw-semibold" style="color:var(--recti-red-dark);">Ir a consulta pública</a>
+                </p>
+
             </div>
-            <div>
-              <label class="form-label">Contraseña</label>
-              <input id="pass" type="password" class="form-control form-control-lg" placeholder="********" required>
-            </div>
-
-            <div class="form-check">
-              <input class="form-check-input" type="checkbox" id="remember">
-              <label class="form-check-label" for="remember">Recordarme en este equipo</label>
-            </div>
-
-            <button class="btn btn-primary btn-lg w-100" type="submit">Ingresar</button>
-            <div id="error" class="text-danger small d-none">Usuario o contraseña inválidos.</div>
-          </form>
-
-          <hr class="my-4">
-          <p class="mb-0 text-center">
-            ¿Sólo querés consultar tu orden? <a href="/consulta.html">Ir a consulta pública</a>
-          </p>
         </div>
-      </div>
     </div>
-  </div>
+</div>
 
-  <script type="module">
+<!-- FOOTER -->
+<footer>
+    © 2025 Rectificadora Cornejo — Acceso administrativo
+</footer>
+
+<!-- LOGIN SCRIPT -->
+<script type="module">
     import { saveAuth } from "/js/auth.js";
 
     const form = document.getElementById("loginForm");
     const error = document.getElementById("error");
 
+    const btn = document.getElementById("btnLogin");
+    const spinner = document.getElementById("btnSpinner");
+
     form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      error.classList.add("d-none");
+        e.preventDefault();
+        error.classList.add("d-none");
 
-      const user = document.getElementById("user").value.trim();
-      const pass = document.getElementById("pass").value;
-      const remember = document.getElementById("remember").checked;
+        const user = document.getElementById("user").value.trim();
+        const pass = document.getElementById("pass").value;
+        const remember = document.getElementById("remember").checked;
 
-      // arma Basic Base64
-      const token = btoa(`${user}:${pass}`);
+        if (!user || !pass) return;
 
-      // probamos contra un endpoint protegido
-      const r = await fetch("/admin/health", {
-        headers: { "Authorization": `Basic ${token}` }
-      });
+        btn.disabled = true;
+        spinner.classList.remove("d-none");
 
-      if (r.ok) {
-        saveAuth(token, remember);
-        // redirigimos a una página “interna”; podés cambiar por /historial.html si querés
-        window.location.href = "/consulta.html";
-      } else {
-        error.classList.remove("d-none");
-      }
+        const token = btoa(`${user}:${pass}`);
+
+        const r = await fetch("/admin/health", {
+            headers: { "Authorization": `Basic ${token}` }
+        });
+
+        if (r.ok) {
+            saveAuth(token, remember);
+            window.location.href = "/admin-menu.html";
+        } else {
+            error.classList.remove("d-none");
+            btn.disabled = false;
+            spinner.classList.add("d-none");
+        }
     });
-  </script>
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    /* === MODO OSCURO === */
+    const btnDark = document.getElementById("btnDark");
+    const darkIcon = document.getElementById("darkIcon");
+    const darkText = document.getElementById("darkText");
+    const body = document.body;
+
+    function updateDarkLabel(isDark) {
+        darkIcon.textContent = isDark ? "☀️" : "🌙";
+        darkText.textContent = isDark ? "Modo claro" : "Modo oscuro";
+    }
+
+    // Si había preferencia guardada
+    (function init() {
+        const saved = localStorage.getItem("recti-dark");
+        const isDark = saved === "1";
+        if (isDark) body.classList.add("dark-mode");
+        updateDarkLabel(isDark);
+    })();
+
+    btnDark.addEventListener("click", () => {
+        const isDark = body.classList.toggle("dark-mode");
+        localStorage.setItem("recti-dark", isDark ? "1" : "0");
+        updateDarkLabel(isDark);
+    });
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
 </body>
 </html>

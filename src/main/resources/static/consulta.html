@@ -4,66 +4,472 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Consulta de Estado | Rectificadora</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="/css/styles.css" rel="stylesheet">
+    <link
+            href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+            rel="stylesheet"
+    >
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+
+    <style>
+        :root {
+            --recti-red: #e53935;
+            --recti-red-dark: #c62828;
+            --recti-black: #111111;
+            --recti-gray-light: #f5f5f5;
+            --recti-gray-mid: #dcdcdc;
+            --recti-white: #ffffff;
+        }
+
+        body {
+            margin: 0;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            color: var(--recti-black);
+            /* mismo fondo que home */
+            background: #f3f3f3 url("/img/fondo-figura.png") repeat;
+            background-size: 260px 260px;
+        }
+
+        /* ===== NAVBAR (mismo que el home) ===== */
+
+        .main-header {
+            background: var(--recti-white);
+            border-bottom: none;
+            box-shadow: 0 1px 0 rgba(0,0,0,0.05);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .main-header-inner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.6rem 1.5rem;
+            gap: 24px;
+        }
+
+        .nav-logo {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            color: var(--recti-black);
+        }
+
+        .nav-logo-mark {
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            background: var(--recti-red);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: .9rem;
+        }
+
+        .nav-toggle {
+            display: none;
+            border: none;
+            background: transparent;
+            font-size: 1.4rem;
+            cursor: pointer;
+        }
+
+        .nav-main {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .nav-list {
+            display: flex;
+            list-style: none;
+            gap: 18px;
+            margin: 0;
+            padding: 0;
+        }
+
+        .nav-link {
+            color: #444;
+            font-size: .92rem;
+            font-weight: 500;
+            text-decoration: none;
+        }
+
+        .nav-link:hover {
+            color: var(--recti-red-dark);
+        }
+
+        .btn-login {
+            border: 1px solid var(--recti-red);
+            color: var(--recti-red);
+            padding: .35rem 1rem;
+            border-radius: 999px;
+            font-size: .9rem;
+            font-weight: 600;
+        }
+
+        .btn-login:hover {
+            background: var(--recti-red);
+            color: white;
+        }
+
+        @media (max-width: 992px) {
+            .nav-toggle {
+                display: block;
+            }
+            .nav-main {
+                position: fixed;
+                inset: 60px 0 auto 0;
+                background: white;
+                flex-direction: column;
+                max-height: 0;
+                overflow: hidden;
+                transition: max-height .25s ease;
+                padding: 0 1rem;
+                box-shadow: 0 8px 25px rgba(0,0,0,.15);
+            }
+            .nav-main.nav-open {
+                max-height: 70vh;
+            }
+            .nav-list {
+                flex-direction: column;
+                width: 100%;
+                gap: 10px;
+                padding: 1rem 0;
+            }
+            .btn-login { margin-bottom: 1rem; }
+        }
+
+        /* ==== PAGE WRAP ==== */
+        .page-wrap {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 80px 16px 96px; /* arriba / costados / abajo */
+            min-height: calc(100vh - 64px - 260px);
+            display: flex;
+            flex-direction: column;
+        }
+        .page-title {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 24px;
+        }
+
+        .page-title h1 {
+            font-size: 1.9rem;
+            margin: 0;
+            font-weight: 700;
+        }
+
+        .badge {
+            background: var(--recti-red);
+            color: white;
+            border-radius: 6px;
+            padding: .3rem .6rem;
+        }
+
+        /* FORM */
+        #consultaForm {
+            margin-bottom: 32px;
+        }
+
+        #nroOrden {
+            border-radius: 14px;
+            padding: 14px 18px;
+            font-size: 1rem;
+            border: 1px solid #ddd;
+            height: 54px;
+        }
+
+        .btn-primary {
+            background: var(--recti-red);
+            border-color: var(--recti-red);
+            border-radius: 14px;
+            font-size: 1rem;
+            font-weight: 600;
+            height: 54px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-primary:hover {
+            background: var(--recti-red-dark);
+            border-color: var(--recti-red-dark);
+        }
+
+        /* CARD RESULTADO */
+        #resultado {
+            border-radius: 18px;
+            overflow: hidden;
+            border: none;
+            margin-top: 20px;
+            animation: fadeIn .4s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .card-body {
+            padding: 28px;
+        }
+
+        .kv {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: .95rem;
+        }
+
+        .k { font-weight: 600; }
+        .v { color: #555; }
+
+        /* CHIP ESTADO */
+        .status {
+            padding: .35rem .75rem;
+            border-radius: 999px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: .85rem;
+            font-weight: 600;
+            background: #eee;
+            color: #333;
+        }
+        .status .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: currentColor;
+        }
+        .status.ok { background: #d4edda; color: #2e7d32; }
+        .status.warn { background: #fff3cd; color: #ff8f00; }
+        .status.stop { background: #f8d7da; color: #c62828; }
+
+        .muted {
+            color: #777;
+            font-size: .9rem;
+        }
+
+        /* ===== FOOTER ===== */
+
+        .site-footer {
+            background: #111;
+            color: #ccc;
+            padding: 40px 0 24px;
+            font-size: .85rem;
+        }
+
+        .footer-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 16px;
+        }
+
+        .footer-bottom {
+            border-top: 1px solid rgba(255,255,255,.1);
+            padding-top: 16px;
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+        }
+        .page-wrap {
+            max-width: 900px;
+            margin: 60px auto 70px;
+            padding: 0 16px;
+        }
+        a { color: inherit; text-decoration: none; }
+
+        html, body {
+            height: 100%;
+        }
+
+        /* para que el header + contenido + footer formen una columna
+           y el footer quede pegado abajo */
+        body {
+            display: flex;
+            flex-direction: column;
+        }
+
+        main.page-wrap {
+            flex: 1 0 auto;
+        }
+        .nav-link.active {
+            color: var(--recti-red-dark);
+            font-weight: 600;
+        }
+        /* ===== FOOTER (mismo que Home) ===== */
+
+        .site-footer {
+            background: #111;
+            color: #ccc;
+            padding: 40px 0 24px;
+            font-size: .9rem;
+        }
+
+        .footer-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 16px;
+        }
+
+        /* TOP */
+        .footer-top {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            gap: 40px;
+            padding-bottom: 32px;
+        }
+
+        /* LOGO */
+        .footer-brand {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .footer-logo-mark {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            background: var(--recti-red);
+            color: white;
+            font-weight: 800;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .footer-logo-text {
+            font-size: 1.1rem;
+            font-weight: 700;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+        }
+
+        /* LINKS */
+        .footer-links {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 40px;
+        }
+
+        .footer-column h4 {
+            font-size: .85rem;
+            color: #eee;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            margin-bottom: 10px;
+        }
+
+        .footer-column a {
+            display: block;
+            color: #bbb;
+            font-size: .85rem;
+            margin-bottom: 6px;
+            text-decoration: none;
+        }
+
+        .footer-column a:hover {
+            color: var(--recti-red);
+        }
+
+        /* BOTTOM STRIP */
+        .footer-bottom {
+            border-top: 1px solid rgba(255,255,255,0.1);
+            padding-top: 16px;
+            margin-top: 16px;
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            font-size: .8rem;
+            color: #888;
+        }
+
+        @media (max-width: 768px) {
+            .footer-top {
+                flex-direction: column;
+                align-items: flex-start;   /* o center si lo querés centrado */
+                gap: 24px;
+            }
+
+            .footer-links {
+                flex-direction: column;
+                gap: 24px;
+            }
+
+            .footer-column {
+                width: 100%;
+            }
+        }
+        .nav-link.is-active {
+            color: var(--recti-red-dark);
+            font-weight: 600;
+        }
+    </style>
+
 </head>
 <body>
-<!-- NAV -->
-<nav class="navbar navbar-expand-lg">
-    <div class="container">
-        <a class="navbar-brand" href="#"><i class="bi bi-gear-fill me-2"></i>Rectificadora</a>
-        <button class="navbar-toggler text-white" type="button" data-bs-toggle="collapse" data-bs-target="#nav">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div id="nav" class="collapse navbar-collapse">
-            <ul class="navbar-nav ms-auto">
-                <li class="nav-item"><a class="nav-link active" href="/consulta.html">Consulta</a></li>
-                <li class="nav-item"><a class="nav-link" href="/historial.html">Historial</a></li>
-                <li class="nav-item"><a class="nav-link" href="/swagger-ui.html" target="_blank">API Docs</a></li>
-                <!-- en la navbar -->
-                <li class="nav-item"><a id="logoutLink" class="nav-link" href="#">Salir</a></li>
 
-                <script type="module">
-                    import { clearAuth, getAuth } from "/js/auth.js";
-                    const link = document.getElementById("logoutLink");
-                    if (link) {
-                        if (!getAuth()) link.classList.add("d-none");
-                        link.addEventListener("click", (e)=>{
-                            e.preventDefault();
-                            clearAuth();
-                            window.location.href = "/login.html";
-                        });
-                    }
-                </script>
+<!-- ===== NAVBAR ===== -->
+<header class="main-header">
+    <div class="main-header-inner">
+        <a href="/home.html" class="nav-logo">
+            <span class="nav-logo-mark">R</span>
+            <span>RECTIFICADORA CORNEJO</span>
+        </a>
+
+        <button class="nav-toggle"><i class="bi bi-list"></i></button>
+
+        <nav id="mainNav" class="nav-main">
+            <ul class="nav-list">
+                <li><a href="/consulta.html" class="nav-link active">Consulta</a></li>
+                <li><a href="/historial.html" class="nav-link">Historial</a></li>
+                <li><a href="/estado-solicitud.html" class="nav-link">Solicitud</a></li>
             </ul>
-        </div>
+            <a href="/login.html" class="btn-login">Login taller</a>
+        </nav>
     </div>
-</nav>
+</header>
 
-<!-- CONTENT -->
-<main class="container page-wrap">
+<!-- ===== CONTENT ===== -->
+<main class="page-wrap">
     <div class="page-title">
-        <h1 class="m-0">Consulta de estado</h1>
-        <span class="badge">Sprint 1</span>
+        <h1>Consulta de estado</h1>
+        <span class="badge">Seguimiento</span>
     </div>
 
     <form id="consultaForm" class="mb-4">
-        <div class="row g-3">
-            <div class="col-lg-8">
-                <input type="text" id="nroOrden" class="form-control form-control-lg"
-                       placeholder="Ingresá N° de orden (ej: OT-0001)" required>
+        <div class="row g-3 justify-content-center">
+            <div class="col-lg-7 col-md-8 col-12">
+                <input type="text" id="nroOrden"
+                       class="form-control"
+                       placeholder="Ingresá N° de orden (ej: OT-0001)"
+                       required>
             </div>
-            <div class="col-lg-4 d-grid">
-                <button class="btn btn-primary btn-lg" type="submit"><i class="bi bi-search me-2"></i>Consultar</button>
+
+            <div class="col-lg-3 col-md-4 col-12 d-grid">
+                <button class="btn btn-primary" type="submit">
+                    <i class="bi bi-search me-2"></i>Consultar
+                </button>
             </div>
         </div>
     </form>
 
     <div id="resultado" class="card shadow-sm d-none">
         <div class="card-body">
+
             <div class="d-flex justify-content-between align-items-center mb-3">
-                <h5 class="card-title m-0">Detalles de la orden</h5>
+                <h5 class="m-0">Detalles de la orden</h5>
                 <span id="chipEstado" class="status"><span class="dot"></span><span class="label">-</span></span>
             </div>
 
@@ -72,36 +478,94 @@
                     <div class="kv"><div class="k">N° Orden:</div><div class="v" id="orden">-</div></div>
                     <div class="kv"><div class="k">Fecha de creación:</div><div class="v" id="creadaEn">-</div></div>
                 </div>
+
                 <div class="col-md-6">
                     <div class="kv"><div class="k">Garantía desde:</div><div class="v" id="garantiaDesde">-</div></div>
                     <div class="kv"><div class="k">Garantía hasta:</div><div class="v" id="garantiaHasta">-</div></div>
                 </div>
             </div>
 
-            <hr class="my-4" />
-            <div class="muted">Tip: podés ver el detalle completo del recorrido en <a href="/historial.html">Historial</a>.</div>
+            <hr class="my-4">
+            <div class="muted">Tip: podés ver el detalle completo en <a href="/historial.html">Historial</a>.</div>
         </div>
     </div>
+    <section style="max-width:900px;margin:24px auto 0;padding:0 16px;">
+        <p class="muted">
+            ¿No encontrás tu orden? Verificá que el número esté bien escrito
+            (ej: <strong>OT-0009</strong>) o consultá en el taller para confirmar
+            que ya fue registrada en el sistema.
+        </p>
+    </section>
 </main>
 
+<!-- ===== FOOTER ===== -->
 <footer class="site-footer">
-    <div class="container d-flex justify-content-between">
-        <span>© Rectificadora — demo académica</span>
-        <span class="muted">Negro/Gris/Blanco + Rojo</span>
+    <div class="footer-container">
+
+        <div class="footer-top">
+            <div class="footer-brand">
+                <div class="footer-logo-mark">R</div>
+                <span class="footer-logo-text">RECTIFICADORA CORNEJO</span>
+            </div>
+
+            <div class="footer-links">
+                <div class="footer-column">
+                    <h4>Soluciones</h4>
+                    <a href="/consulta.html">Estado del motor</a>
+                    <a href="/historial.html">Historial</a>
+                    <a href="/estado-solicitud.html">Estado de solicitud</a>
+                </div>
+
+                <div class="footer-column">
+                    <h4>Nosotros</h4>
+                    <a href="/index.html#nosotros">Quiénes somos</a>
+                    <a href="/index.html#por-que">Por qué nos eligen</a>
+                </div>
+
+                <div class="footer-column">
+                    <h4>Contacto</h4>
+                    <a href="/presupuesto.html">Pedir cotización</a>
+                    <a href="/index.html#contacto">Trabajá con nosotros</a>
+                </div>
+
+                <div class="footer-column">
+                    <h4>Seguimientos</h4>
+                    <a href="/consulta.html">Estado del motor</a>
+                    <a href="/historial.html">Historial del motor</a>
+                    <a href="/estado-solicitud.html">Solicitud</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer-bottom">
+            <span>© 2025 Rectificadora Cornejo. Todos los derechos reservados.
+  •
+Aviso legal</span>
+            <span>2025</span>
+        </div>
+
     </div>
 </footer>
 
-<!-- Toast de notificaciones -->
-<div class="position-fixed bottom-0 end-0 p-3" style="z-index:1080">
-    <div id="toastNotif" class="toast align-items-center text-bg-success border-0" role="alert">
-        <div class="d-flex">
-            <div class="toast-body" id="toastBody">Notificación</div>
-            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
-        </div>
-    </div>
-</div>
-
 <script>
+    // Navbar público (Consulta / Historial / Solicitud)
+    const navToggle = document.querySelector('.nav-toggle');
+    const mainNav   = document.getElementById('mainNav');
+
+    if (navToggle && mainNav) {
+        navToggle.addEventListener('click', () => {
+            const isOpen = mainNav.classList.toggle('nav-open');
+            navToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+        });
+
+        // opcional: cerrar el menú si tocan un link (queda más prolijo)
+        mainNav.addEventListener('click', (e) => {
+            if (e.target.classList.contains('nav-link')) {
+                mainNav.classList.remove('nav-open');
+                navToggle.setAttribute('aria-expanded', 'false');
+            }
+        });
+    }
     const fmtDate = (s) => s ? new Date(s).toLocaleString() : "-";
     function paintStatus(el, estado) {
         el.classList.remove('ok','warn','stop');
@@ -197,10 +661,20 @@
             .catch(()=>{});
     }
 
-    // Si viene ?nro=OT-0001 en la URL, auto-conecta SSE
+    // Si viene ?nro=OT-0001 en la URL, rellenamos el input y disparamos la consulta
     (function initFromQuery(){
-        const nro = new URLSearchParams(location.search).get('nro');
-        if (nro) startSSE(nro);
+        const params = new URLSearchParams(location.search);
+        const nro = params.get('nro');
+        if (!nro) return;
+
+        const input = document.getElementById('nroOrden');
+        const form  = document.getElementById('consultaForm');
+
+        if (input && form) {
+            input.value = nro;
+            // “Simulamos” un submit para reutilizar toda la lógica existente
+            form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+        }
     })();
 </script>
 </body>

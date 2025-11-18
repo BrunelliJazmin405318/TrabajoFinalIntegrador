@@ -3,42 +3,390 @@
 <head>
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Admin | Presupuestos (Checkout API)</title>
+    <title>Admin | Presupuestos </title>
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="/css/styles.css" rel="stylesheet">
+    <!-- <link href="/css/styles.css" rel="stylesheet"> -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+
+    <style>
+        :root {
+            --recti-red: #e53935;
+            --recti-red-dark: #c62828;
+            --recti-black: #111111;
+            --recti-white: #ffffff;
+            --recti-bg-light: #f3f3f3;
+            --recti-card-light: #ffffff;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background: var(--recti-bg-light) url("/img/fondo-figura.png") repeat;
+            background-size: 260px;
+            color: var(--recti-black);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ===== MINI NAV SUPERIOR ADMIN ===== */
+        .mini-nav {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(255,255,255,0.92);
+            backdrop-filter: blur(8px);
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .mini-nav-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: .45rem 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: .85rem;
+        }
+
+        .mini-nav-left a {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: .25rem .7rem;
+            border-radius: 999px;
+            border: 1px solid rgba(0,0,0,0.08);
+            background: #fff;
+            text-decoration: none;
+            color: #222;
+        }
+
+        .mini-nav-left a i {
+            font-size: 1.1rem;
+        }
+
+        .mini-nav-pill {
+            padding: .25rem .7rem;
+            border-radius: 999px;
+            background: #111;
+            color: white;
+            font-size: .8rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* ===== PAGE WRAP ===== */
+        main.page-wrap {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 30px 16px 40px;
+            flex: 1 0 auto;
+            width: 100%;
+        }
+
+        .page-header {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: flex-end;
+            justify-content: space-between;
+            margin-bottom: 18px;
+        }
+
+        .page-header-left h1 {
+            margin: 0;
+            font-size: 1.9rem;
+            font-weight: 700;
+            letter-spacing: .03em;
+        }
+
+        .page-header-left p {
+            margin: 4px 0 0;
+            font-size: .95rem;
+            color: #555;
+        }
+
+        .badge-admin {
+            background: var(--recti-red);
+            color: #fff;
+            padding: .35rem .75rem;
+            border-radius: 999px;
+            font-size: .78rem;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+        }
+
+        .badge-api {
+            background: #29b6f6;
+            color: #fff;
+            padding: .35rem .75rem;
+            border-radius: 999px;
+            font-size: .78rem;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+        }
+
+        /* ===== CARDS ===== */
+        .card {
+            border-radius: 16px;
+            background: rgba(255,255,255,0.96);
+            border: 1px solid rgba(0,0,0,0.04);
+            box-shadow: 0 12px 30px rgba(0,0,0,0.08);
+        }
+
+        .card-filters,
+        .card-gen {
+            margin-bottom: 16px;
+            animation: fadeIn .4s ease-out;
+        }
+
+        .card-table {
+            animation: fadeIn .5s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ===== TABLE ===== */
+        table.table thead th {
+            font-size: .8rem;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            color: #555;
+            border-bottom-width: 1px;
+        }
+
+        table.table tbody td {
+            font-size: .87rem;
+            vertical-align: middle;
+        }
+
+        .table thead tr {
+            background: #fafafa;
+        }
+
+        .table-hover > tbody > tr:hover > * {
+            background-color: #f7f7f7;
+        }
+
+        /* ===== BANNERS FLOATING (toastContainer) ===== */
+        #toastContainer .alert {
+            border-radius: 999px;
+        }
+
+        /* ===== BOTONES / FORM ===== */
+        #btnBuscar {
+            border-radius: 999px;
+            background-color: #c62828;
+            border: none;
+        }
+
+        #btnBuscar:hover {
+            background-color: #b71c1c;
+        }
+
+        #fEstado,
+        #fSolicitud {
+            border-radius: 999px;
+        }
+
+        /* chips de servicios */
+        #serviciosGrid .btn,
+        #extrasChips .btn {
+            border-radius: 999px;
+            color: var(--recti-red-dark);
+        }
+
+        /* ===== FOOTER ===== */
+        footer.site-footer {
+            border-top: 1px solid rgba(0,0,0,0.06);
+            padding: 12px 16px;
+            font-size: .8rem;
+            color: #666;
+            background: rgba(255,255,255,0.9);
+        }
+
+        footer .footer-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        /* CARD TABLE SCROLLEABLE (si querés limitar alto, se puede activar) */
+        /* .table-scroll {
+            max-height: 60vh;
+            overflow-y: auto;
+        } */
+        /* ===== TOQUES ROJOS SUAVES ===== */
+
+        /* Solo el botón "Generar" en rojo */
+        .card-gen .btn-primary {
+            background-color: var(--recti-red);
+            border-color: var(--recti-red);
+        }
+
+        .card-gen .btn-primary:hover,
+        .card-gen .btn-primary:focus {
+            background-color: var(--recti-red-dark);
+            border-color: var(--recti-red-dark);
+        }
+
+        /* Chips de servicios y extras */
+        #serviciosGrid .btn,
+        #extrasChips .btn {
+            border-radius: 999px;
+            color: var(--recti-red-dark);   /* texto rojo */
+            /* el borde queda azul por defecto de Bootstrap (outline-primary) */
+        }
+
+        /* Chips seleccionados: fondo rojo */
+        #serviciosGrid .btn.btn-primary,
+        #extrasChips .btn.btn-primary {
+            background-color: var(--recti-red);
+            border-color: var(--recti-red);
+            color: #fff;
+        }
+        /* ===== ACCIONES EN TABLA DE PRESUPUESTOS ===== */
+        .tabla-presupuestos tbody tr {
+            border-bottom: 1px solid rgba(0,0,0,0.03);
+        }
+
+        .tabla-presupuestos tbody tr:last-child {
+            border-bottom: none;
+        }
+        .tabla-presupuestos td:last-child {
+            display: flex;
+            flex-wrap: wrap;
+            gap: .25rem .5rem;          /* espacio entre chips */
+            align-items: flex-start;
+            white-space: normal;        /* permite saltos de línea */
+        }
+
+        /* Quitamos los márgenes horizontales de Bootstrap dentro de la celda */
+        .tabla-presupuestos td:last-child > * {
+            margin: 0 !important;
+        }
+
+        /* Chips un poquito más chicos para que no se sature */
+        .tabla-presupuestos td:last-child .badge {
+            font-size: .72rem;
+            padding: .2rem .45rem;
+        }
+
+        .tabla-presupuestos td:last-child .btn-sm {
+            font-size: .78rem;
+            padding: .2rem .5rem;
+        }
+
+        /* Separar bloque de OT para que se lea mejor */
+        .tabla-presupuestos td:last-child div.mt-2 {
+            width: 100%;               /* que corte a otra línea */
+            margin-top: .3rem !important;
+        }
+        /* === Tabla scrolleable y header fijo === */
+        .card-table {
+            border-radius: 18px;
+            overflow: hidden;
+            box-shadow: 0 12px 30px rgba(0,0,0,.12);
+        }
+
+        .table-scroll {
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+
+        .table-scroll thead th {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+            background: #fafafa;
+        }
+
+        /* === Columna de acciones compacta === */
+        .col-acciones {
+            white-space: nowrap;
+            font-size: .8rem;
+        }
+
+        /* Botoncitos redondos con iconos */
+        .btn-icon-circle {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            padding: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Pila de acciones */
+        .acciones-stack {
+            display: flex;
+            flex-direction: column;
+            gap: .25rem;
+        }
+
+        .acciones-stack .acciones-line {
+            display: flex;
+            flex-wrap: wrap;
+            gap: .25rem .35rem;
+            align-items: center;
+        }
+
+    </style>
 </head>
 <body>
-<!-- 🟦 BANNER FLOATING TOP (NUEVO) -->
+
+<!-- MINI NAV SUPERIOR -->
+<div class="mini-nav">
+    <div class="mini-nav-inner">
+        <div class="mini-nav-left">
+            <a href="/admin-menu.html">
+                <i class="bi bi-arrow-left-short"></i> Volver al panel
+            </a>
+        </div>
+        <div class="mini-nav-right">
+            <span class="mini-nav-pill">
+                <i class="bi bi-receipt-cutoff"></i> Presupuestos
+            </span>
+        </div>
+    </div>
+</div>
+
+<!-- BANNER FLOATING TOP -->
 <div id="toastContainer"
      class="position-fixed top-0 start-50 translate-middle-x p-3"
      style="z-index:3000; width:100%; max-width:430px;">
 </div>
-<nav class="navbar navbar-expand-lg navbar-dark">
-    <div class="container">
-        <a class="navbar-brand" href="/presupuesto.html"><i class="bi bi-gear-fill me-2"></i>Rectificadora</a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav"><span class="navbar-toggler-icon"></span></button>
-        <div id="nav" class="collapse navbar-collapse">
-            <ul class="navbar-nav ms-auto">
-                <li class="nav-item"><a class="nav-link" href="/admin-solicitudes.html">Solicitudes</a></li>
-                <li class="nav-item"><a class="nav-link active" href="/admin-presupuestos.html">Presupuestos</a></li>
-            </ul>
+
+<main class="page-wrap">
+    <!-- HEADER -->
+    <header class="page-header">
+        <div class="page-header-left">
+            <h1>Presupuestos</h1>
+            <p>Generá, gestioná y facturá los presupuestos aprobados desde la web.</p>
         </div>
-    </div>
-</nav>
+        <div class="page-header-right d-flex flex-wrap gap-2">
+            <span class="badge-admin">Panel admin</span>
+        </div>
+    </header>
 
-<main class="container page-wrap">
-    <div class="page-title d-flex align-items-center gap-2 my-3">
-        <h1 class="m-0">Presupuestos</h1>
-        <span class="badge">Panel Admin</span>
-        <span class="badge text-bg-info">Checkout API</span>
-    </div>
-
-    <!-- Generación rápida (NUEVO) -->
-    <div class="card mb-3">
+    <!-- Generación rápida -->
+    <div class="card card-gen mb-3">
         <div class="card-body">
-            <h5 class="card-title">Generar desde solicitud aprobada</h5>
+            <h5 class="card-title mb-3">
+                <i class="bi bi-magic me-2 text-danger"></i>
+                Generar presupuesto desde solicitud aprobada
+            </h5>
 
             <form id="gen" class="row g-3">
                 <div class="col-md-2">
@@ -56,12 +404,12 @@
                 </div>
 
                 <div class="col-md-3">
-                    <label class="form-label">Pieza</label>
+                    <label class="form-label d-block">Pieza</label>
                     <div class="btn-group d-flex" role="group" aria-label="piezaTipo">
                         <input type="radio" class="btn-check" name="piezaTipo" id="piezaMotor" value="MOTOR" autocomplete="off" checked data-lockable>
                         <label class="btn btn-outline-primary" for="piezaMotor">Motor</label>
 
-                        <input type="radio" class="btn-check" name="piezaTipo" id="piezaTapa" value="TAPA" autocomplete="off" data-lockable="">
+                        <input type="radio" class="btn-check" name="piezaTipo" id="piezaTapa" value="TAPA" autocomplete="off" data-lockable>
                         <label class="btn btn-outline-primary" for="piezaTapa">Tapa</label>
                     </div>
                 </div>
@@ -80,45 +428,72 @@
                             <i class="bi bi-plus-lg"></i> Agregar
                         </button>
                     </div>
-                    <div class="form-text">Hacé click para seleccionar/deseleccionar. Podés agregar servicios personalizados con su precio.</div>
+                    <div class="form-text">Hacé click en un servicio para seleccionarlo. Podés agregar servicios personalizados con su precio.</div>
                 </div>
 
-                <div class="col-md-3 d-grid">
-                    <button class="btn btn-primary" type="submit">Generar</button>
+                <div class="col-md-3 d-grid mt-2">
+                    <button class="btn btn-primary" type="submit">
+                        <i class="bi bi-clipboard-plus me-1"></i> Generar
+                    </button>
                 </div>
             </form>
 
-            <div id="genOk"  class="alert alert-success mt-2 d-none"></div>
-            <div id="genErr" class="alert alert-danger  mt-2 d-none"></div>
+            <div id="genOk"  class="alert alert-success mt-3 d-none"></div>
+            <div id="genErr" class="alert alert-danger  mt-3 d-none"></div>
         </div>
     </div>
 
-    <!-- Filtros -->
-    <div class="row g-2 mb-3">
-        <div class="col-md-3">
-            <select id="fEstado" class="form-select">
-                <option value="">Todos</option>
-                <option value="PENDIENTE" selected>Pendientes</option>
-                <option value="APROBADO">Aprobados</option>
-                <option value="RECHAZADO">Rechazados</option>
-            </select>
-        </div>
-        <div class="col-md-3">
-            <input id="fSolicitud" class="form-control" placeholder="Filtrar por Solicitud ID">
-        </div>
-        <div class="col-md-2 d-grid">
-            <button id="btnBuscar" class="btn btn-secondary">Buscar</button>
-        </div>
-    </div>
-
-    <!-- Tabla -->
-    <div class="card">
+    <!-- FILTROS LISTADO -->
+    <div class="card card-filters mb-3">
         <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-bordered align-middle mb-0">
-                    <thead>
+            <h6 class="mb-3 text-uppercase text-muted" style="letter-spacing:.09em; font-size:.78rem;">
+                Filtrar presupuestos
+            </h6>
+            <div class="row g-2 align-items-end">
+                <div class="col-md-3">
+                    <label for="fEstado" class="form-label small mb-1">Estado</label>
+                    <select id="fEstado" class="form-select">
+                        <option value="">Todos</option>
+                        <option value="PENDIENTE" selected>Pendientes</option>
+                        <option value="APROBADO">Aprobados</option>
+                        <option value="RECHAZADO">Rechazados</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="fSolicitud" class="form-label small mb-1">Filtrar por Solicitud ID</label>
+                    <input id="fSolicitud" class="form-control" placeholder="Ej: 15">
+                </div>
+                <div class="col-md-2 d-grid">
+                    <button id="btnBuscar" class="btn btn-secondary mt-3 mt-md-0">
+                        <i class="bi bi-search me-1"></i> Buscar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TABLA -->
+    <div class="card card-table">
+        <div class="card-body p-0">
+            <div class="d-flex justify-content-between align-items-center p-3 pb-2">
+                <h6 class="mb-0 text-uppercase text-muted" style="letter-spacing:.09em; font-size:.78rem;">
+                    Listado
+                </h6>
+                <small class="text-secondary">ID, solicitud, cliente, tipo, total, estado y acciones.</small>
+            </div>
+
+            <div class="table-responsive table-scroll">
+                <table class="table table-bordered align-middle mb-0 table-hover tabla-presupuestos">
+                    <thead class="sticky-header">
                     <tr>
-                        <th>ID</th><th>Solicitud</th><th>Cliente</th><th>Tipo</th><th>Total</th><th>Estado</th><th>Creada</th><th>Acciones</th>
+                        <th>ID</th>
+                        <th>Solicitud</th>
+                        <th>Cliente</th>
+                        <th>Tipo</th>
+                        <th>Total</th>
+                        <th>Estado</th>
+                        <th>Creada</th>
+                        <th class="col-acciones">Acciones</th>
                     </tr>
                     </thead>
                     <tbody id="tbody"></tbody>
@@ -129,9 +504,9 @@
 </main>
 
 <footer class="site-footer">
-    <div class="container d-flex justify-content-between">
-        <span>©️ Rectificadora — demo académica</span>
-        <span class="muted">Negro/Gris/Blanco + Rojo</span>
+    <div class="footer-inner">
+        <span>© 2025 Rectificadora Cornejo</span>
+        <span>Panel administrativo — UTN FRC</span>
     </div>
 </footer>
 
@@ -350,14 +725,27 @@
 
             if (p.estado === "PENDIENTE") {
                 acciones =
-                    `<button type="button" class="btn btn-success btn-sm me-1" data-act="aprobar" data-id="${p.id}">
-             <i class="bi bi-check2"></i> Aprobar
-           </button>
-           <button type="button" class="btn btn-danger btn-sm" data-act="rechazar" data-id="${p.id}">
-             <i class="bi bi-x-lg"></i> Rechazar
-           </button>`;
+                    `<div class="acciones-stack">
+           <div class="acciones-line">
+             <span class="badge text-bg-warning">Pendiente</span>
+           </div>
+           <div class="acciones-line">
+             <button type="button"
+                     class="btn btn-outline-success btn-sm btn-icon-circle"
+                     data-act="aprobar" data-id="${p.id}"
+                     title="Aprobar presupuesto">
+               <i class="bi bi-check2"></i>
+             </button>
+             <button type="button"
+                     class="btn btn-outline-danger btn-sm btn-icon-circle"
+                     data-act="rechazar" data-id="${p.id}"
+                     title="Rechazar presupuesto">
+               <i class="bi bi-x-lg"></i>
+             </button>
+           </div>
+         </div>`;
             } else if (p.estado === "APROBADO") {
-                const senaOK  = (p.senaEstado  || "").toUpperCase() === "ACREDITADA";
+                const senaOK = (p.senaEstado || "").toUpperCase() === "ACREDITADA";
                 const finalOK = (p.finalEstado || "").toUpperCase() === "ACREDITADA";
 
                 // 🔧 Botón Repuestos (solo si hay OT Y NO está el pago final acreditado)
@@ -372,76 +760,124 @@
 
                 if (finalOK) {
                     const tieneFactura = !!p.facturaNumero;
+
+                    const btnRepuestosIcon = (!p.otNroOrden) ? "" : `
+        <button type="button"
+                class="btn btn-outline-dark btn-sm btn-icon-circle"
+                data-act="repuestos"
+                data-ot-nro="${p.otNroOrden}"
+                title="Ver repuestos de la OT">
+          <i class="bi bi-tools"></i>
+        </button>`;
+
                     if (tieneFactura) {
                         acciones =
-                            `<span class="badge bg-success me-2">Monto total pagado</span>
-               ${p.finalPaymentId ? `<span class="text-muted">#${p.finalPaymentId}</span>` : ""}
-               <button type="button" class="btn btn-success btn-sm ms-2"
-                       data-act="descargar-factura" data-id="${p.id}" data-tipo="${p.facturaTipo || "B"}">
-                 <i class="bi bi-download"></i> Descargar factura ${p.facturaTipo || "B"}
+                            `<div class="acciones-stack">
+             <div class="acciones-line">
+               <span class="badge bg-success">Monto total pagado</span>
+               ${p.facturaNumero ? `<span class="text-muted small ms-1">${p.facturaNumero}</span>` : ""}
+               ${p.otNroOrden ? `<span class="badge text-bg-warning ms-1">OT: ${p.otNroOrden}</span>` : ""}
+             </div>
+             <div class="acciones-line">
+               <button type="button"
+                       class="btn btn-success btn-sm btn-icon-circle"
+                       data-act="descargar-factura"
+                       data-id="${p.id}"
+                       data-tipo="${p.facturaTipo || "B"}"
+                       title="Descargar factura ${p.facturaTipo || "B"}">
+                 <i class="bi bi-download"></i>
                </button>
-               <a class="btn btn-outline-primary btn-sm ms-2" target="_blank"
-                  href="/estado-solicitud.html?id=${p.solicitudId ?? ""}">
-                 <i class="bi bi-box-arrow-up-right"></i> Página del cliente
+               <a class="btn btn-outline-primary btn-sm btn-icon-circle"
+                  href="/estado-solicitud.html?id=${p.solicitudId ?? ""}"
+                  target="_blank"
+                  title="Ver página del cliente">
+                 <i class="bi bi-box-arrow-up-right"></i>
                </a>
-               <span class="text-muted ms-2">${p.facturaNumero}</span>
-               ${btnRepuestos}`;
+               ${btnRepuestosIcon}
+             </div>
+           </div>`;
                     } else {
                         acciones =
-                            `<span class="badge bg-success me-2">Monto total pagado</span>
-               ${p.finalPaymentId ? `<span class="text-muted">#${p.finalPaymentId}</span>` : ""}
-               <button type="button" class="btn btn-outline-success btn-sm ms-2"
-                       data-act="facturar" data-id="${p.id}">
-                 <i class="bi bi-receipt"></i> Generar factura (A/B/C)
+                            `<div class="acciones-stack">
+             <div class="acciones-line">
+               <span class="badge bg-success">Monto total pagado</span>
+               ${p.otNroOrden ? `<span class="badge text-bg-warning ms-1">OT: ${p.otNroOrden}</span>` : ""}
+             </div>
+             <div class="acciones-line">
+               <button type="button"
+                       class="btn btn-outline-success btn-sm btn-icon-circle"
+                       data-act="facturar" data-id="${p.id}"
+                       title="Generar factura (A/B/C)">
+                 <i class="bi bi-receipt"></i>
                </button>
-               <a class="btn btn-outline-primary btn-sm ms-2" target="_blank"
-                  href="/estado-solicitud.html?id=${p.solicitudId ?? ""}">
-                 <i class="bi bi-box-arrow-up-right"></i> Página del cliente
+               <a class="btn btn-outline-primary btn-sm btn-icon-circle"
+                  href="/estado-solicitud.html?id=${p.solicitudId ?? ""}"
+                  target="_blank"
+                  title="Ver página del cliente">
+                 <i class="bi bi-box-arrow-up-right"></i>
                </a>
-               ${btnRepuestos}`;
+               ${btnRepuestosIcon}
+             </div>
+           </div>`;
                     }
                 } else {
-                    const senaOK2  = (p.senaEstado  || "").toUpperCase() === "ACREDITADA";
-                    const chip = senaOK2
-                        ? `<span class="badge bg-success me-2">Seña acreditada</span>${p.senaPaymentId ? `<span class="text-muted me-2">#${p.senaPaymentId}</span>` : ""}`
-                        : `<span class="badge bg-warning text-dark me-2">Seña pendiente</span>`;
+                    const senaOK2 = (p.senaEstado || "").toUpperCase() === "ACREDITADA";
 
-                    const otBadge = p.otNroOrden
-                        ? `<div class="mt-2">
-                             <span class="badge text-bg-warning me-2">OT: ${p.otNroOrden}</span>
-                             ${btnRepuestos}
-                           </div>`
-                        : btnRepuestos;
+                    const chip = senaOK2
+                        ? `<span class="badge bg-success">Seña acreditada</span>`
+                        : `<span class="badge bg-warning text-dark">Seña pendiente</span>`;
 
                     const puedeCrearOT = (senaOK2 || finalOK) && !p.otNroOrden;
-                    const btnCrearOT = puedeCrearOT
-                        ? `<button type="button" class="btn btn-warning btn-sm mt-2"
-                       data-act="crear-ot" data-id="${p.id}">
-                 <i class="bi bi-plus-square"></i> Crear OT
-               </button>`
-                        : `<button type="button" class="btn btn-warning btn-sm mt-2" disabled
-                   title="${p.otNroOrden ? 'Ya existe OT' : 'Requiere seña acreditada'}">
-                 <i class="bi bi-plus-square"></i> Crear OT
-               </button>`;
+
+                    const btnRepuestosIcon = (!p.otNroOrden) ? "" : `
+        <button type="button"
+                class="btn btn-outline-dark btn-sm btn-icon-circle"
+                data-act="repuestos"
+                data-ot-nro="${p.otNroOrden}"
+                title="Ver repuestos de la OT">
+          <i class="bi bi-tools"></i>
+        </button>`;
+
+                    const btnCrearOT = `
+        <button type="button"
+                class="btn btn-warning btn-sm btn-icon-circle"
+                data-act="crear-ot" data-id="${p.id}"
+                ${puedeCrearOT ? "" : 'disabled title="Requiere seña acreditada o ya existe OT"'}
+                title="${puedeCrearOT ? "Crear Orden de Trabajo" : "Requiere seña acreditada o ya existe OT"}">
+          <i class="bi bi-plus-square"></i>
+        </button>`;
 
                     acciones =
-                        `${chip}
-             <a class="btn btn-outline-primary btn-sm me-2" target="_blank"
-                href="/estado-solicitud.html?id=${p.solicitudId ?? ""}">
-               <i class="bi bi-box-arrow-up-right"></i> Página del cliente
-             </a>
-             <button type="button" class="btn btn-outline-primary btn-sm"
-                data-act="pago-manual"
-                data-id="${p.id}"
-                data-total="${p.total ?? 0}"
-                data-sena-monto="${p.senaMonto ?? ""}"
-                data-sena-estado="${p.senaEstado ?? ""}"
-                data-final-estado="${p.finalEstado ?? ""}"
-                data-ot-nro="${p.otNroOrden ?? ""}">
-            <i class="bi bi-cash-coin"></i> Registrar pago manual
-        </button>
-             ${otBadge}
-             ${btnCrearOT}`;
+                        `<div class="acciones-stack">
+         <div class="acciones-line">
+           ${chip}
+           ${p.otNroOrden ? `<span class="badge text-bg-warning ms-1">OT: ${p.otNroOrden}</span>` : ""}
+         </div>
+         <div class="acciones-line">
+           <button type="button"
+                   class="btn btn-outline-primary btn-sm btn-icon-circle"
+                   data-act="pago-manual"
+                   data-id="${p.id}"
+                   data-total="${p.total ?? 0}"
+                   data-sena-monto="${p.senaMonto ?? ""}"
+                   data-sena-estado="${p.senaEstado ?? ""}"
+                   data-final-estado="${p.finalEstado ?? ""}"
+                   data-ot-nro="${p.otNroOrden ?? ""}"
+                   title="Registrar pago manual">
+             <i class="bi bi-cash-coin"></i>
+           </button>
+
+           <a class="btn btn-outline-primary btn-sm btn-icon-circle"
+              href="/estado-solicitud.html?id=${p.solicitudId ?? ""}"
+              target="_blank"
+              title="Ver página del cliente">
+             <i class="bi bi-box-arrow-up-right"></i>
+           </a>
+
+           ${btnRepuestosIcon}
+           ${btnCrearOT}
+         </div>
+       </div>`;
                 }
             }
 

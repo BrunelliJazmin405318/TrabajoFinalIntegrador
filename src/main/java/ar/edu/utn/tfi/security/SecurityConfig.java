@@ -29,6 +29,8 @@ public class SecurityConfig {
                                 "/", "/index.html",
                                 "/login.html",
                                 "/consulta.html",
+                                "/home.html",
+                                "/index.html",
                                 "/historial.html",
                                 "/presupuesto.html",
                                 "/estado-solicitud.html",
@@ -37,7 +39,8 @@ public class SecurityConfig {
                                 "/swagger-ui.html", "/swagger-ui/**",
                                 "/v3/api-docs/**",
                                 "/favicon.ico",
-                                "/css/**", "/js/**", "/images/**"
+                                "/api/notificaciones/**",
+                                "/css/**", "/js/**", "/img/**"
                         ).permitAll()
 
                         // ✅ APIs públicas (Checkout API cliente)
