@@ -4,118 +4,550 @@
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Solicitar presupuesto | Rectificadora</title>
+
+    <!-- Bootstrap + íconos -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="/css/styles.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+
+    <style>
+        :root {
+            --recti-red: #e53935;
+            --recti-red-dark: #c62828;
+            --recti-black: #111111;
+            --recti-gray-light: #f5f5f5;
+            --recti-white: #ffffff;
+        }
+
+        * { box-sizing: border-box; }
+
+        html, body {
+            height: 100%;
+        }
+
+        body {
+            margin: 0;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            color: var(--recti-black);
+            background: #f3f3f3 url('/img/fondo-figura.png') repeat;
+            background-size: 260px auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        /* ============= NAVBAR (mismo estilo público) ============= */
+
+        .main-header {
+            background: var(--recti-white);
+            border-bottom: none;
+            box-shadow: 0 1px 0 rgba(0,0,0,0.03);
+            position: sticky;
+            top: 0;
+            z-index: 1050;
+        }
+
+        .main-header-inner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 24px;
+            padding: 0.6rem 1.5rem;
+        }
+
+        .nav-logo {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 800;
+            letter-spacing: .08em;
+            font-size: 1rem;
+            text-transform: uppercase;
+            color: var(--recti-black);
+        }
+
+        .nav-logo-mark {
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            background: var(--recti-red);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--recti-white);
+            font-size: .9rem;
+        }
+
+        .nav-main {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+        }
+
+        .nav-list {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        .nav-link {
+            border: none;
+            background: transparent;
+            padding: .25rem 0;
+            font-size: .92rem;
+            font-weight: 500;
+            color: #444;
+            cursor: pointer;
+        }
+
+        .nav-link:hover {
+            color: var(--recti-red-dark);
+        }
+
+        .nav-link.is-active {
+            color: var(--recti-red-dark);
+            font-weight: 600;
+        }
+
+        .btn-login {
+            border-radius: 999px;
+            border: 1px solid var(--recti-red);
+            padding: .35rem 1rem;
+            font-size: .9rem;
+            font-weight: 600;
+            color: var(--recti-red);
+            white-space: nowrap;
+            transition: all .15s ease;
+        }
+
+        .btn-login:hover {
+            background: var(--recti-red);
+            color: var(--recti-white);
+        }
+
+        .nav-toggle {
+            display: none;
+            border: none;
+            background: transparent;
+            font-size: 1.4rem;
+            cursor: pointer;
+            color: #444;
+        }
+
+        @media (max-width: 992px) {
+            .main-header-inner { padding-inline: 1rem; }
+
+            .nav-toggle { display: inline-flex; }
+
+            .nav-main {
+                position: fixed;
+                inset: 64px 0 auto 0;
+                background: var(--recti-white);
+                flex-direction: column;
+                align-items: stretch;
+                gap: 0;
+                max-height: 0;
+                overflow: hidden;
+                transition: max-height .25s ease;
+                box-shadow: 0 12px 30px rgba(0, 0, 0, .18);
+            }
+
+            .nav-main.nav-open { max-height: 80vh; }
+
+            .nav-list {
+                flex-direction: column;
+                align-items: stretch;
+                padding: .75rem 1rem;
+                gap: .25rem;
+            }
+
+            .nav-link {
+                width: 100%;
+                text-align: left;
+            }
+
+            .btn-login {
+                margin: .4rem 1rem 1rem;
+                align-self: flex-start;
+            }
+        }
+
+        /* ============= LAYOUT PAGE ============= */
+
+        .page-wrap {
+            max-width: 900px;
+            margin: 60px auto 80px;
+            padding: 0 16px;
+            flex: 1 0 auto;
+        }
+
+        .page-title {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 24px;
+        }
+
+        .page-title h1 {
+            font-size: 1.9rem;
+            margin: 0;
+            font-weight: 700;
+        }
+
+        .badge {
+            background: var(--recti-red);
+            color: white;
+            border-radius: 6px;
+            padding: .3rem .6rem;
+            font-size: .8rem;
+        }
+
+        .card-presupuesto {
+            border-radius: 18px;
+            border: 1px solid rgba(0,0,0,0.04);
+            background: var(--recti-white);
+            box-shadow: 0 14px 30px rgba(0,0,0,.10);
+            padding: 24px 22px 26px;
+            animation: fadeIn .35s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .card-presupuesto .form-label {
+            font-weight: 500;
+        }
+
+        .card-presupuesto .form-control,
+        .card-presupuesto .form-select {
+            border-radius: 10px;
+        }
+
+        .zona-tipo-consulta {
+            background: #111;
+            color: #f5f5f5;
+        }
+
+        /* ============= FOOTER (igual home/consulta/historial) ============= */
+
+        .site-footer {
+            background: #111;
+            color: #ccc;
+            padding: 40px 0 24px;
+            font-size: .9rem;
+        }
+
+        .footer-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 16px;
+        }
+
+        .footer-top {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            gap: 40px;
+            padding-bottom: 32px;
+        }
+
+        .footer-brand {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .footer-logo-mark {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            background: var(--recti-red);
+            color: white;
+            font-weight: 800;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .footer-logo-text {
+            font-size: 1.1rem;
+            font-weight: 700;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+        }
+
+        .footer-links {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 40px;
+        }
+
+        .footer-column h4 {
+            font-size: .85rem;
+            color: #eee;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            margin-bottom: 10px;
+        }
+
+        .footer-column a {
+            display: block;
+            color: #bbb;
+            font-size: .85rem;
+            margin-bottom: 6px;
+            text-decoration: none;
+        }
+
+        .footer-column a:hover {
+            color: var(--recti-red);
+        }
+
+        .footer-bottom {
+            border-top: 1px solid rgba(255,255,255,0.1);
+            padding-top: 16px;
+            margin-top: 16px;
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            font-size: .8rem;
+            color: #888;
+        }
+
+        @media (max-width: 768px) {
+            .footer-links {
+                flex-direction: column;
+            }
+        }
+
+        .muted {
+            color: #777;
+        }
+
+        .btn-primary {
+            background: var(--recti-red);
+            border-color: var(--recti-red);
+            border-radius: 14px;
+        }
+
+        .btn-primary:hover {
+            background: var(--recti-red-dark);
+            border-color: var(--recti-red-dark);
+        }
+    </style>
 </head>
 <body>
-<!-- NAV -->
-<nav class="navbar navbar-expand-lg navbar-dark">
-    <div class="container">
-        <a class="navbar-brand" href="/presupuesto.html"><i class="bi bi-gear-fill me-2"></i>Rectificadora</a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav" aria-label="Menu">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div id="nav" class="collapse navbar-collapse">
-            <ul class="navbar-nav ms-auto">
-                <li class="nav-item"><a class="nav-link active" href="/presupuesto.html">Solicitar presupuesto</a></li>
-                <li class="nav-item"><a class="nav-link" href="/estado-solicitud.html">Estado de solicitud</a></li>
-                <li class="nav-item"><a class="nav-link" href="/admin-solicitud.html">Admin</a></li>
-            </ul>
-        </div>
-    </div>
-</nav>
 
-<!-- CONTENT -->
-<main class="container page-wrap">
+<!-- ===== NAVBAR ===== -->
+<header class="main-header">
+    <div class="main-header-inner">
+        <a href="/home.html" class="nav-logo">
+            <span class="nav-logo-mark">R</span>
+            <span>RECTIFICADORA CORNEJO</span>
+        </a>
+
+        <button class="nav-toggle" type="button" aria-label="Abrir menú" aria-expanded="false">
+            <i class="bi bi-list"></i>
+        </button>
+
+        <nav id="mainNav" class="nav-main">
+            <ul class="nav-list">
+                <li><a href="/consulta.html" class="nav-link">Consulta</a></li>
+                <li><a href="/historial.html" class="nav-link">Historial</a></li>
+                <li><a href="/estado-solicitud.html" class="nav-link">Estado solicitud</a></li>
+                <li><a href="/presupuesto.html" class="nav-link is-active">Presupuesto</a></li>
+                <li><a id="logoutLink" class="nav-link" href="#">Salir</a></li>
+            </ul>
+            <a href="/login.html" class="btn-login">Login taller</a>
+        </nav>
+    </div>
+</header>
+
+<!-- ===== CONTENIDO ===== -->
+<main class="page-wrap">
     <div class="page-title">
         <h1 class="m-0">Solicitar presupuesto</h1>
         <span class="badge">Presupuestos</span>
     </div>
 
-    <form id="formSolicitud" class="row g-3">
-        <div class="col-md-6">
-            <label class="form-label">Nombre y Apellido*</label>
-            <input class="form-control" name="clienteNombre" required>
-        </div>
-        <div class="col-md-6">
-            <label class="form-label">Teléfono</label>
-            <input class="form-control" name="clienteTelefono" placeholder="+54 9 ...">
-        </div>
-        <div class="col-md-6">
-            <label class="form-label">Email</label>
-            <input type="email" class="form-control" name="clienteEmail" placeholder="ejemplo@correo.com">
-        </div>
-        <div class="col-md-6">
-            <label class="form-label">Tipo de unidad*</label>
-            <select class="form-select" name="tipoUnidad" required>
-                <option value="MOTOR">Motor</option>
-                <option value="TAPA">Tapa</option>
-            </select>
-        </div>
-        <div class="col-md-4">
-            <label class="form-label">Marca</label>
-            <input class="form-control" name="marca" placeholder="Ej: Fiat">
-        </div>
-        <div class="col-md-4">
-            <label class="form-label">Modelo</label>
-            <input class="form-control" name="modelo" placeholder="Ej: Palio">
-        </div>
-        <div class="col-md-4">
-            <label class="form-label">Cilindrada de motor</label>
-            <input class="form-control" name="nroMotor" placeholder="Ej:1.6 - 2.0">
-        </div>
-        <div class="col-12 bg-dark p-3 rounded-3">
-            <label class="form-label d-block">¿Qué necesitás?</label>
-
-            <div class="form-check form-check-inline">
-                <input class="form-check-input"
-                       type="radio"
-                       name="tipoConsulta"
-                       id="tipoCoti"
-                       value="COTIZACION"
-                       checked>
-                <label class="form-check-label" for="tipoCoti">
-                    Cotización estimada
-                </label>
+    <div class="card-presupuesto mb-3">
+        <form id="formSolicitud" class="row g-3">
+            <div class="col-md-6">
+                <label class="form-label">Nombre y Apellido*</label>
+                <input class="form-control" name="clienteNombre" required>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Teléfono</label>
+                <input class="form-control" name="clienteTelefono" placeholder="+54 9 ...">
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Email</label>
+                <input type="email" class="form-control" name="clienteEmail" placeholder="ejemplo@correo.com">
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Tipo de unidad*</label>
+                <select class="form-select" name="tipoUnidad" required>
+                    <option value="MOTOR">Motor</option>
+                    <option value="TAPA">Tapa</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Marca</label>
+                <input class="form-control" name="marca" placeholder="Ej: Fiat">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Modelo</label>
+                <input class="form-control" name="modelo" placeholder="Ej: Palio">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Cilindrada de motor</label>
+                <input class="form-control" name="nroMotor" placeholder="Ej: 1.6 - 2.0">
             </div>
 
-            <div class="form-check form-check-inline">
-                <input class="form-check-input"
-                       type="radio"
-                       name="tipoConsulta"
-                       id="tipoDiag"
-                       value="DIAGNOSTICO">
-                <label class="form-check-label" for="tipoDiag">
-                    No sé qué tiene / Quiero diagnóstico presencial
-                </label>
+            <div class="col-12 zona-tipo-consulta p-3 rounded-3">
+                <label class="form-label d-block mb-2">¿Qué necesitás?</label>
+
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input"
+                           type="radio"
+                           name="tipoConsulta"
+                           id="tipoCoti"
+                           value="COTIZACION"
+                           checked>
+                    <label class="form-check-label" for="tipoCoti">
+                        Cotización estimada
+                    </label>
+                </div>
+
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input"
+                           type="radio"
+                           name="tipoConsulta"
+                           id="tipoDiag"
+                           value="DIAGNOSTICO">
+                    <label class="form-check-label" for="tipoDiag">
+                        No sé qué tiene / Quiero diagnóstico presencial
+                    </label>
+                </div>
+
+                <div class="form-text text-light mt-2">
+                    Si elegís diagnóstico presencial, te vamos a contactar para coordinar un turno y ver la pieza en el taller.
+                </div>
             </div>
 
-            <div class="form-text">
-                Si elegís diagnóstico presencial, te vamos a contactar para coordinar un turno y ver la pieza en el taller.
+            <div class="col-12">
+                <label class="form-label">Descripción del trabajo</label>
+                <textarea class="form-control" name="descripcion" rows="3"
+                          placeholder="Contanos qué le pasa al motor / tapa, ruidos, síntomas, etc."></textarea>
             </div>
-        </div>
-        <div class="col-12">
-            <label class="form-label">Descripción del trabajo</label>
-            <textarea class="form-control" name="descripcion" rows="3"
-                      placeholder="Contanos qué le pasa al motor / tapa, ruidos, síntomas, etc."></textarea>
-        </div>
-        <div class="col-12 d-grid">
-            <button class="btn btn-primary btn-lg" type="submit">Enviar solicitud</button>
-        </div>
-    </form>
 
-    <div id="ok" class="alert alert-success mt-4 d-none"></div>
-    <div id="err" class="alert alert-danger mt-4 d-none"></div>
+            <div class="col-12 d-grid">
+                <button class="btn btn-primary btn-lg" type="submit">Enviar solicitud</button>
+            </div>
+        </form>
+
+        <div id="ok" class="alert alert-success mt-4 d-none"></div>
+        <div id="err" class="alert alert-danger mt-4 d-none"></div>
+    </div>
+
+    <p class="muted small mt-2">
+        Tip: si dejás tu email correctamente escrito, te vamos a poder enviar el presupuesto y el seguimiento
+        de tu solicitud.
+    </p>
 </main>
 
+<!-- ===== FOOTER ===== -->
 <footer class="site-footer">
-    <div class="container d-flex justify-content-between">
-        <span>© Rectificadora Cornejo</span>
-        <span class="muted">Universidad Tecnologica Nacional</span>
+    <div class="footer-container">
+
+        <div class="footer-top">
+            <div class="footer-brand">
+                <div class="footer-logo-mark">R</div>
+                <span class="footer-logo-text">RECTIFICADORA CORNEJO</span>
+            </div>
+
+            <div class="footer-links">
+                <div class="footer-column">
+                    <h4>Soluciones</h4>
+                    <a href="/consulta.html">Estado del motor</a>
+                    <a href="/historial.html">Historial</a>
+                    <a href="/estado-solicitud.html">Estado de solicitud</a>
+                    <a href="/presupuesto.html">Pedir cotización</a>
+                </div>
+
+                <div class="footer-column">
+                    <h4>Nosotros</h4>
+                    <a href="/home.html#nosotros">Quiénes somos</a>
+                    <a href="/home.html#por-que">Por qué nos eligen</a>
+                </div>
+
+                <div class="footer-column">
+                    <h4>Contacto</h4>
+                    <a href="/presupuesto.html">Pedir cotización</a>
+                    <a href="/home.html#contacto">Trabajá con nosotros</a>
+                </div>
+
+                <div class="footer-column">
+                    <h4>Seguimientos</h4>
+                    <a href="/consulta.html">Estado del motor</a>
+                    <a href="/historial.html">Historial del motor</a>
+                    <a href="/estado-solicitud.html">Solicitud</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer-bottom">
+            <span>© 2025 Rectificadora Cornejo. Todos los derechos reservados. • Aviso legal</span>
+            <span>2025</span>
+        </div>
+
     </div>
 </footer>
 
+<!-- ===== NAVBAR LOGIC (igual al resto) ===== -->
+<script>
+    const navToggle = document.querySelector('.nav-toggle');
+    const mainNav   = document.getElementById('mainNav');
+
+    if (navToggle && mainNav) {
+        navToggle.addEventListener('click', () => {
+            const isOpen = mainNav.classList.toggle('nav-open');
+            navToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+        });
+
+        mainNav.addEventListener('click', (e) => {
+            if (e.target.classList.contains('nav-link')) {
+                mainNav.classList.remove('nav-open');
+                navToggle.setAttribute('aria-expanded', 'false');
+            }
+        });
+    }
+
+    (async () => {
+        try {
+            const { getAuth, clearAuth } = await import("/js/auth.js");
+            const link = document.getElementById("logoutLink");
+            if (link) {
+                if (!getAuth()) link.classList.add("d-none");
+                link.addEventListener("click", (e)=>{
+                    e.preventDefault();
+                    clearAuth();
+                    window.location.href = "/login.html";
+                });
+            }
+        } catch {}
+    })();
+</script>
+
+<!-- ===== LÓGICA FORMULARIO (misma funcionalidad de antes) ===== -->
 <script>
     const f = document.getElementById('formSolicitud');
 
@@ -133,8 +565,6 @@
         ok.innerHTML = msg;
         document.getElementById('err').classList.add('d-none');
     }
-
-    // ============== VALIDACIONES AVANZADAS ==============
 
     // Solo letras, números y espacios (para marca / modelo)
     function validarTextoSimple(v) {
@@ -186,12 +616,12 @@
         e.preventDefault();
         const data = Object.fromEntries(new FormData(f).entries());
 
-        // ---- Normalizar teléfono a formato WhatsApp-friendly ----
+        // Normalizar teléfono
         if (data.clienteTelefono) {
             data.clienteTelefono = normalizarTelefono(data.clienteTelefono);
         }
 
-        // ---- Marca / Modelo: solo letras, números y espacios ----
+        // Marca / Modelo
         if (data.marca && !validarTextoSimple(data.marca)) {
             return mostrarError("La marca solo puede contener letras, números y espacios.");
         }
@@ -199,9 +629,8 @@
             return mostrarError("El modelo solo puede contener letras, números y espacios.");
         }
 
-        // ---- Validar email + MX si cargó uno ----
+        // Email + MX
         if (data.clienteEmail) {
-            // valida formato básico HTML5 (type=email) + dominio MX
             if (!f.clienteEmail.checkValidity()) {
                 return mostrarError("Ingresá un email válido (ej: usuario@dominio.com).");
             }
@@ -211,7 +640,6 @@
             }
         }
 
-        // ---- Enviar solicitud al backend ----
         try {
             const resp = await fetch('/public/presupuestos/solicitud', {
                 method: 'POST',

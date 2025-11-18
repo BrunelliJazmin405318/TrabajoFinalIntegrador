@@ -548,6 +548,24 @@ Aviso legal</span>
 </footer>
 
 <script>
+    // Navbar público (Consulta / Historial / Solicitud)
+    const navToggle = document.querySelector('.nav-toggle');
+    const mainNav   = document.getElementById('mainNav');
+
+    if (navToggle && mainNav) {
+        navToggle.addEventListener('click', () => {
+            const isOpen = mainNav.classList.toggle('nav-open');
+            navToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+        });
+
+        // opcional: cerrar el menú si tocan un link (queda más prolijo)
+        mainNav.addEventListener('click', (e) => {
+            if (e.target.classList.contains('nav-link')) {
+                mainNav.classList.remove('nav-open');
+                navToggle.setAttribute('aria-expanded', 'false');
+            }
+        });
+    }
     const fmtDate = (s) => s ? new Date(s).toLocaleString() : "-";
     function paintStatus(el, estado) {
         el.classList.remove('ok','warn','stop');

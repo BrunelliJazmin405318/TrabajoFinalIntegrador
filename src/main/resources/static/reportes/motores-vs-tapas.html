@@ -5,109 +5,292 @@
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
     <title>Reporte - Motores vs Tapas</title>
 
+    <!-- Bootstrap + Icons + Chart.js -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
     <style>
         :root{
-            --c-bg:#0d1117;
-            --c-card:#1a2230;
-            --c-soft:#2a3442;
-            --c-text:#f4f7fb;
-            --c-muted:#cbd6e2;
-            --c-acc:#2f81f7;
+            --recti-red: #e53935;
+            --recti-red-dark: #c62828;
+            --recti-black: #111111;
+            --recti-white: #ffffff;
+            --recti-bg-light: #f3f3f3;
+            --recti-card-light: #ffffff;
+
+            /* Colores específicos de este reporte */
             --c-motor:#4e79a7;
             --c-tapa:#e15759;
         }
-        body{ background:var(--c-bg); color:var(--c-text); font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif; }
-        .navbar{ background:#0b0f14; }
-        .card{ background:var(--c-card); border:none; border-radius:1rem; box-shadow:0 10px 30px rgba(0,0,0,.28); }
-        .kpi{ min-height:110px; display:flex; align-items:center; justify-content:space-between; padding:1rem 1.25rem; }
-        .kpi h2{ margin:0; font-weight:800; letter-spacing:.5px; color:#ffffff; }
-        .kpi .sub{ font-size:.9rem; color:var(--c-muted); }
-        .pill{ background:rgba(255,255,255,.14); color:#f4f7fb; border-radius:999px; padding:.25rem .6rem; font-size:.85rem; box-shadow: inset 0 0 0 1px rgba(255,255,255,.06); }
-        .toolbar .btn{ border-radius:.75rem }
-        .legend-dot{ display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:.35rem; }
+
+        * { box-sizing: border-box; }
+
+        body{
+            margin:0;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background: var(--recti-bg-light) url("/img/fondo-figura.png") repeat;
+            background-size:260px;
+            color: var(--recti-black);
+            min-height:100vh;
+            display:flex;
+            flex-direction:column;
+        }
+
+        /* ===== MINI NAV SUPERIOR ===== */
+        .mini-nav{
+            position:sticky;
+            top:0;
+            z-index:1100;
+            background:rgba(255,255,255,0.92);
+            backdrop-filter:blur(8px);
+            border-bottom:1px solid rgba(0,0,0,0.05);
+        }
+        .mini-nav-inner{
+            max-width:1200px;
+            margin:0 auto;
+            padding:.45rem 1rem;
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            font-size:.85rem;
+        }
+        .mini-nav-left a{
+            display:inline-flex;
+            align-items:center;
+            gap:6px;
+            padding:.25rem .7rem;
+            border-radius:999px;
+            border:1px solid rgba(0,0,0,0.08);
+            background:#fff;
+            text-decoration:none;
+            color:#222;
+        }
+        .mini-nav-left a:hover{
+            border-color:rgba(0,0,0,0.18);
+        }
+        .mini-nav-pill{
+            padding:.25rem .7rem;
+            border-radius:999px;
+            background:#111;
+            color:#f5f5f5;
+            font-size:.8rem;
+            display:inline-flex;
+            align-items:center;
+            gap:6px;
+        }
+
+        /* ===== PAGE WRAP ===== */
+        main.page-wrap{
+            max-width:1200px;
+            margin:0 auto;
+            padding:30px 16px 40px;
+            flex:1 0 auto;
+            width:100%;
+        }
+
+        .page-header{
+            display:flex;
+            flex-wrap:wrap;
+            gap:10px;
+            align-items:flex-end;
+            justify-content:space-between;
+            margin-bottom:14px;
+        }
+        .page-header-title h1{
+            margin:0;
+            font-size:1.9rem;
+            font-weight:700;
+            letter-spacing:.03em;
+        }
+        .page-header-title p{
+            margin:4px 0 0;
+            font-size:.95rem;
+            color:#555;
+        }
+        .badge-report{
+            background:var(--recti-red);
+            color:#fff;
+            padding:.35rem .75rem;
+            border-radius:999px;
+            font-size:.78rem;
+            text-transform:uppercase;
+            letter-spacing:.06em;
+        }
+
+        /* ===== CARD GENÉRICA ===== */
+        .card{
+            border-radius:16px;
+            background:rgba(255,255,255,0.96);
+            border:1px solid rgba(0,0,0,0.04);
+            box-shadow:0 12px 30px rgba(0,0,0,0.08);
+        }
+
+        /* ===== FILTROS / TOOLBAR ===== */
+        .toolbar .btn{ border-radius:.75rem; }
+        .legend-dot{
+            display:inline-block;
+            width:10px;
+            height:10px;
+            border-radius:50%;
+            margin-right:.3rem;
+        }
         .legend-dot.motor{ background:var(--c-motor); }
         .legend-dot.tapa{  background:var(--c-tapa);  }
-        .chart-wrap{ padding:1rem }
-        .badge{ font-size:.8rem; letter-spacing:.5px; vertical-align:middle; }
+
+        /* ===== KPIs ===== */
+        .kpi{
+            min-height:110px;
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            padding:1rem 1.25rem;
+            border-radius:16px;
+            background:rgba(255,255,255,0.96);
+            border:1px solid rgba(0,0,0,0.04);
+            box-shadow:0 10px 26px rgba(0,0,0,0.08);
+        }
+        .kpi h2{
+            margin:0;
+            font-weight:800;
+            letter-spacing:.5px;
+            color:#111;
+        }
+        .kpi .sub{
+            font-size:.9rem;
+            color:#555;
+        }
+        .pill{
+            background:#111;
+            color:#f5f5f5;
+            border-radius:999px;
+            padding:.25rem .7rem;
+            font-size:.85rem;
+        }
+
+        .chart-wrap{
+            padding:1rem 1.25rem 1.4rem;
+        }
+
+        .badge{
+            font-size:.8rem;
+            letter-spacing:.5px;
+            vertical-align:middle;
+        }
+
         .fade-in{ animation:fade .4s ease-out; }
-        @keyframes fade{ from{opacity:0; transform:translateY(2px)} to{opacity:1; transform:none} }
+        @keyframes fade{
+            from{opacity:0; transform:translateY(2px);}
+            to{opacity:1; transform:none;}
+        }
+
+        footer{
+            font-size:.8rem;
+            padding:12px 16px;
+            text-align:center;
+            color:#555;
+            background:rgba(255,255,255,0.9);
+            border-top:1px solid rgba(0,0,0,0.05);
+        }
     </style>
 </head>
 <body>
 
-<nav class="navbar navbar-expand-lg navbar-dark mb-4">
-    <div class="container">
-        <a class="navbar-brand" href="#"><i class="bi bi-gear-fill me-2"></i>Rectificadora</a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div id="nav" class="collapse navbar-collapse">
-            <ul class="navbar-nav ms-auto">
-                <li class="nav-item"><a class="nav-link" href="/reportes/motores-por-etapa.html">Motores por etapa</a></li>
-                <li class="nav-item"><a class="nav-link active" href="/reportes/motores-vs-tapas.html">Motores vs Tapas</a></li>
-                <li class="nav-item"><a class="nav-link" href="/reportes/clientes-frecuentes.html">Clientes frecuentes</a></li>
-                <li class="nav-item"><a class="nav-link" href="/swagger-ui.html" target="_blank">API Docs</a></li>
-            </ul>
+<!-- NAV SUPERIOR LIGHT -->
+<div class="mini-nav">
+    <div class="mini-nav-inner">
+        <div class="mini-nav-left">
+            <a href="/admin-menu.html">
+                <i class="bi bi-arrow-left-short"></i>
+                Volver al panel
+            </a>
+        </div>
+        <div class="mini-nav-right">
+            <span class="mini-nav-pill">
+                <i class="bi bi-bar-chart-fill"></i> Reporte
+            </span>
         </div>
     </div>
-</nav>
+</div>
 
-<main class="container">
-    <h2 class="mb-2">
-        Motores vs Tapas <span class="badge bg-danger">Dashboard</span>
-    </h2>
+<main class="page-wrap">
+
+    <!-- HEADER -->
+    <div class="page-header">
+        <div class="page-header-title">
+            <h1>Motores vs Tapas</h1>
+            <p>Comparativa de trabajos de motores y tapas en el período seleccionado.</p>
+        </div>
+        <div>
+            <span class="badge-report">Dashboard</span>
+        </div>
+    </div>
+
     <p id="rangoActivo" class="text-secondary small mb-3"></p>
 
-    <!-- Controles -->
-    <div class="d-flex flex-wrap gap-2 mb-3">
-        <div class="d-flex flex-wrap gap-2 align-items-center mb-3">
-            <div class="btn-group" role="group" aria-label="rangos">
-                <button id="r7"    class="btn btn-outline-secondary btn-sm">Últimos 7 días</button>
-                <button id="rMes"  class="btn btn-outline-secondary btn-sm">Mes actual</button>
-                <button id="rAnno" class="btn btn-outline-secondary btn-sm">Año actual</button>
-            </div>
+    <!-- CONTROLES / FILTROS -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="d-flex flex-wrap gap-3 align-items-end toolbar">
 
-            <div class="ms-2 d-flex align-items-center gap-2">
-                <input type="date" id="fFrom" class="form-control form-control-sm" style="width: 160px;">
-                <span>→</span>
-                <input type="date" id="fTo"   class="form-control form-control-sm" style="width: 160px;">
-                <button id="btnAplicar" class="btn btn-primary btn-sm">
-                    <i class="bi bi-funnel"></i> Aplicar
+                <div class="btn-group" role="group" aria-label="rangos">
+                    <button id="r7"    class="btn btn-outline-dark btn-sm">Últimos 7 días</button>
+                    <button id="rMes"  class="btn btn-outline-dark btn-sm">Mes actual</button>
+                    <button id="rAnno" class="btn btn-outline-dark btn-sm">Año actual</button>
+                </div>
+
+                <div class="d-flex align-items-center gap-2">
+                    <label class="form-label small mb-1">Desde</label>
+                    <input type="date" id="fFrom" class="form-control form-control-sm" style="width:160px;">
+                    <span>→</span>
+                    <label class="form-label small mb-1">Hasta</label>
+                    <input type="date" id="fTo" class="form-control form-control-sm" style="width:160px;">
+                    <button id="btnAplicar" class="btn btn-primary btn-sm">
+                        <i class="bi bi-funnel"></i> Aplicar
+                    </button>
+                </div>
+
+                <button id="btnRefresh" class="btn btn-primary btn-sm">
+                    <i class="bi bi-arrow-clockwise me-1"></i>Actualizar
                 </button>
+
+                <!-- Exportar -->
+                <div class="btn-group">
+                    <button class="btn btn-success btn-sm dropdown-toggle" data-bs-toggle="dropdown">
+                        <i class="bi bi-download me-1"></i>Exportar
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-light">
+                        <li><a class="dropdown-item" href="#" id="expPdf">PDF</a></li>
+                        <li><a class="dropdown-item" href="#" id="expXlsx">Excel (.xlsx)</a></li>
+                    </ul>
+                </div>
+
+                <button id="btnPng"
+                        class="btn btn-outline-dark btn-sm"
+                        data-bs-toggle="tooltip"
+                        title="Exportar ambos gráficos como imagen PNG">
+                    <i class="bi bi-image me-1"></i>PNG
+                </button>
+
+                <button id="btnCsv"
+                        class="btn btn-outline-dark btn-sm"
+                        data-bs-toggle="tooltip"
+                        title="Exportar resumen como CSV">
+                    <i class="bi bi-filetype-csv me-1"></i>CSV
+                </button>
+
+                <span class="ms-auto text-secondary small d-flex align-items-center gap-3">
+                  <span><span class="legend-dot motor"></span>Motores</span>
+                  <span><span class="legend-dot tapa"></span>Tapas</span>
+                </span>
             </div>
         </div>
-
-        <button id="btnRefresh" class="btn btn-primary"><i class="bi bi-arrow-clockwise me-1"></i>Actualizar</button>
-
-        <!-- 🔽 Exportar -->
-        <div class="btn-group">
-            <button class="btn btn-success btn-sm dropdown-toggle" data-bs-toggle="dropdown">
-                <i class="bi bi-download me-1"></i>Exportar
-            </button>
-            <ul class="dropdown-menu dropdown-menu-dark">
-                <li><a class="dropdown-item" href="#" id="expPdf">PDF</a></li>
-                <li><a class="dropdown-item" href="#" id="expXlsx">Excel (.xlsx)</a></li>
-            </ul>
-        </div>
-
-        <button id="btnPng" class="btn btn-outline-light"><i class="bi bi-image me-1"></i>Exportar PNG</button>
-        <button id="btnCsv" class="btn btn-outline-light"><i class="bi bi-filetype-csv me-1"></i>Exportar CSV</button>
-
-        <span class="ms-auto muted small d-flex align-items-center gap-3">
-          <span><span class="legend-dot motor"></span>Motores</span>
-          <span><span class="legend-dot tapa"></span>Tapas</span>
-        </span>
     </div>
 
     <!-- KPIs -->
     <div class="row g-3 mb-3">
         <div class="col-sm-6 col-lg-3">
-            <div class="card kpi shadow-soft">
+            <div class="kpi">
                 <div>
                     <div class="sub">Motores</div>
                     <h2 id="kpiMotores">0</h2>
@@ -116,7 +299,7 @@
             </div>
         </div>
         <div class="col-sm-6 col-lg-3">
-            <div class="card kpi shadow-soft">
+            <div class="kpi">
                 <div>
                     <div class="sub">Tapas</div>
                     <h2 id="kpiTapas">0</h2>
@@ -125,7 +308,7 @@
             </div>
         </div>
         <div class="col-sm-6 col-lg-3">
-            <div class="card kpi shadow-soft">
+            <div class="kpi">
                 <div>
                     <div class="sub">Total</div>
                     <h2 id="kpiTotal">0</h2>
@@ -134,7 +317,7 @@
             </div>
         </div>
         <div class="col-sm-6 col-lg-3">
-            <div class="card kpi shadow-soft">
+            <div class="kpi">
                 <div>
                     <div class="sub">Ratio M/T</div>
                     <h2 id="kpiRatio">0</h2>
@@ -144,16 +327,16 @@
         </div>
     </div>
 
-    <!-- Gráficos -->
+    <!-- GRÁFICOS -->
     <div class="row g-3">
         <div class="col-lg-5">
-            <div class="card shadow-soft chart-wrap">
+            <div class="card chart-wrap fade-in">
                 <h6 class="mb-3 text-secondary">Distribución</h6>
                 <canvas id="chartDonut" height="260"></canvas>
             </div>
         </div>
         <div class="col-lg-7">
-            <div class="card shadow-soft chart-wrap">
+            <div class="card chart-wrap fade-in">
                 <h6 class="mb-3 text-secondary">Comparativa</h6>
                 <canvas id="chartBar" height="260"></canvas>
             </div>
@@ -163,6 +346,9 @@
     <p id="lastRefresh" class="text-secondary small mt-3"></p>
 </main>
 
+<footer>
+    © 2025 Rectificadora Cornejo — Reportes administrativos
+</footer>
 <script type="module">
     import { getAuthHeader } from "/js/auth.js";
 
