@@ -6,6 +6,8 @@ import ar.edu.utn.tfi.repository.*;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ar.edu.utn.tfi.service.NotificationService;
+import ar.edu.utn.tfi.domain.Cliente;
 
 import java.time.LocalDateTime;
 
@@ -15,15 +17,18 @@ public class CrearOrdenService {
     private final UnidadTrabajoRepository unidadRepo;
     private final OrdenTrabajoRepository ordenRepo;
     private final OrdenEtapaHistorialRepository historialRepo;
+    private final NotificationService notificationService;
 
     public CrearOrdenService(ClienteRepository clienteRepo,
                                 UnidadTrabajoRepository unidadRepo,
                                 OrdenTrabajoRepository ordenRepo,
-                                OrdenEtapaHistorialRepository historialRepo) {
+                                OrdenEtapaHistorialRepository historialRepo,
+                             NotificationService notificationService) {
         this.clienteRepo = clienteRepo;
         this.unidadRepo = unidadRepo;
         this.ordenRepo = ordenRepo;
         this.historialRepo = historialRepo;
+        this.notificationService = notificationService;
     }
 
     // DTO simple para el request
@@ -89,6 +94,8 @@ public class CrearOrdenService {
         h.setObservacion("Alta de orden");
         h.setUsuario(usuario);
         historialRepo.save(h);
+        // 📲 notificación de ingreso al taller
+        notificationService.notificarIngresoOrden(ot, cliente);
 
         return new CreateOTResp(ot.getId(), ot.getNroOrden());
     }

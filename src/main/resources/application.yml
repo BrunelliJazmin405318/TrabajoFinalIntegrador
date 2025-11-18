@@ -57,3 +57,15 @@ app:
   base-url: ${APP_PUBLIC_BASE_URL:https://yaretzi-evangelistic-unsecularly.ngrok-free.dev
   public-base-url: ${APP_PUBLIC_BASE_URL:https://yaretzi-evangelistic-unsecularly.ngrok-free.dev
 
+#wa:
+#  api:
+#    enabled: true
+#    base-url: https://mi-proveedor-wa.com/api   # o la URL de Twilio/Meta
+#    token: ${WA_API_TOKEN:dummy}
+#    from-number: "+5493510000000"
+wa:
+  api:
+    enabled: false
+    base-url: http://localhost:9999/mock-wa
+    token: dummy
+    from-number: "+5493510000000"

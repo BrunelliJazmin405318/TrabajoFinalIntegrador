@@ -19,6 +19,7 @@ import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
+import ar.edu.utn.tfi.service.NotificationService;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -38,6 +39,7 @@ public class PresupuestoGestionService {
     private final PaymentApiService paymentApiService;
     private final PagoManualRepository pagoManualRepo;
     private final OrdenRepuestoService ordenRepuestoService;
+    private final NotificationService notificationService;
 
     public PresupuestoGestionService(SolicitudPresupuestoRepository solicitudRepo,
                                      ServicioTarifaRepository tarifaRepo,
@@ -46,7 +48,8 @@ public class PresupuestoGestionService {
                                      MailService mailService,
                                      PaymentApiService paymentApiService,
                                      PagoManualRepository pagoManualRepo,
-                                     OrdenRepuestoService ordenRepuestoService) {
+                                     OrdenRepuestoService ordenRepuestoService,
+                                     NotificationService notificationService) {
         this.solicitudRepo = solicitudRepo;
         this.tarifaRepo = tarifaRepo;
         this.presupuestoRepo = presupuestoRepo;
@@ -55,6 +58,7 @@ public class PresupuestoGestionService {
         this.paymentApiService = paymentApiService;
         this.pagoManualRepo = pagoManualRepo;
         this.ordenRepuestoService = ordenRepuestoService;
+        this.notificationService = notificationService;
     }
     private static final Set<String> ETAPAS_PERMITEN_PAGO_FINAL = Set.of(
             "LISTO_RETIRAR",
@@ -204,7 +208,7 @@ public class PresupuestoGestionService {
                 itemRepo.save(it);
             }
         }
-
+        notificationService.notificarPresupuestoGenerado(p, s);
         return p;
     }
 
@@ -250,10 +254,12 @@ public class PresupuestoGestionService {
         p.setDecisionFecha(LocalDateTime.now());
         p.setDecisionMotivo(nota);
         Presupuesto saved = presupuestoRepo.save(p);
-        mailService.enviarDecisionPresupuesto(saved);
+
+        // antes: mailService.enviarDecisionPresupuesto(saved);
+        notificationService.notificarDecisionPresupuesto(saved);
+
         return saved;
     }
-
     @Transactional
     public Presupuesto rechazar(Long id, String usuario, String nota) {
         Presupuesto p = getById(id);
@@ -265,7 +271,10 @@ public class PresupuestoGestionService {
         p.setDecisionFecha(LocalDateTime.now());
         p.setDecisionMotivo(nota);
         Presupuesto saved = presupuestoRepo.save(p);
-        mailService.enviarDecisionPresupuesto(saved);
+
+        // antes: mailService.enviarDecisionPresupuesto(saved);
+        notificationService.notificarDecisionPresupuesto(saved);
+
         return saved;
     }
 

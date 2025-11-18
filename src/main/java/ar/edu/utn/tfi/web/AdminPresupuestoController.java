@@ -3,9 +3,7 @@ package ar.edu.utn.tfi.web;
 
 import ar.edu.utn.tfi.domain.SolicitudPresupuesto;
 import ar.edu.utn.tfi.repository.PresupuestoRepository;
-import ar.edu.utn.tfi.repository.SolicitudPresupuestoRepository;
-import ar.edu.utn.tfi.repository.FacturaMockRepository;     // ⬅️ NUEVO
-import ar.edu.utn.tfi.service.MailService;
+import ar.edu.utn.tfi.repository.FacturaMockRepository;
 import ar.edu.utn.tfi.service.PresupuestoService;            // SOLICITUDES
 import ar.edu.utn.tfi.service.PresupuestoGestionService;     // PRESUPUESTOS
 import ar.edu.utn.tfi.web.dto.PresupuestoAdminDTO;
@@ -15,7 +13,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -24,26 +21,19 @@ import java.util.stream.Collectors;
 @RequestMapping("/admin/presupuestos")
 public class AdminPresupuestoController {
 
-    private final SolicitudPresupuestoRepository repo;
-    private final MailService mailService;
+    private final PresupuestoService solicitudesService;          // lista SOLICITUDES
+    private final PresupuestoGestionService presupuestosService;  // lista PRESUPUESTOS
+    private final FacturaMockRepository facturaRepo;
     private final PresupuestoRepository presupuestoRepo;
-    private final PresupuestoService solicitudesService;       // lista SOLICITUDES
-    private final PresupuestoGestionService presupuestosService; // lista PRESUPUESTOS
 
-    private final FacturaMockRepository facturaRepo;           // ⬅️ NUEVO
-
-    public AdminPresupuestoController(SolicitudPresupuestoRepository repo,
-                                      MailService mailService,
-                                      PresupuestoService solicitudesService,
+    public AdminPresupuestoController(PresupuestoService solicitudesService,
                                       PresupuestoGestionService presupuestosService,
                                       FacturaMockRepository facturaRepo,
-                                      PresupuestoRepository presupuestoRepo) {   // ⬅️ NUEVO en ctor
-        this.repo = repo;
-        this.mailService = mailService;
+                                      PresupuestoRepository presupuestoRepo) {
         this.solicitudesService = solicitudesService;
         this.presupuestosService = presupuestosService;
         this.facturaRepo = facturaRepo;
-        this.presupuestoRepo = presupuestoRepo;// ⬅️ NUEVO
+        this.presupuestoRepo = presupuestoRepo;
     }
 
     // ---------------- SOLICITUDES ----------------
@@ -53,7 +43,7 @@ public class AdminPresupuestoController {
         return solicitudesService.listar(estado).stream()
                 .map(s -> SolicitudDTO.from(
                         s,
-                        presupuestoRepo.existsBySolicitudId(s.getId()) // ⬅️ flag
+                        presupuestoRepo.existsBySolicitudId(s.getId()) // flag: ya tiene presupuesto o no
                 ))
                 .toList();
     }
@@ -64,48 +54,48 @@ public class AdminPresupuestoController {
     public ResponseEntity<?> aprobar(@PathVariable Long id,
                                      @RequestBody(required = false) NotaReq body,
                                      Authentication auth) {
-        SolicitudPresupuesto s = repo.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Solicitud no encontrada: " + id));
-
-        if (!"PENDIENTE".equals(s.getEstado())) {
+        try {
+            SolicitudPresupuesto s = solicitudesService.aprobar(
+                    id,
+                    auth == null ? "admin" : auth.getName(),
+                    body == null ? null : body.nota()
+            );
+            return ResponseEntity.ok(Map.of("message", "Aprobada", "id", s.getId()));
+        } catch (IllegalStateException e) {
             return ResponseEntity.status(409).body(Map.of(
                     "error", "CONFLICT",
-                    "message", "Solo se puede aprobar si está PENDIENTE"
+                    "message", e.getMessage()
+            ));
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.status(404).body(Map.of(
+                    "error", "NOT_FOUND",
+                    "message", e.getMessage()
             ));
         }
-
-        s.setEstado("APROBADO");
-        s.setDecisionUsuario(auth == null ? "admin" : auth.getName());
-        s.setDecisionFecha(LocalDateTime.now());
-        s.setDecisionMotivo(body == null ? null : body.nota());
-        repo.save(s);
-
-        mailService.enviarDecisionSolicitud(s);
-        return ResponseEntity.ok(Map.of("message", "Aprobada", "id", s.getId()));
     }
 
     @PutMapping("/solicitudes/{id}/rechazar")
     public ResponseEntity<?> rechazar(@PathVariable Long id,
                                       @RequestBody(required = false) NotaReq body,
                                       Authentication auth) {
-        SolicitudPresupuesto s = repo.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Solicitud no encontrada: " + id));
-
-        if (!"PENDIENTE".equals(s.getEstado())) {
+        try {
+            SolicitudPresupuesto s = solicitudesService.rechazar(
+                    id,
+                    auth == null ? "admin" : auth.getName(),
+                    body == null ? null : body.nota()
+            );
+            return ResponseEntity.ok(Map.of("message", "Rechazada", "id", s.getId()));
+        } catch (IllegalStateException e) {
             return ResponseEntity.status(409).body(Map.of(
                     "error", "CONFLICT",
-                    "message", "Solo se puede rechazar si está PENDIENTE"
+                    "message", e.getMessage()
+            ));
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.status(404).body(Map.of(
+                    "error", "NOT_FOUND",
+                    "message", e.getMessage()
             ));
         }
-
-        s.setEstado("RECHAZADO");
-        s.setDecisionUsuario(auth == null ? "admin" : auth.getName());
-        s.setDecisionFecha(LocalDateTime.now());
-        s.setDecisionMotivo(body == null ? null : body.nota());
-        repo.save(s);
-
-        mailService.enviarDecisionSolicitud(s);
-        return ResponseEntity.ok(Map.of("message", "Rechazada", "id", s.getId()));
     }
 
     // ---------------- PRESUPUESTOS (grilla admin) ----------------
@@ -116,14 +106,12 @@ public class AdminPresupuestoController {
 
         var presupuestos = presupuestosService.listar(estado, solicitudId);
 
-        // si la lista viene vacía, evitamos query inútil
         if (presupuestos.isEmpty()) {
             return List.of();
         }
 
         var ids = presupuestos.stream().map(p -> p.getId()).toList();
 
-        // repo de facturas inyectado en el service o controller (elegí dónde lo tengas)
         var facturas = facturaRepo.findByPresupuestoIdIn(ids).stream()
                 .collect(Collectors.toMap(f -> f.getPresupuesto().getId(), f -> f));
 
@@ -138,12 +126,11 @@ public class AdminPresupuestoController {
                 })
                 .toList();
     }
+
     // Obtener una solicitud por id (ADMIN) para autocompletar en admin-presupuestos.html
     @GetMapping("/solicitudes/{id}")
     public SolicitudDTO getSolicitudById(@PathVariable Long id) {
-        SolicitudPresupuesto s = repo.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Solicitud no encontrada: " + id));
-
+        SolicitudPresupuesto s = solicitudesService.getById(id);
         boolean generado = presupuestoRepo.existsBySolicitudId(s.getId());
         return SolicitudDTO.from(s, generado);
     }
