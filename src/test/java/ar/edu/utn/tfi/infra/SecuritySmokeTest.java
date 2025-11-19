@@ -1,35 +1,25 @@
+// src/test/java/ar/edu/utn/tfi/infra/SecuritySmokeTest.java
 package ar.edu.utn.tfi.infra;
 
 import ar.edu.utn.tfi.security.SecurityConfig;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
-import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.httpBasic;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@SpringBootTest
-@AutoConfigureMockMvc
-@Import({SecurityConfig.class, SecuritySmokeTest.TestEndpoints.class})
-@TestPropertySource(properties = {
-        // Evitamos levantar DataSource/JPA/Flyway para este test
-        "spring.autoconfigure.exclude=" +
-                "org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration," +
-                "org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration," +
-                "org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration"
-})
+@WebMvcTest(controllers = SecuritySmokeTest.TestController.class)
+@Import(SecurityConfig.class)
 public class SecuritySmokeTest {
 
     @Autowired
@@ -52,7 +42,7 @@ public class SecuritySmokeTest {
                 .andExpect(content().string("ok-admin"));
     }
 
-    /** Endpoints de PRUEBA solo para este test (no dependen de BD). */
+    // Endpoints artificiales SOLO para este test
     @TestConfiguration
     static class TestEndpoints {
         @Bean
@@ -65,4 +55,3 @@ public class SecuritySmokeTest {
         @GetMapping("/admin/ping")  String adm() { return "ok-admin"; }
     }
 }
-
