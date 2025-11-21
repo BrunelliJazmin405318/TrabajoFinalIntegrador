@@ -255,8 +255,8 @@
                 <div class="col-md-4">
                     <label for="filtro" class="form-label small mb-1">Estado de la solicitud</label>
                     <select id="filtro" class="form-select">
-                        <option value="">Todas</option>
-                        <option value="PENDIENTE" selected>Pendientes</option>
+                        <option value="" selected>Todas</option>
+                        <option value="PENDIENTE" >Pendientes</option>
                         <option value="APROBADO">Aprobadas</option>
                         <option value="RECHAZADO">Rechazadas</option>
                     </select>
@@ -433,7 +433,13 @@
                 return;
             }
 
-            showBannerOk(`Solicitud #${id} ${act} correctamente.`);
+            const accionHumana = act === "aprobar"
+                ? "aprobada"
+                : act === "rechazar"
+                    ? "rechazada"
+                    : act;
+
+            showBannerOk(`Solicitud #${id} ${accionHumana} correctamente.`);
             cargar();
 
         } catch (e){

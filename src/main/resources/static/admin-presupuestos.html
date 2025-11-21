@@ -453,8 +453,8 @@
                 <div class="col-md-3">
                     <label for="fEstado" class="form-label small mb-1">Estado</label>
                     <select id="fEstado" class="form-select">
-                        <option value="">Todos</option>
-                        <option value="PENDIENTE" selected>Pendientes</option>
+                        <option value="" selected>Todos</option>
+                        <option value="PENDIENTE" >Pendientes</option>
                         <option value="APROBADO">Aprobados</option>
                         <option value="RECHAZADO">Rechazados</option>
                     </select>
@@ -788,11 +788,11 @@
                  <i class="bi bi-download"></i>
                </button>
                <a class="btn btn-outline-primary btn-sm btn-icon-circle"
-                  href="/estado-solicitud.html?id=${p.solicitudId ?? ""}"
-                  target="_blank"
-                  title="Ver página del cliente">
-                 <i class="bi bi-box-arrow-up-right"></i>
-               </a>
+                href="/historial.html?nro=${p.otNroOrden ?? ""}"
+                target="_blank"
+                title="Ver historial de la OT">
+                <i class="bi bi-gear-wide-connected"></i>
+                </a>
                ${btnRepuestosIcon}
              </div>
            </div>`;
@@ -811,11 +811,11 @@
                  <i class="bi bi-receipt"></i>
                </button>
                <a class="btn btn-outline-primary btn-sm btn-icon-circle"
-                  href="/estado-solicitud.html?id=${p.solicitudId ?? ""}"
-                  target="_blank"
-                  title="Ver página del cliente">
-                 <i class="bi bi-box-arrow-up-right"></i>
-               </a>
+                href="/historial.html?nro=${p.otNroOrden ?? ""}"
+                target="_blank"
+                title="Ver historial de la OT">
+                <i class="bi bi-gear-wide-connected"></i>
+                </a>
                ${btnRepuestosIcon}
              </div>
            </div>`;
@@ -867,12 +867,12 @@
              <i class="bi bi-cash-coin"></i>
            </button>
 
-           <a class="btn btn-outline-primary btn-sm btn-icon-circle"
-              href="/estado-solicitud.html?id=${p.solicitudId ?? ""}"
-              target="_blank"
-              title="Ver página del cliente">
-             <i class="bi bi-box-arrow-up-right"></i>
-           </a>
+          <a class="btn btn-outline-primary btn-sm btn-icon-circle"
+                href="/historial.html?nro=${p.otNroOrden ?? ""}"
+                target="_blank"
+                title="Ver historial de la OT">
+                <i class="bi bi-gear-wide-connected"></i>
+                </a>
 
            ${btnRepuestosIcon}
            ${btnCrearOT}
@@ -919,13 +919,8 @@
             });
             btn.disabled = false;
             const j = await r.json().catch(() => ({}));
-            if (!r.ok) {
-                showBanner("err", j.message || `Error HTTP ${r.status}`);
-                return;
-            }
-            showBanner("ok", "Presupuesto " + act + " correctamente.");
-            await cargar();
-            return;
+            const verb = act === "aprobar" ? "aprobado" : "rechazado";
+            showBanner("ok", `Presupuesto ${verb} correctamente.`);
         }
 
         // Abrir pantalla de repuestos de la OT
@@ -1002,6 +997,7 @@
         }
 
         // Pago manual
+        // Pago manual
         if (act === "pago-manual") {
             const totalServicios = Number(btn.dataset.total || 0);      // sólo servicios
             const senaMontoDato = btn.dataset.senaMonto;
@@ -1070,20 +1066,30 @@
 
             const hoy = new Date().toISOString().slice(0, 10);
             const montoSugerido = T === "SENA" ? senaEsperada : finalEsperado;
-            const fechaStr = prompt("Fecha (opcional, formato YYYY-MM-DD). Dejar vacío = hoy", hoy) ?? null;
+
+            const fechaStr = prompt(
+                "Fecha (opcional, formato YYYY-MM-DD). Dejar vacío = hoy",
+                hoy
+            ) ?? null;
+
             const nota = prompt("Nota (opcional)") ?? null;
+
             const montoStr = prompt(`Monto ${T} exacto (ARS)`, montoSugerido.toFixed(2));
             if (montoStr === null) return;
+
             const medio = prompt("Medio (EFECTIVO/TRANSFERENCIA/TARJETA/OTRO):", "EFECTIVO");
             if (medio === null) return;
+
             const monto = Number(String(montoStr).replace(",", "."));
             if (!(monto > 0)) {
                 showBanner("err", "Monto inválido. Debe ser mayor a 0.");
                 return;
             }
+
             let fechaPago = null;
-            if (fechaStr && /^\d{4}-\d{2}-\d{2}$/.test(fechaStr)) fechaPago = fechaStr;
-            else if (fechaStr && fechaStr.trim() !== "") {
+            if (fechaStr && /^\d{4}-\d{2}-\d{2}$/.test(fechaStr)) {
+                fechaPago = fechaStr;
+            } else if (fechaStr && fechaStr.trim() !== "") {
                 showBanner("err", "Fecha inválida. Usá formato YYYY-MM-DD.");
                 return;
             }
@@ -1121,7 +1127,6 @@
             }
             return;
         }
-
         // ===== NUEVO: Crear OT =====
         if (act === "crear-ot") {
             if (btn.dataset.busy === "1") return;
