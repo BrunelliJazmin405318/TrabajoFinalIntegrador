@@ -21,13 +21,11 @@
 
         * { box-sizing: border-box; }
 
-        /* 👇 AGREGÁ ESTO */
         html,
         body {
             height: 100%;
         }
 
-        /* y dejá el body así (podés sacar el height de acá si querés) */
         body {
             margin: 0;
             font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -36,14 +34,13 @@
             background-size: 260px 260px;
             display: flex;
             flex-direction: column;
-            /* height: 100%;  ← esto ya no hace falta, porque lo pusimos arriba */
         }
         main.page-wrap {
             flex: 1 0 auto;
         }
         a { color: inherit; text-decoration: none; }
 
-        /* ============= NAVBAR (igual que home/consulta) ============= */
+        /* ============= NAVBAR (compartido) ============= */
 
         .main-header {
             background: var(--recti-white);
@@ -263,7 +260,7 @@
             padding: 24px 28px;
         }
 
-        /* STATUS CHIP (igual a consulta) */
+        /* STATUS CHIP */
 
         .status {
             padding: .35rem .75rem;
@@ -319,7 +316,7 @@
             font-style: italic;
         }
 
-        /* BOTONES ADMIN (dejamos estilos suaves) */
+        /* BOTONES ADMIN */
 
         #btnAvanzar,
         #btnIrreparable,
@@ -328,7 +325,7 @@
             border-radius: 999px;
         }
 
-        /* ============= FOOTER (igual home/consulta) ============= */
+        /* ============= FOOTER ============= */
 
         .site-footer {
             background: #111;
@@ -420,9 +417,6 @@
             }
         }
 
-
-
-        /* Texto TIP */
         .tip {
             margin-top: 12px;
             font-size: .9rem;
@@ -433,8 +427,27 @@
 </head>
 <body>
 
-<!-- ===== NAVBAR ===== -->
-<header class="main-header">
+<!-- ===== HEADER ADMIN (oculto por defecto) ===== -->
+<header id="adminHeader" class="main-header d-none" style="background:#111; color:#fff;">
+    <div class="main-header-inner">
+        <a href="/admin-menu.html" class="nav-logo" style="color:#fff;">
+            <span class="nav-logo-mark" style="background:#e53935;">R</span>
+            <span>Panel Administrativo</span>
+        </a>
+
+        <nav class="nav-main">
+            <ul class="nav-list">
+                <li><a href="/admin-presupuestos.html" class="nav-link" style="color:#fff;">Presupuestos</a></li>
+                <li><a href="/admin-ordenes.html" class="nav-link" style="color:#fff;">Órdenes</a></li>
+                <li><a href="/admin-reportes.html" class="nav-link" style="color:#fff;">Reportes</a></li>
+                <li><a id="logoutAdmin" href="#" class="nav-link" style="color:#ff8a80; font-weight:bold;">Salir</a></li>
+            </ul>
+        </nav>
+    </div>
+</header>
+
+<!-- ===== HEADER PÚBLICO ===== -->
+<header id="publicHeader" class="main-header">
     <div class="main-header-inner">
         <a href="/home.html" class="nav-logo">
             <span class="nav-logo-mark">R</span>
@@ -531,7 +544,7 @@
     </div>
 </main>
 
-<!-- ===== FOOTER (igual home) ===== -->
+<!-- ===== FOOTER ===== -->
 <footer class="site-footer">
     <div class="footer-container">
 
@@ -593,7 +606,7 @@ Aviso legal</span>
             navToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
         });
 
-        // opcional: cerrar el menú si tocan un link (queda más prolijo)
+        // opcional: cerrar el menú si tocan un link
         mainNav.addEventListener('click', (e) => {
             if (e.target.classList.contains('nav-link')) {
                 mainNav.classList.remove('nav-open');
@@ -601,6 +614,7 @@ Aviso legal</span>
             }
         });
     }
+
     (async () => {
         try {
             const { getAuth, clearAuth } = await import("/js/auth.js");
@@ -625,7 +639,7 @@ Aviso legal</span>
 
         if (normalized.includes('LISTO') || normalized.includes('RETIRAR')) {
             el.classList.add('ok');
-        } else if (normalized.includes('ESPERa') || normalized.includes('DEMORA')) {
+        } else if (normalized.includes('ESPERA') || normalized.includes('DEMORA')) {
             el.classList.add('warn');
         } else if (normalized.includes('IRREPARABLE')) {
             el.classList.add('stop');
@@ -710,6 +724,40 @@ Aviso legal</span>
         if (!nro) return;
         await cargarHistorial(nro);
     });
+
+    // ======= AUTOCARGA CUANDO VIENE CON ?nro= EN LA URL =======
+    document.addEventListener("DOMContentLoaded", () => {
+        const params = new URLSearchParams(location.search);
+        const nroParam = params.get("nro");
+        if (!nroParam) return;
+
+        const input = document.getElementById("nroOrden");
+        if (input) {
+            input.value = nroParam;
+        }
+
+        cargarHistorial(nroParam);
+    });
+</script>
+
+<!-- ====== TOGGLE HEADER ADMIN/PÚBLICO SEGÚN LOGIN ====== -->
+<script type="module">
+    import { isAuthenticated, clearAuth } from "/js/auth.js";
+
+    const adminHeader  = document.getElementById("adminHeader");
+    const publicHeader = document.getElementById("publicHeader");
+    const logoutAdmin  = document.getElementById("logoutAdmin");
+
+    if (isAuthenticated()) {
+        if (adminHeader)  adminHeader.classList.remove("d-none");
+        if (publicHeader) publicHeader.classList.add("d-none");
+
+        logoutAdmin?.addEventListener("click", (e) => {
+            e.preventDefault();
+            clearAuth();
+            window.location.href = "/login.html";
+        });
+    }
 </script>
 
 <!-- ======= ACCIONES ADMIN ======= -->
