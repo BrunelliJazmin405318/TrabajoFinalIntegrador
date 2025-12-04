@@ -418,9 +418,11 @@
     </style>
 
 </head>
-<body>
+
 
 <!-- ===== NAVBAR ===== -->
+<body>
+
 <header class="main-header">
     <div class="main-header-inner">
         <a href="/home.html" class="nav-logo">
@@ -432,8 +434,8 @@
 
         <nav id="mainNav" class="nav-main">
             <ul class="nav-list">
-                <li><a href="/consulta.html" class="nav-link active">Consulta</a></li>
-                <li><a href="/historial.html" class="nav-link">Historial</a></li>
+                <li><a href="/consulta.html" class="nav-link active">Estado del motor</a></li>
+                <!-- Historial ya NO se muestra más al cliente -->
                 <li><a href="/estado-solicitud.html" class="nav-link">Solicitud</a></li>
             </ul>
             <a href="/login.html" class="btn-login">Login taller</a>
@@ -441,13 +443,13 @@
     </div>
 </header>
 
-<!-- ===== CONTENT ===== -->
 <main class="page-wrap">
     <div class="page-title">
         <h1>Consulta de estado</h1>
         <span class="badge">Seguimiento</span>
     </div>
 
+    <!-- Form -->
     <form id="consultaForm" class="mb-4">
         <div class="row g-3 justify-content-center">
             <div class="col-lg-7 col-md-8 col-12">
@@ -465,85 +467,59 @@
         </div>
     </form>
 
+    <!-- Datos principales -->
     <div id="resultado" class="card shadow-sm d-none">
         <div class="card-body">
-
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h5 class="m-0">Detalles de la orden</h5>
                 <span id="chipEstado" class="status"><span class="dot"></span><span class="label">-</span></span>
             </div>
 
-            <div class="row gy-3">
+            <div class="row gy-3 mb-3">
                 <div class="col-md-6">
-                    <div class="kv"><div class="k">N° Orden:</div><div class="v" id="orden">-</div></div>
-                    <div class="kv"><div class="k">Fecha de creación:</div><div class="v" id="creadaEn">-</div></div>
+                    <div class="kv"><strong>N° Orden:</strong> <span id="orden">-</span></div>
+                    <div class="kv"><strong>Creada:</strong> <span id="creadaEn">-</span></div>
                 </div>
-
                 <div class="col-md-6">
-                    <div class="kv"><div class="k">Garantía desde:</div><div class="v" id="garantiaDesde">-</div></div>
-                    <div class="kv"><div class="k">Garantía hasta:</div><div class="v" id="garantiaHasta">-</div></div>
+                    <div class="kv"><strong>Garantía desde:</strong> <span id="garantiaDesde">-</span></div>
+                    <div class="kv"><strong>Garantía hasta:</strong> <span id="garantiaHasta">-</span></div>
                 </div>
             </div>
 
-            <hr class="my-4">
-            <div class="muted">Tip: podés ver el detalle completo en <a href="/historial.html">Historial</a>.</div>
+            <hr>
+            <p class="muted">
+                Si ya retiraste tu motor, vas a ver acá todo su recorrido 📌
+            </p>
         </div>
     </div>
-    <section style="max-width:900px;margin:24px auto 0;padding:0 16px;">
-        <p class="muted">
-            ¿No encontrás tu orden? Verificá que el número esté bien escrito
-            (ej: <strong>OT-0009</strong>) o consultá en el taller para confirmar
-            que ya fue registrada en el sistema.
-        </p>
-    </section>
+
+    <!-- Historial — Insertada aquí -->
+    <div id="wrapHistorial" class="card d-none">
+        <div class="card-body">
+            <h5>Historial de etapas</h5>
+            <div class="table-responsive">
+                <table id="tablaHistorial" class="table table-bordered mb-0">
+                    <thead>
+                    <tr>
+                        <th>Etapa</th>
+                        <th>Inicio</th>
+                        <th>Fin</th>
+                        <th>Observación</th>
+                    </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
 </main>
 
-<!-- ===== FOOTER ===== -->
 <footer class="site-footer">
     <div class="footer-container">
-
-        <div class="footer-top">
-            <div class="footer-brand">
-                <div class="footer-logo-mark">R</div>
-                <span class="footer-logo-text">RECTIFICADORA CORNEJO</span>
-            </div>
-
-            <div class="footer-links">
-                <div class="footer-column">
-                    <h4>Soluciones</h4>
-                    <a href="/consulta.html">Estado del motor</a>
-                    <a href="/historial.html">Historial</a>
-                    <a href="/estado-solicitud.html">Estado de solicitud</a>
-                </div>
-
-                <div class="footer-column">
-                    <h4>Nosotros</h4>
-                    <a href="/index.html#nosotros">Quiénes somos</a>
-                    <a href="/index.html#por-que">Por qué nos eligen</a>
-                </div>
-
-                <div class="footer-column">
-                    <h4>Contacto</h4>
-                    <a href="/presupuesto.html">Pedir cotización</a>
-                    <a href="/index.html#contacto">Trabajá con nosotros</a>
-                </div>
-
-                <div class="footer-column">
-                    <h4>Seguimientos</h4>
-                    <a href="/consulta.html">Estado del motor</a>
-                    <a href="/historial.html">Historial del motor</a>
-                    <a href="/estado-solicitud.html">Solicitud</a>
-                </div>
-            </div>
-        </div>
-
         <div class="footer-bottom">
-            <span>© 2025 Rectificadora Cornejo. Todos los derechos reservados.
-  •
-Aviso legal</span>
-            <span>2025</span>
+            <span>© 2025 Rectificadora Cornejo — Todos los derechos reservados.</span>
         </div>
-
     </div>
 </footer>
 
@@ -611,71 +587,65 @@ Aviso legal</span>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
-<!-- SSE + Toast helpers (se carga después de Bootstrap) -->
 <script>
-    function __showToast(msg) {
-        const el = document.getElementById('toastNotif');
-        const body = document.getElementById('toastBody');
-        if (!el || !body) return;
-        body.textContent = msg || 'Notificación';
-        const t = new bootstrap.Toast(el, { delay: 6000 });
-        t.show();
-    }
+    const fmtDate = (s)=>s?new Date(s).toLocaleString():"-";
+    const paintStatus=(el,estado)=>{
+        el.classList.remove('ok','warn','stop');
+        const n=(estado||'').toUpperCase();
+        if(n.includes('LISTO'))el.classList.add('ok');
+        else if(n.includes('DEMO'))el.classList.add('warn');
+        else if(n.includes('IRRE'))el.classList.add('stop');
+        el.querySelector('.label').textContent=estado||'-';
+    };
 
-    let __es = null;
-    function startSSE(nroOrden) {
-        try { if (__es) { __es.close(); __es = null; } } catch {}
-        if (!nroOrden) return;
-        window.NRO_ORDEN = nroOrden;
-
-        const url = `/public/notificaciones/stream?nroOrden=${encodeURIComponent(nroOrden)}`;
-        __es = new EventSource(url);
-
-        __es.addEventListener('connected', () => { /* ok */ });
-
-        // ✅ Parseo JSON con id + mensaje y marcamos LEÍDA
-        __es.addEventListener('listo-retirar', (ev) => {
-            let data = {};
-            try { data = JSON.parse(ev.data); } catch { data = { mensaje: ev.data }; }
-            __showToast(data.mensaje || 'Tu orden está lista para retirar.');
-            if (data.id) {
-                fetch(`/public/notificaciones/${encodeURIComponent(data.id)}/leida`, { method: 'POST' }).catch(()=>{});
-            }
+    async function cargarHistorial(nro){
+        const r=await fetch(`/public/ordenes/${encodeURIComponent(nro)}/historial`);
+        if(!r.ok)return;
+        const list=await r.json();
+        const tbody=document.querySelector("#tablaHistorial tbody");
+        tbody.innerHTML="";
+        list.forEach(h=>{
+            const isActive=!h.fechaFin;
+            tbody.insertAdjacentHTML("beforeend",`
+<tr class="${isActive?'row-active':'row-closed'}">
+<td><strong>${h.etapaCodigo}</strong></td>
+<td>${fmtDate(h.fechaInicio)}</td>
+<td>${fmtDate(h.fechaFin)}</td>
+<td>${h.observacion||"-"}</td>
+</tr>
+`);
         });
-
-        __es.onerror = () => { /* opcional: reconectar manual */ };
-
-        // Cargar últimas (para no perderte nada si abriste tarde)
-        fetch(`/public/notificaciones/ultimas?nroOrden=${encodeURIComponent(nroOrden)}`)
-            .then(r => r.json())
-            .then(items => {
-                if (Array.isArray(items) && items.length) {
-                    const n = items[0];
-                    if (n && n.tipo === 'LISTO_RETIRAR' && n.estado !== 'LEIDA') {
-                        __showToast(n.mensaje);
-                        fetch(`/public/notificaciones/${encodeURIComponent(n.id)}/leida`, { method: 'POST' })
-                            .catch(()=>{});
-                    }
-                }
-            })
-            .catch(()=>{});
+        document.getElementById("wrapHistorial").classList.remove("d-none");
     }
 
-    // Si viene ?nro=OT-0001 en la URL, rellenamos el input y disparamos la consulta
-    (function initFromQuery(){
-        const params = new URLSearchParams(location.search);
-        const nro = params.get('nro');
-        if (!nro) return;
+    // Submit
+    document.getElementById("consultaForm").addEventListener("submit",async(e)=>{
+        e.preventDefault();
+        const nro=document.getElementById("nroOrden").value.trim();
+        if(!nro)return;
+        const res=await fetch(`/public/ordenes/${encodeURIComponent(nro)}/estado`);
+        if(!res.ok){alert("Orden no encontrada");return;}
+        const data=await res.json();
+        const est=data.estado||data;
 
-        const input = document.getElementById('nroOrden');
-        const form  = document.getElementById('consultaForm');
+        document.getElementById("resultado").classList.remove("d-none");
+        document.getElementById("orden").textContent=est.nroOrden;
+        document.getElementById("creadaEn").textContent=fmtDate(est.creadaEn);
+        document.getElementById("garantiaDesde").textContent=est.garantiaDesde||"-";
+        document.getElementById("garantiaHasta").textContent=est.garantiaHasta||"-";
+        paintStatus(document.getElementById('chipEstado'),est.estadoActual||'-');
 
-        if (input && form) {
-            input.value = nro;
-            // “Simulamos” un submit para reutilizar toda la lógica existente
-            form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+        cargarHistorial(nro);
+    });
+
+    // ?nro=OT-0001
+    document.addEventListener("DOMContentLoaded",()=>{
+        const nro=new URLSearchParams(location.search).get("nro");
+        if(nro){
+            document.getElementById("nroOrden").value=nro;
+            document.getElementById("consultaForm").dispatchEvent(new Event("submit"));
         }
-    })();
+    });
 </script>
 </body>
 </html>

@@ -36,6 +36,8 @@ public class SecurityConfig {
                                 "/estado-solicitud.html",
                                 "/admin-solicitudes.html",
                                 "/admin-presupuestos.html",
+                                "/faq.html",
+                                "/terminos.html",
                                 "/swagger-ui.html", "/swagger-ui/**",
                                 "/v3/api-docs/**",
                                 "/favicon.ico",
