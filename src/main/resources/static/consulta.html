@@ -291,8 +291,6 @@
             height: 100%;
         }
 
-        /* para que el header + contenido + footer formen una columna
-           y el footer quede pegado abajo */
         body {
             display: flex;
             flex-direction: column;
@@ -398,7 +396,7 @@
         @media (max-width: 768px) {
             .footer-top {
                 flex-direction: column;
-                align-items: flex-start;   /* o center si lo querés centrado */
+                align-items: flex-start;
                 gap: 24px;
             }
 
@@ -415,19 +413,49 @@
             color: var(--recti-red-dark);
             font-weight: 600;
         }
+
+        /* ===== ESTILOS TABLA HISTORIAL (agregados) ===== */
+        #wrapTabla.card {
+            border-radius: 22px;
+            border: 1px solid rgba(0,0,0,0.04);
+            box-shadow: 0 14px 30px rgba(0,0,0,.08);
+            margin-top: 16px;
+        }
+
+        #tablaHistorial thead th {
+            background: #fafafa;
+            border-bottom: 1px solid #e0e0e0;
+            font-size: .85rem;
+            text-transform: uppercase;
+            letter-spacing: .05em;
+        }
+
+        #tablaHistorial td, #tablaHistorial th {
+            font-size: .9rem;
+            vertical-align: middle;
+        }
+
+        .row-active {
+            background-color: #ffebee !important;
+            font-weight: 600;
+        }
+
+        .row-closed {
+            background-color: #fafafa !important;
+            color: #555;
+            font-style: italic;
+        }
     </style>
 
 </head>
-
-
-<!-- ===== NAVBAR ===== -->
 <body>
 
+<!-- ===== NAVBAR ===== -->
 <header class="main-header">
     <div class="main-header-inner">
         <a href="/home.html" class="nav-logo">
             <span class="nav-logo-mark">R</span>
-            <span>RECTIFICADORA CORNEJO</span>
+            <span>RECTIFICACIONES CORNEJO</span>
         </a>
 
         <button class="nav-toggle"><i class="bi bi-list"></i></button>
@@ -435,7 +463,7 @@
         <nav id="mainNav" class="nav-main">
             <ul class="nav-list">
                 <li><a href="/consulta.html" class="nav-link active">Estado del motor</a></li>
-                <!-- Historial ya NO se muestra más al cliente -->
+                <!-- Historial sacado del menú público -->
                 <li><a href="/estado-solicitud.html" class="nav-link">Solicitud</a></li>
             </ul>
             <a href="/login.html" class="btn-login">Login taller</a>
@@ -443,13 +471,13 @@
     </div>
 </header>
 
+<!-- ===== CONTENT ===== -->
 <main class="page-wrap">
     <div class="page-title">
         <h1>Consulta de estado</h1>
         <span class="badge">Seguimiento</span>
     </div>
 
-    <!-- Form -->
     <form id="consultaForm" class="mb-4">
         <div class="row g-3 justify-content-center">
             <div class="col-lg-7 col-md-8 col-12">
@@ -467,59 +495,112 @@
         </div>
     </form>
 
-    <!-- Datos principales -->
+    <!-- CARD DETALLES -->
     <div id="resultado" class="card shadow-sm d-none">
         <div class="card-body">
+
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h5 class="m-0">Detalles de la orden</h5>
                 <span id="chipEstado" class="status"><span class="dot"></span><span class="label">-</span></span>
             </div>
 
-            <div class="row gy-3 mb-3">
+            <div class="row gy-3">
                 <div class="col-md-6">
-                    <div class="kv"><strong>N° Orden:</strong> <span id="orden">-</span></div>
-                    <div class="kv"><strong>Creada:</strong> <span id="creadaEn">-</span></div>
+                    <div class="kv"><div class="k">N° Orden:</div><div class="v" id="orden">-</div></div>
+                    <div class="kv"><div class="k">Fecha de creación:</div><div class="v" id="creadaEn">-</div></div>
                 </div>
+
                 <div class="col-md-6">
-                    <div class="kv"><strong>Garantía desde:</strong> <span id="garantiaDesde">-</span></div>
-                    <div class="kv"><strong>Garantía hasta:</strong> <span id="garantiaHasta">-</span></div>
+                    <div class="kv"><div class="k">Garantía desde:</div><div class="v" id="garantiaDesde">-</div></div>
+                    <div class="kv"><div class="k">Garantía hasta:</div><div class="v" id="garantiaHasta">-</div></div>
                 </div>
             </div>
 
-            <hr>
-            <p class="muted">
-                Si ya retiraste tu motor, vas a ver acá todo su recorrido 📌
-            </p>
+            <hr class="my-4">
+            <div class="muted">Si ya retiraste tu motor, vas a ver acá todo su recorrido 📌</div>
         </div>
     </div>
 
-    <!-- Historial — Insertada aquí -->
-    <div id="wrapHistorial" class="card d-none">
+    <!-- GRILLA DE HISTORIAL (solo lectura) -->
+    <div id="wrapTabla" class="card d-none">
         <div class="card-body">
-            <h5>Historial de etapas</h5>
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="card-title m-0">Historial de etapas</h5>
+                <span class="muted">Registro cronológico</span>
+            </div>
+
             <div class="table-responsive">
                 <table id="tablaHistorial" class="table table-bordered mb-0">
                     <thead>
                     <tr>
-                        <th>Etapa</th>
-                        <th>Inicio</th>
-                        <th>Fin</th>
+                        <th style="width:220px">Etapa</th>
+                        <th style="width:220px">Inicio</th>
+                        <th style="width:220px">Fin</th>
                         <th>Observación</th>
                     </tr>
                     </thead>
                     <tbody></tbody>
                 </table>
             </div>
+
         </div>
     </div>
 
+    <section style="max-width:900px;margin:24px auto 0;padding:0 16px;">
+        <p class="muted">
+            ¿No encontrás tu orden? Verificá que el número esté bien escrito
+            (ej: <strong>OT-0009</strong>) o consultá en el taller para confirmar
+            que ya fue registrada en el sistema.
+        </p>
+    </section>
 </main>
 
+<!-- ===== FOOTER ===== -->
 <footer class="site-footer">
     <div class="footer-container">
-        <div class="footer-bottom">
-            <span>© 2025 Rectificadora Cornejo — Todos los derechos reservados.</span>
+
+        <div class="footer-top">
+            <div class="footer-brand">
+                <div class="footer-logo-mark">R</div>
+                <span class="footer-logo-text">RECTIFICACIONES CORNEJO</span>
+            </div>
+
+            <div class="footer-links">
+                <div class="footer-column">
+                    <h4>Soluciones</h4>
+                    <a href="/consulta.html">Estado del motor</a>
+                    <!-- Historial sacado acá también -->
+                    <a href="/estado-solicitud.html">Estado de solicitud</a>
+                </div>
+
+                <div class="footer-column">
+                    <h4>Nosotros</h4>
+                    <a href="/index.html#nosotros">Quiénes somos</a>
+                    <a href="/index.html#por-que">Por qué nos eligen</a>
+                </div>
+
+                <div class="footer-column">
+                    <h4>Contacto</h4>
+                    <a href="/presupuesto.html">Pedir cotización</a>
+                    <a href="/index.html#contacto">Trabajá con nosotros</a>
+                </div>
+
+                <div class="footer-column">
+                    <h4>Seguimientos</h4>
+                    <a href="/consulta.html">Estado del motor</a>
+                    <!-- Historial removido -->
+                    <a href="/estado-solicitud.html">Solicitud</a>
+                </div>
+            </div>
         </div>
+
+        <div class="footer-bottom">
+            <span>© 2025 Rectificaciones Cornejo. Todos los derechos reservados.
+  •
+Aviso legal</span>
+            <span>2025</span>
+        </div>
+
     </div>
 </footer>
 
@@ -534,7 +615,6 @@
             navToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
         });
 
-        // opcional: cerrar el menú si tocan un link (queda más prolijo)
         mainNav.addEventListener('click', (e) => {
             if (e.target.classList.contains('nav-link')) {
                 mainNav.classList.remove('nav-open');
@@ -542,6 +622,7 @@
             }
         });
     }
+
     const fmtDate = (s) => s ? new Date(s).toLocaleString() : "-";
     function paintStatus(el, estado) {
         el.classList.remove('ok','warn','stop');
@@ -556,6 +637,33 @@
             el.classList.add('stop');
         }
         label.textContent = estado || '-';
+    }
+
+    // 👉 NUEVO: cargar historial y pintar tabla
+    async function cargarHistorial(nro) {
+        const rHist = await fetch(`/public/ordenes/${encodeURIComponent(nro)}/historial`);
+        if (!rHist.ok) {
+            console.warn("No se pudo cargar historial para", nro);
+            return;
+        }
+        const historial = await rHist.json();
+
+        const tbody = document.querySelector("#tablaHistorial tbody");
+        tbody.innerHTML = "";
+        historial.forEach(h => {
+            const isActive = !h.fechaFin;
+            const rowClass = isActive ? 'row-active' : 'row-closed';
+            tbody.insertAdjacentHTML('beforeend', `
+                <tr class="${rowClass}">
+                  <td><strong>${h.etapaCodigo}</strong></td>
+                  <td>${fmtDate(h.fechaInicio)}</td>
+                  <td>${fmtDate(h.fechaFin)}</td>
+                  <td>${h.observacion || "-"}</td>
+                </tr>
+            `);
+        });
+
+        document.getElementById("wrapTabla").classList.remove("d-none");
     }
 
     document.getElementById("consultaForm").addEventListener("submit", async (e) => {
@@ -581,71 +689,89 @@
         document.getElementById("resultado").classList.remove("d-none");
         document.getElementById("resultado").scrollIntoView({behavior:'smooth', block:'start'});
 
-        startSSE(nro); // conecta SSE para este nro
+        // 👉 después de pintar estado, cargamos historial
+        await cargarHistorial(nro);
+
+        // y conectamos SSE como ya lo tenías
+        startSSE(nro);
     });
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
+<!-- SSE + Toast helpers (igual que antes) -->
 <script>
-    const fmtDate = (s)=>s?new Date(s).toLocaleString():"-";
-    const paintStatus=(el,estado)=>{
-        el.classList.remove('ok','warn','stop');
-        const n=(estado||'').toUpperCase();
-        if(n.includes('LISTO'))el.classList.add('ok');
-        else if(n.includes('DEMO'))el.classList.add('warn');
-        else if(n.includes('IRRE'))el.classList.add('stop');
-        el.querySelector('.label').textContent=estado||'-';
-    };
-
-    async function cargarHistorial(nro){
-        const r=await fetch(`/public/ordenes/${encodeURIComponent(nro)}/historial`);
-        if(!r.ok)return;
-        const list=await r.json();
-        const tbody=document.querySelector("#tablaHistorial tbody");
-        tbody.innerHTML="";
-        list.forEach(h=>{
-            const isActive=!h.fechaFin;
-            tbody.insertAdjacentHTML("beforeend",`
-<tr class="${isActive?'row-active':'row-closed'}">
-<td><strong>${h.etapaCodigo}</strong></td>
-<td>${fmtDate(h.fechaInicio)}</td>
-<td>${fmtDate(h.fechaFin)}</td>
-<td>${h.observacion||"-"}</td>
-</tr>
-`);
-        });
-        document.getElementById("wrapHistorial").classList.remove("d-none");
+    function __showToast(msg) {
+        const el = document.getElementById('toastNotif');
+        const body = document.getElementById('toastBody');
+        if (!el || !body) return;
+        body.textContent = msg || 'Notificación';
+        const t = new bootstrap.Toast(el, { delay: 6000 });
+        t.show();
     }
 
-    // Submit
-    document.getElementById("consultaForm").addEventListener("submit",async(e)=>{
-        e.preventDefault();
-        const nro=document.getElementById("nroOrden").value.trim();
-        if(!nro)return;
-        const res=await fetch(`/public/ordenes/${encodeURIComponent(nro)}/estado`);
-        if(!res.ok){alert("Orden no encontrada");return;}
-        const data=await res.json();
-        const est=data.estado||data;
+    let __es = null;
+    function startSSE(nroOrden) {
+        try { if (__es) { __es.close(); __es = null; } } catch {}
+        if (!nroOrden) return;
+        window.NRO_ORDEN = nroOrden;
 
-        document.getElementById("resultado").classList.remove("d-none");
-        document.getElementById("orden").textContent=est.nroOrden;
-        document.getElementById("creadaEn").textContent=fmtDate(est.creadaEn);
-        document.getElementById("garantiaDesde").textContent=est.garantiaDesde||"-";
-        document.getElementById("garantiaHasta").textContent=est.garantiaHasta||"-";
-        paintStatus(document.getElementById('chipEstado'),est.estadoActual||'-');
+        const url = `/public/notificaciones/stream?nroOrden=${encodeURIComponent(nroOrden)}`;
+        __es = new EventSource(url);
 
-        cargarHistorial(nro);
-    });
+        __es.addEventListener('connected', () => { /* ok */ });
 
-    // ?nro=OT-0001
-    document.addEventListener("DOMContentLoaded",()=>{
-        const nro=new URLSearchParams(location.search).get("nro");
-        if(nro){
-            document.getElementById("nroOrden").value=nro;
-            document.getElementById("consultaForm").dispatchEvent(new Event("submit"));
+        __es.addEventListener('listo-retirar', (ev) => {
+            let data = {};
+            try { data = JSON.parse(ev.data); } catch { data = { mensaje: ev.data }; }
+            __showToast(data.mensaje || 'Tu orden está lista para retirar.');
+            if (data.id) {
+                fetch(`/public/notificaciones/${encodeURIComponent(data.id)}/leida`, { method: 'POST' }).catch(()=>{});
+            }
+        });
+
+        __es.onerror = () => { /* opcional: reconectar manual */ };
+
+        fetch(`/public/notificaciones/ultimas?nroOrden=${encodeURIComponent(nroOrden)}`)
+            .then(r => r.json())
+            .then(items => {
+                if (Array.isArray(items) && items.length) {
+                    const n = items[0];
+                    if (n && n.tipo === 'LISTO_RETIRAR' && n.estado !== 'LEIDA') {
+                        __showToast(n.mensaje);
+                        fetch(`/public/notificaciones/${encodeURIComponent(n.id)}/leida`, { method: 'POST' })
+                            .catch(()=>{});
+                    }
+                }
+            })
+            .catch(()=>{});
+    }
+
+    // Si viene ?nro=OT-0001 en la URL, rellenamos el input y disparamos la consulta
+    (function initFromQuery(){
+        const params = new URLSearchParams(location.search);
+        const nro = params.get('nro');
+        if (!nro) return;
+
+        const input = document.getElementById('nroOrden');
+        const form  = document.getElementById('consultaForm');
+
+        if (input && form) {
+            input.value = nro;
+            form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
         }
-    });
+    })();
 </script>
+
+<!-- Toast de SSE -->
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index:1080">
+    <div id="toastNotif" class="toast align-items-center text-bg-success border-0" role="alert">
+        <div class="d-flex">
+            <div class="toast-body" id="toastBody">Notificación</div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+    </div>
+</div>
+
 </body>
 </html>

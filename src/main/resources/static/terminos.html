@@ -28,6 +28,7 @@
             background-size: 260px 260px;
         }
 
+        /* ===== NAVBAR ===== */
         .main-header {
             background: var(--recti-white);
             border-bottom: none;
@@ -141,6 +142,7 @@
             .btn-login { margin-bottom: 1rem; }
         }
 
+        /* ===== LAYOUT ===== */
         .page-wrap {
             max-width: 900px;
             margin: 60px auto 70px;
@@ -151,7 +153,7 @@
             display: flex;
             align-items: center;
             gap: 14px;
-            margin-bottom: 24px;
+            margin-bottom: 16px;
         }
 
         .page-title h1 {
@@ -165,6 +167,7 @@
             color: white;
             border-radius: 6px;
             padding: .3rem .6rem;
+            font-size: .8rem;
         }
 
         a { color: inherit; text-decoration: none; }
@@ -182,6 +185,107 @@
             flex: 1 0 auto;
         }
 
+        /* ===== HERO LEGAL ===== */
+        .legal-hero {
+            background: rgba(255,255,255,0.9);
+            border-radius: 20px;
+            padding: 20px 22px;
+            box-shadow: 0 12px 30px rgba(0,0,0,.08);
+            border: 1px solid rgba(0,0,0,0.03);
+            display: flex;
+            gap: 16px;
+            align-items: flex-start;
+            margin-bottom: 24px;
+            animation: fadeUp .45s ease-out;
+        }
+
+        .legal-hero-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 999px;
+            background: rgba(229,57,53,0.08);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--recti-red-dark);
+            font-size: 1.4rem;
+        }
+
+        .legal-hero-title {
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .legal-hero-text {
+            margin: 0;
+            font-size: .95rem;
+            color: #555;
+        }
+
+        .legal-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: .18rem .55rem;
+            border-radius: 999px;
+            background: #e3f2fd;
+            color: #1565c0;
+            font-size: .75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: .05em;
+            margin-top: 6px;
+        }
+
+        /* ===== CARD TÉRMINOS ===== */
+        .legal-card {
+            background: rgba(255,255,255,0.92);
+            border-radius: 20px;
+            box-shadow: 0 12px 30px rgba(0,0,0,.08);
+            border: 1px solid rgba(0,0,0,0.03);
+            padding: 20px 22px 22px;
+            animation: fadeUp .5s ease-out .05s both;
+        }
+
+        .legal-meta {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 6px;
+            font-size: .8rem;
+            color: #777;
+            margin-bottom: 10px;
+        }
+
+        .legal-list {
+            list-style: none;
+            padding-left: 0;
+            margin: 0;
+        }
+
+        .legal-list > li {
+            padding: 12px 0 10px;
+            border-top: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .legal-list > li:first-child {
+            border-top: none;
+            padding-top: 4px;
+        }
+
+        .legal-section-title {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .legal-section-text {
+            margin: 0;
+            font-size: .93rem;
+            color: #555;
+        }
+
+        /* ===== FOOTER ===== */
         .site-footer {
             background: #111;
             color: #ccc;
@@ -282,6 +386,18 @@
                 width: 100%;
             }
         }
+
+        /* ===== ANIMACIONES ===== */
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
     </style>
 </head>
 <body>
@@ -290,7 +406,7 @@
     <div class="main-header-inner">
         <a href="/home.html" class="nav-logo">
             <span class="nav-logo-mark">R</span>
-            <span>RECTIFICADORA CORNEJO</span>
+            <span>RECTIFICACIONES CORNEJO</span>
         </a>
 
         <button class="nav-toggle"><i class="bi bi-list"></i></button>
@@ -298,7 +414,7 @@
         <nav id="mainNav" class="nav-main">
             <ul class="nav-list">
                 <li><a href="/consulta.html" class="nav-link">Consulta</a></li>
-                <li><a href="/historial.html" class="nav-link">Historial</a></li>
+<!--                <li><a href="/historial.html" class="nav-link">Historial</a></li>-->
                 <li><a href="/estado-solicitud.html" class="nav-link">Solicitud</a></li>
             </ul>
             <a href="/login.html" class="btn-login">Login taller</a>
@@ -311,82 +427,113 @@
         <h1>Términos y Condiciones</h1>
         <span class="badge">Información legal</span>
     </div>
-
-    <section class="mb-4">
-        <p>
-            Este documento describe las condiciones de uso del sistema de gestión de la
-            <strong>Rectificadora Cornejo</strong>. Al utilizar este sitio, el usuario acepta estos términos.
-        </p>
-    </section>
-
-    <section class="mb-3">
-        <h2 class="h5 mb-2">1. Uso del sistema</h2>
-        <p>
-            El sistema está destinado a la carga y consulta de solicitudes de presupuesto,
-            órdenes de trabajo y estados de reparación. El usuario se compromete a utilizar
-            la aplicación de forma responsable, sin alterar datos ni intentar acceder a
-            información de otros clientes.
-        </p>
-    </section>
-
-    <section class="mb-3">
-        <h2 class="h5 mb-2">2. Propiedad intelectual</h2>
-        <p>
-            La aplicación, su diseño, código fuente, logotipos y contenidos asociados son
-            propiedad de sus autores y se encuentran protegidos por la legislación vigente
-            en materia de propiedad intelectual.
-        </p>
-    </section>
-
-    <section class="mb-3">
-        <h2 class="h5 mb-2">3. Datos personales y privacidad</h2>
-        <p>
-            Los datos de contacto del cliente (nombre, teléfono, correo electrónico, datos
-            del vehículo, etc.) se utilizan exclusivamente para la gestión de solicitudes,
-            presupuestos, notificaciones y seguimiento de trabajos. No se venden ni
-            ceden a terceros con fines comerciales.
-        </p>
-    </section>
-
-    <section class="mb-3">
-        <h2 class="h5 mb-2">4. Seguridad de la información</h2>
-        <p>
-            Se aplican medidas razonables de seguridad para proteger la información
-            almacenada. Sin embargo, ningún sistema es totalmente infalible y el usuario
-            entiende que pueden existir riesgos técnicos ajenos a la empresa.
-        </p>
-    </section>
-
-    <section class="mb-3">
-        <h2 class="h5 mb-2">5. Uso de cookies</h2>
-        <p>
-            El sitio puede utilizar cookies técnicas para recordar preferencias básicas
-            de navegación y mejorar la experiencia del usuario. No se utilizan cookies con
-            fines publicitarios ni de seguimiento masivo.
-        </p>
-    </section>
-
-    <section class="mb-3">
-        <h2 class="h5 mb-2">6. Limitación de responsabilidad</h2>
-        <p>
-            La empresa no será responsable por interrupciones de servicio, fallas técnicas
-            o pérdidas de información causadas por terceros, problemas de conectividad
-            o fuerza mayor.
-        </p>
-    </section>
-
-    <section class="mb-3">
-        <h2 class="h5 mb-2">7. Modificaciones</h2>
-        <p>
-            Los presentes términos pueden actualizarse o modificarse. La versión vigente
-            será siempre la publicada en esta sección.
-        </p>
-    </section>
-
-    <section class="mt-4">
+    <div class="mt-3 text-end">
         <a href="/index.html" class="btn btn-outline-secondary btn-sm">
             <i class="bi bi-arrow-left"></i> Volver al inicio
         </a>
+    </div>
+    <br>
+    <!-- Hero legal -->
+    <section class="legal-hero">
+        <div class="legal-hero-icon">
+            <i class="bi bi-shield-check"></i>
+        </div>
+        <div>
+            <div class="legal-hero-title">Cuidamos tu información y tu motor.</div>
+            <p class="legal-hero-text">
+                Acá te contamos cómo se usa el sistema de gestión de la
+                <strong>Rectificaciones Cornejo</strong>, qué datos guardamos y cuáles son
+                las responsabilidades de cada parte al utilizar la plataforma.
+            </p>
+            <span class="legal-pill">
+                <i class="bi bi-info-circle"></i> Última actualización: 2025
+            </span>
+        </div>
+    </section>
+
+    <!-- Card de términos -->
+    <section class="legal-card">
+        <div class="legal-meta">
+            <span>Al usar este sitio aceptás estos términos.</span>
+            <span>Te recomendamos leerlos con calma antes de continuar.</span>
+        </div>
+
+        <ol class="legal-list">
+
+            <li>
+                <div class="legal-section-title">1. Uso del sistema</div>
+                <p class="legal-section-text">
+                    El sistema está destinado a la carga y consulta de solicitudes de presupuesto,
+                    órdenes de trabajo y estados de reparación. El usuario se compromete a utilizar
+                    la aplicación de forma responsable, sin alterar datos ni intentar acceder a
+                    información de otros clientes o secciones restringidas.
+                </p>
+            </li>
+
+            <li>
+                <div class="legal-section-title">2. Propiedad intelectual</div>
+                <p class="legal-section-text">
+                    La aplicación, su diseño, código fuente, logotipos y contenidos asociados son
+                    propiedad de sus autores y se encuentran protegidos por la legislación vigente
+                    en materia de propiedad intelectual. No se permite su copia, distribución
+                    o modificación sin autorización expresa.
+                </p>
+            </li>
+
+            <li>
+                <div class="legal-section-title">3. Datos personales y privacidad</div>
+                <p class="legal-section-text">
+                    Los datos de contacto del cliente (nombre, teléfono, correo electrónico, datos
+                    del vehículo, etc.) se utilizan exclusivamente para la gestión de solicitudes,
+                    presupuestos, notificaciones y seguimiento de trabajos. No se venden ni
+                    ceden a terceros con fines comerciales y se tratan de acuerdo con las normas
+                    aplicables de protección de datos.
+                </p>
+            </li>
+
+            <li>
+                <div class="legal-section-title">4. Seguridad de la información</div>
+                <p class="legal-section-text">
+                    Se aplican medidas razonables de seguridad para proteger la información
+                    almacenada. Sin embargo, ningún sistema es totalmente infalible y el usuario
+                    entiende que pueden existir riesgos técnicos ajenos a la empresa (fallas de
+                    internet, proveedores externos, ataques informáticos, etc.).
+                </p>
+            </li>
+
+            <li>
+                <div class="legal-section-title">5. Uso de cookies</div>
+                <p class="legal-section-text">
+                    El sitio puede utilizar cookies técnicas para recordar preferencias básicas
+                    de navegación y mejorar la experiencia del usuario. No se utilizan cookies con
+                    fines publicitarios ni de seguimiento masivo. El usuario puede configurar su
+                    navegador para limitar o bloquear las cookies, aunque esto podría afectar
+                    ciertas funcionalidades.
+                </p>
+            </li>
+
+            <li>
+                <div class="legal-section-title">6. Limitación de responsabilidad</div>
+                <p class="legal-section-text">
+                    La empresa no será responsable por interrupciones de servicio, fallas técnicas
+                    o pérdidas de información causadas por terceros, problemas de conectividad
+                    o fuerza mayor. La información mostrada en el sitio tiene fines informativos
+                    y puede requerir confirmación directa en el taller.
+                </p>
+            </li>
+
+            <li>
+                <div class="legal-section-title">7. Modificaciones de los términos</div>
+                <p class="legal-section-text">
+                    Los presentes términos pueden actualizarse o modificarse cuando sea necesario.
+                    La versión vigente será siempre la publicada en esta sección. El uso continuado
+                    del sitio después de una actualización implica la aceptación de los nuevos
+                    términos y condiciones.
+                </p>
+            </li>
+
+        </ol>
+
     </section>
 </main>
 
@@ -396,14 +543,14 @@
         <div class="footer-top">
             <div class="footer-brand">
                 <div class="footer-logo-mark">R</div>
-                <span class="footer-logo-text">RECTIFICADORA CORNEJO</span>
+                <span class="footer-logo-text">RECTIFICACIONES CORNEJO</span>
             </div>
 
             <div class="footer-links">
                 <div class="footer-column">
                     <h4>Soluciones</h4>
                     <a href="/consulta.html">Estado del motor</a>
-                    <a href="/historial.html">Historial</a>
+<!--                    <a href="/historial.html">Historial</a>-->
                     <a href="/estado-solicitud.html">Estado de solicitud</a>
                 </div>
 
@@ -429,7 +576,7 @@
 
         <div class="footer-bottom">
             <span>
-                © 2025 Rectificadora Cornejo. Todos los derechos reservados.
+                © 2025 Rectificaciones Cornejo. Todos los derechos reservados.
                 • <a href="/terminos.html">Términos y Condiciones</a>
                 · <a href="/faq.html">Preguntas Frecuentes</a>
             </span>
