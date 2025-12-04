@@ -40,7 +40,7 @@
         }
         a { color: inherit; text-decoration: none; }
 
-        /* ============= NAVBAR (compartido) ============= */
+        /* ============= NAVBAR (ADMIN) ============= */
 
         .main-header {
             background: var(--recti-white);
@@ -116,67 +116,12 @@
             font-weight: 600;
         }
 
-        .btn-login {
-            border-radius: 999px;
-            border: 1px solid var(--recti-red);
-            padding: .35rem 1rem;
-            font-size: .9rem;
-            font-weight: 600;
-            color: var(--recti-red);
-            white-space: nowrap;
-            transition: all .15s ease;
-        }
-
-        .btn-login:hover {
-            background: var(--recti-red);
-            color: var(--recti-white);
-        }
-
-        .nav-toggle {
-            display: none;
-            border: none;
-            background: transparent;
-            font-size: 1.4rem;
-            cursor: pointer;
-            color: #444;
-        }
-
         @media (max-width: 992px) {
             .main-header-inner { padding-inline: 1rem; }
 
-            .nav-toggle { display: inline-flex; }
-
             .nav-main {
-                position: fixed;
-                inset: 64px 0 auto 0;
-                background: var(--recti-white);
-                flex-direction: column;
-                align-items: stretch;
-                gap: 0;
-                max-height: 0;
-                overflow: hidden;
-                transition: max-height .25s ease;
-                box-shadow: 0 12px 30px rgba(0, 0, 0, .18);
-            }
-
-            .nav-main.nav-open { max-height: 80vh; }
-
-            .nav-list {
-                flex-direction: column;
-                align-items: stretch;
-                padding: .75rem 1rem;
-                gap: .25rem;
-            }
-
-            .nav-link {
-                justify-content: space-between;
-                width: 100%;
-                text-align: left;
-            }
-
-            .btn-login {
-                margin: .4rem 1rem 1rem;
-                align-self: flex-start;
+                flex-wrap: wrap;
+                gap: 8px;
             }
         }
 
@@ -213,7 +158,7 @@
         /* FORM */
 
         #historialForm {
-            margin-bottom: 32px;
+            margin-bottom: 16px; /* un poco menos porque saqué textos cliente */
         }
 
         #nroOrden {
@@ -239,6 +184,12 @@
         .btn-primary:hover {
             background: var(--recti-red-dark);
             border-color: var(--recti-red-dark);
+        }
+
+        .tip {
+            margin-top: 8px;
+            font-size: .9rem;
+            color: #666;
         }
 
         /* CARD HISTORIAL */
@@ -416,13 +367,6 @@
                 flex-direction: column;
             }
         }
-
-        .tip {
-            margin-top: 12px;
-            font-size: .9rem;
-            color: #666;
-            text-align: center;
-        }
     </style>
 </head>
 <body>
@@ -446,35 +390,13 @@
     </div>
 </header>
 
-<!-- ===== HEADER PÚBLICO ===== -->
-<header id="publicHeader" class="main-header">
-    <div class="main-header-inner">
-        <a href="/home.html" class="nav-logo">
-            <span class="nav-logo-mark">R</span>
-            <span>RECTIFICADORA CORNEJO</span>
-        </a>
-
-        <button class="nav-toggle" type="button" aria-label="Abrir menú" aria-expanded="false">
-            <i class="bi bi-list"></i>
-        </button>
-
-        <nav id="mainNav" class="nav-main">
-            <ul class="nav-list">
-                <li><a href="/consulta.html" class="nav-link">Consulta</a></li>
-                <!--<li><a href="/historial.html" class="nav-link is-active">Historial</a></li> !-->
-                <li><a href="/estado-solicitud.html" class="nav-link">Solicitud</a></li>
-                <li><a id="logoutLink" class="nav-link" href="#">Salir</a></li>
-            </ul>
-            <a href="/login.html" class="btn-login">Login taller</a>
-        </nav>
-    </div>
-</header>
+<!-- (YA NO HAY HEADER PÚBLICO) -->
 
 <!-- ===== CONTENIDO ===== -->
 <main class="page-wrap">
     <div class="page-title">
         <h1 class="m-0">Historial de etapas</h1>
-        <span class="badge">Seguimiento</span>
+        <span class="badge">Vista interna</span>
     </div>
 
     <form id="historialForm" class="mb-4">
@@ -498,12 +420,9 @@
     </form>
 
     <p class="tip">
-        Tip: Si tu orden sigue activa, este historial se actualizará automáticamente.
+        Esta pantalla es sólo para el taller. Usá el número de OT para ver el historial y avanzar etapas.
     </p>
-    <p class="tip">
-        Si ya retiraste tu motor, vas a ver acá todas las etapas que recorrió,
-        con fechas y observaciones de nuestro equipo.
-    </p>
+
     <div id="wrapTabla" class="card d-none">
         <div class="card-body">
             <div class="d-flex justify-content-between align-items-center mb-3">
@@ -517,7 +436,7 @@
                         <i class="bi bi-fast-forward-fill me-1"></i>Avanzar etapa
                     </button>
                     <button id="btnIrreparable" class="btn btn-outline-danger btn-sm d-none" type="button">
-                        ⚠️ Marcar irreparable
+                        ⚠ Marcar irreparable
                     </button>
                     <button id="btnDemora" class="btn btn-warning btn-sm d-none" type="button">
                         🕒 Registrar demora
@@ -558,7 +477,6 @@
                 <div class="footer-column">
                     <h4>Soluciones</h4>
                     <a href="/consulta.html">Estado del motor</a>
-<!--                    <a href="/historial.html">Historial</a>-->
                     <a href="/estado-solicitud.html">Estado de solicitud</a>
                 </div>
 
@@ -577,16 +495,13 @@
                 <div class="footer-column">
                     <h4>Seguimientos</h4>
                     <a href="/consulta.html">Estado del motor</a>
-<!--                    <a href="/historial.html">Historial del motor</a>-->
                     <a href="/estado-solicitud.html">Solicitud</a>
                 </div>
             </div>
         </div>
 
         <div class="footer-bottom">
-            <span>© 2025 Rectificaciones Cornejo. Todos los derechos reservados.
-  •
-Aviso legal</span>
+            <span>© 2025 Rectificaciones Cornejo. Todos los derechos reservados. • Aviso legal</span>
             <span>2025</span>
         </div>
 
@@ -594,42 +509,8 @@ Aviso legal</span>
 </footer>
 
 
-<!-- ======= LÓGICA PÚBLICA ======= -->
+<!-- ======= LÓGICA HISTORIAL (admin + cliente, pero vista admin) ======= -->
 <script>
-    // Navbar público (Consulta / Historial / Solicitud)
-    const navToggle = document.querySelector('.nav-toggle');
-    const mainNav   = document.getElementById('mainNav');
-
-    if (navToggle && mainNav) {
-        navToggle.addEventListener('click', () => {
-            const isOpen = mainNav.classList.toggle('nav-open');
-            navToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-        });
-
-        // opcional: cerrar el menú si tocan un link
-        mainNav.addEventListener('click', (e) => {
-            if (e.target.classList.contains('nav-link')) {
-                mainNav.classList.remove('nav-open');
-                navToggle.setAttribute('aria-expanded', 'false');
-            }
-        });
-    }
-
-    (async () => {
-        try {
-            const { getAuth, clearAuth } = await import("/js/auth.js");
-            const link = document.getElementById("logoutLink");
-            if (link) {
-                if (!getAuth()) link.classList.add("d-none");
-                link.addEventListener("click", (e)=>{
-                    e.preventDefault();
-                    clearAuth();
-                    window.location.href = "/login.html";
-                });
-            }
-        } catch {}
-    })();
-
     const fmtDate = (s) => s ? new Date(s).toLocaleString() : "-";
 
     function paintStatus(el, estado) {
@@ -666,13 +547,8 @@ Aviso legal</span>
         const esIrreparable = e.includes("PIEZA_IRREPARABLE");
         const esFinal = e.includes("ENTREGADO");
 
-        // Avanzar etapa: mientras no sea IRREPARABLE ni ENTREGADO
         if (!esIrreparable && !esFinal) btnAvanzar.classList.remove("d-none");
-
-        // Irreparable: solo en DIAGNOSTICO
         if (e === "DIAGNOSTICO") btnIrreparable.classList.remove("d-none");
-
-        // Demora: solo en SEMI_ARMADO
         if (e === "SEMI_ARMADO") btnDemora.classList.remove("d-none");
     }
 
@@ -689,7 +565,7 @@ Aviso legal</span>
                 const data = await rEst.json();
                 estadoActual = data.estado ? data.estado.estadoActual : (data.estadoActual || '-');
             }
-        } catch(_){}
+        } catch(_) {}
 
         const tbody = document.querySelector("#tablaHistorial tbody");
         tbody.innerHTML = "";
@@ -697,24 +573,21 @@ Aviso legal</span>
             const isActive = !h.fechaFin;
             const rowClass = isActive ? 'row-active' : 'row-closed';
             tbody.insertAdjacentHTML('beforeend', `
-        <tr class="${rowClass}">
-          <td><strong>${h.etapaCodigo}</strong></td>
-          <td>${fmtDate(h.fechaInicio)}</td>
-          <td>${fmtDate(h.fechaFin)}</td>
-          <td>${h.observacion || "-"}</td>
-          <td>${h.usuario || "-"}</td>
-        </tr>
-      `);
+                <tr class="${rowClass}">
+                  <td><strong>${h.etapaCodigo}</strong></td>
+                  <td>${fmtDate(h.fechaInicio)}</td>
+                  <td>${fmtDate(h.fechaFin)}</td>
+                  <td>${h.observacion || "-"}</td>
+                  <td>${h.usuario || "-"}</td>
+                </tr>
+            `);
         });
 
         paintStatus(document.getElementById('chipEstado'), estadoActual);
         document.getElementById("wrapTabla").classList.remove("d-none");
         document.getElementById("wrapTabla").scrollIntoView({behavior:'smooth', block:'start'});
 
-        // Botones admin
         updateAdminButtons(estadoActual);
-
-        // HU13: conectar SSE para toasts
         startSSE(nro);
     }
 
@@ -740,25 +613,28 @@ Aviso legal</span>
     });
 </script>
 
-<!-- ====== TOGGLE HEADER ADMIN/PÚBLICO SEGÚN LOGIN ====== -->
 <script type="module">
     import { isAuthenticated, clearAuth } from "/js/auth.js";
 
     const adminHeader  = document.getElementById("adminHeader");
-    const publicHeader = document.getElementById("publicHeader");
     const logoutAdmin  = document.getElementById("logoutAdmin");
 
+    // Si está autenticado, muestro el header admin
     if (isAuthenticated()) {
-        if (adminHeader)  adminHeader.classList.remove("d-none");
-        if (publicHeader) publicHeader.classList.add("d-none");
-
+        adminHeader?.classList.remove("d-none");
         logoutAdmin?.addEventListener("click", (e) => {
             e.preventDefault();
             clearAuth();
             window.location.href = "/login.html";
         });
     }
+    // Si NO está autenticado:
+    // - no muestro el header admin
+    // - la página igual carga
+    // - y cuando intente hacer una acción admin, el fetch a /admin/... le va a devolver 401
+    //   y ahí sí lo redirigís al login (ya lo tenés manejado en los scripts de acciones)
 </script>
+
 
 <!-- ======= ACCIONES ADMIN ======= -->
 <script type="module">
@@ -768,19 +644,23 @@ Aviso legal</span>
     const btnIrreparable = document.getElementById("btnIrreparable");
     const btnDemora = document.getElementById("btnDemora");
 
+    // ---- AVANZAR ETAPA ----
     btnAvanzar?.addEventListener("click", async () => {
         const nro = document.getElementById("nroOrden").value.trim();
         if (!nro) return alert("Ingresá un N° de orden primero");
         if (!isAuthenticated()) return alert("Necesitás iniciar sesión.");
 
         try {
-            const resp = await fetch(`/admin/ordenes/${encodeURIComponent(nro)}/avanzar`, {
-                method: "POST",
-                headers: { ...getAuthHeader(), "Content-Type": "application/json" }
-            });
+            const resp = await fetch(
+                `/admin/ordenes/${encodeURIComponent(nro)}/avanzar`,
+                {
+                    method: "POST",
+                    headers: { ...getAuthHeader(), "Content-Type": "application/json" }
+                }
+            );
             if (!resp.ok) {
                 const err = await resp.json().catch(() => ({}));
-                const msg = err?.message || err?.error || `Error ${resp.status}`;
+                const msg = err?.message || err?.error || ("Error " + resp.status);
                 return alert("No se pudo avanzar: " + msg);
             }
             alert("Etapa avanzada correctamente ✅");
@@ -791,6 +671,7 @@ Aviso legal</span>
         }
     });
 
+    // ---- IRREPARABLE ----
     btnIrreparable?.addEventListener("click", async () => {
         const nro = document.getElementById("nroOrden").value.trim();
         if (!nro) return alert("Ingresá un N° de orden primero");
@@ -798,13 +679,16 @@ Aviso legal</span>
         if (!confirm("¿Confirmás marcar la pieza como IRREPARABLE?")) return;
 
         try {
-            const resp = await fetch(`/admin/ordenes/${encodeURIComponent(nro)}/pieza-irreparable`, {
-                method: "PUT",
-                headers: { ...getAuthHeader(), "Content-Type": "application/json" }
-            });
+            const resp = await fetch(
+                `/admin/ordenes/${encodeURIComponent(nro)}/pieza-irreparable`,
+                {
+                    method: "PUT",
+                    headers: { ...getAuthHeader(), "Content-Type": "application/json" }
+                }
+            );
             if (!resp.ok) {
                 const err = await resp.json().catch(() => ({}));
-                const msg = err?.message || err?.error || `Error ${resp.status}`;
+                const msg = err?.message || err?.error || ("Error " + resp.status);
                 return alert("No se pudo marcar como irreparable: " + msg);
             }
             alert("Marcada como PIEZA_IRREPARABLE ✅");
@@ -815,9 +699,9 @@ Aviso legal</span>
         }
     });
 
+    // ---- DEMORA ----
     btnDemora?.addEventListener("click", async () => {
-        const input = document.getElementById("nroOrden");
-        const nro = input?.value?.trim();
+        const nro = document.getElementById("nroOrden").value.trim();
         if (!nro) return alert("Ingresá un N° de orden primero (y tocá 'Ver historial').");
         if (!isAuthenticated()) return alert("Necesitás iniciar sesión.");
 
@@ -827,21 +711,24 @@ Aviso legal</span>
         const observacion = prompt("Observación (opcional):");
 
         try {
-            const resp = await fetch(`/admin/ordenes/${encodeURIComponent(nro)}/demora`, {
-                method: "POST",
-                headers: { ...getAuthHeader(), "Content-Type": "application/json" },
-                body: JSON.stringify({ motivo, observacion })
-            });
+            const resp = await fetch(
+                `/admin/ordenes/${encodeURIComponent(nro)}/demora`,
+                {
+                    method: "POST",
+                    headers: { ...getAuthHeader(), "Content-Type": "application/json" },
+                    body: JSON.stringify({ motivo, observacion })
+                }
+            );
 
             if (resp.status === 401) {
-                alert("Tu sesión expiró o no estás logueada. Iniciá sesión para continuar.");
+                alert("Tu sesión expiró o no estás logueada. Iniciá sesión.");
                 window.location.href = "/login.html";
                 return;
             }
 
             if (!resp.ok) {
                 const err = await resp.json().catch(() => ({}));
-                const msg = err?.message || err?.error || `Error ${resp.status}`;
+                const msg = err?.message || err?.error || ("Error " + resp.status);
                 return alert("No se pudo registrar la demora: " + msg);
             }
 
@@ -853,6 +740,7 @@ Aviso legal</span>
         }
     });
 </script>
+
 
 <!-- ======= TOAST HU13 ======= -->
 <div class="position-fixed bottom-0 end-0 p-3" style="z-index:1080">
@@ -877,17 +765,24 @@ Aviso legal</span>
 
     let __es = null;
     function startSSE(nroOrden) {
-        try { if (__es) { __es.close(); __es = null; } } catch {}
+        try {
+            if (__es) { __es.close(); __es = null; }
+        } catch {}
+
         if (!nroOrden) return;
+
         const url = `/public/notificaciones/stream?nroOrden=${encodeURIComponent(nroOrden)}`;
         __es = new EventSource(url);
+
         __es.addEventListener('connected', () => {});
         __es.addEventListener('listo-retirar', (ev) => {
             __showToast(ev?.data || 'Tu motor está listo para retirar');
         });
-        __es.onerror = () => { /* opcional: reconexión custom */ };
+
+        __es.onerror = () => { /* reconexión opcional */ };
     }
 </script>
+
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
