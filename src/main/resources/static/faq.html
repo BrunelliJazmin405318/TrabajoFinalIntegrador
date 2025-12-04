@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Preguntas Frecuentes | Rectificadora</title>
+    <title>Preguntas Frecuentes | Rectificaciones</title>
     <link
             href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
             rel="stylesheet"
@@ -28,6 +28,7 @@
             background-size: 260px 260px;
         }
 
+        /* ===== NAVBAR ===== */
         .main-header {
             background: var(--recti-white);
             border-bottom: none;
@@ -141,6 +142,7 @@
             .btn-login { margin-bottom: 1rem; }
         }
 
+        /* ===== LAYOUT ===== */
         .page-wrap {
             max-width: 900px;
             margin: 60px auto 70px;
@@ -151,7 +153,7 @@
             display: flex;
             align-items: center;
             gap: 14px;
-            margin-bottom: 24px;
+            margin-bottom: 16px;
         }
 
         .page-title h1 {
@@ -165,6 +167,7 @@
             color: white;
             border-radius: 6px;
             padding: .3rem .6rem;
+            font-size: .8rem;
         }
 
         a { color: inherit; text-decoration: none; }
@@ -182,6 +185,107 @@
             flex: 1 0 auto;
         }
 
+        /* ===== HERO CARD FAQ ===== */
+        .faq-hero {
+            background: rgba(255,255,255,0.9);
+            border-radius: 20px;
+            padding: 20px 22px;
+            box-shadow: 0 12px 30px rgba(0,0,0,.08);
+            border: 1px solid rgba(0,0,0,0.03);
+            display: flex;
+            gap: 16px;
+            align-items: flex-start;
+            margin-bottom: 24px;
+            animation: fadeUp .45s ease-out;
+        }
+
+        .faq-hero-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 999px;
+            background: rgba(229,57,53,0.08);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--recti-red-dark);
+            font-size: 1.5rem;
+        }
+
+        .faq-hero-title {
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .faq-hero-text {
+            margin: 0;
+            font-size: .95rem;
+            color: #555;
+        }
+
+        /* ===== ACCORDION FAQ ===== */
+        .faq-accordion {
+            border-radius: 20px;
+            overflow: hidden;
+            background: rgba(255,255,255,0.92);
+            box-shadow: 0 12px 30px rgba(0,0,0,.08);
+            border: 1px solid rgba(0,0,0,0.03);
+            animation: fadeUp .5s ease-out .05s both;
+        }
+
+        .faq-accordion .accordion-item {
+            border: none;
+            border-bottom: 1px solid rgba(0,0,0,0.04);
+        }
+
+        .faq-accordion .accordion-item:last-child {
+            border-bottom: none;
+        }
+
+        .faq-accordion .accordion-button {
+            font-weight: 600;
+            font-size: .95rem;
+            padding: 0.9rem 1.2rem;
+            background: transparent;
+        }
+
+        .faq-accordion .accordion-button.collapsed {
+            background: transparent;
+        }
+
+        .faq-accordion .accordion-button:hover {
+            background: #fff7f7;
+        }
+
+        .faq-accordion .accordion-button:focus {
+            box-shadow: 0 0 0 0.12rem rgba(229,57,53,0.25);
+        }
+
+        .faq-accordion .accordion-body {
+            font-size: .93rem;
+            color: #555;
+            padding: 0.8rem 1.2rem 1rem;
+        }
+
+        .faq-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: .18rem .55rem;
+            border-radius: 999px;
+            background: #fff3e0;
+            color: #e65100;
+            font-size: .75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: .05em;
+        }
+
+        .faq-accordion .accordion-button::after {
+            /* icono flecha más discreto */
+            filter: grayscale(1);
+        }
+
+        /* ===== FOOTER ===== */
         .site-footer {
             background: #111;
             color: #ccc;
@@ -282,6 +386,18 @@
                 width: 100%;
             }
         }
+
+        /* ===== ANIMACIONES ===== */
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
     </style>
 </head>
 <body>
@@ -290,7 +406,7 @@
     <div class="main-header-inner">
         <a href="/home.html" class="nav-logo">
             <span class="nav-logo-mark">R</span>
-            <span>RECTIFICADORA CORNEJO</span>
+            <span>RECTIFICACIONES CORNEJO</span>
         </a>
 
         <button class="nav-toggle"><i class="bi bi-list"></i></button>
@@ -298,7 +414,7 @@
         <nav id="mainNav" class="nav-main">
             <ul class="nav-list">
                 <li><a href="/consulta.html" class="nav-link">Consulta</a></li>
-                <li><a href="/historial.html" class="nav-link">Historial</a></li>
+<!--                <li><a href="/historial.html" class="nav-link">Historial</a></li>-->
                 <li><a href="/estado-solicitud.html" class="nav-link">Solicitud</a></li>
             </ul>
             <a href="/login.html" class="btn-login">Login taller</a>
@@ -307,107 +423,180 @@
 </header>
 
 <main class="page-wrap">
+    <section class="mt-4 text-end">
+        <a href="/index.html" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left"></i> Volver al inicio
+        </a>
+    </section>
     <div class="page-title">
         <h1>Preguntas Frecuentes</h1>
         <span class="badge">Ayuda en línea</span>
     </div>
 
-    <p class="mb-4">
-        En esta sección respondemos las dudas más comunes sobre el uso del sistema
-        de seguimiento y presupuestos de la <strong>Rectificadora Cornejo</strong>.
-    </p>
-
-    <div class="mb-3">
-        <h2 class="h6">
-            <i class="bi bi-question-circle me-1"></i>
-            ¿Cómo hago una solicitud de presupuesto?
-        </h2>
-        <p class="mb-0">
-            Desde la página principal podés ingresar a <strong>“Pedir cotización”</strong>
-            o al formulario de solicitud. Completás los datos del vehículo, el problema
-            que notaste y tus datos de contacto. Una vez enviada, vas a recibir un número
-            de solicitud para seguir el estado.
-        </p>
-    </div>
-
-    <div class="mb-3">
-        <h2 class="h6">
-            <i class="bi bi-question-circle me-1"></i>
-            ¿Cuánto tarda en responderse una solicitud?
-        </h2>
-        <p class="mb-0">
-            El tiempo puede variar según la carga de trabajo, pero normalmente la revisión
-            y decisión del presupuesto se realiza dentro de las <strong>24 a 48 horas hábiles</strong>.
-            Cuando se actualiza el estado, se envía una notificación al correo registrado.
-        </p>
-    </div>
-
-    <div class="mb-3">
-        <h2 class="h6">
-            <i class="bi bi-question-circle me-1"></i>
-            ¿Cómo consulto el estado de mi motor?
-        </h2>
-        <p class="mb-0">
-            Podés usar la sección <strong>“Consulta”</strong> ingresando el número de orden
-            (por ejemplo, <code>OT-0001</code>). Desde allí vas a ver el estado actual y
-            las fechas de garantía, si corresponden.
-        </p>
-    </div>
-
-    <div class="mb-3">
-        <h2 class="h6">
-            <i class="bi bi-question-circle me-1"></i>
-            ¿Cómo pago la seña del trabajo?
-        </h2>
-        <p class="mb-0">
-            Una vez que tu presupuesto está <strong>APROBADO</strong>, el sistema puede habilitar
-            el botón de pago de seña desde el detalle del presupuesto. Dependiendo del caso,
-            se puede abonar mediante medios electrónicos o registrarse un pago manual en el taller.
-        </p>
-    </div>
-
-    <div class="mb-3">
-        <h2 class="h6">
-            <i class="bi bi-question-circle me-1"></i>
-            Hice un pago y no veo el cambio de estado, ¿qué hago?
-        </h2>
-        <p class="mb-0">
-            Algunos pagos electrónicos pueden demorar unos minutos en acreditarse.
-            Si ya pasó un tiempo razonable o fue un pago en efectivo, te sugerimos
-            comunicarte con el taller para que puedan verificarlo y actualizarlo
-            en el sistema.
-        </p>
-    </div>
-
-    <div class="mb-3">
-        <h2 class="h6">
-            <i class="bi bi-question-circle me-1"></i>
-            ¿Puedo descargar una factura o comprobante?
-        </h2>
-        <p class="mb-0">
-            Cuando se encuentra disponible, vas a poder descargar el comprobante
-            desde el enlace enviado por correo o desde la sección de seguimiento
-            correspondiente.
-        </p>
-    </div>
-
-    <div class="mb-4">
-        <h2 class="h6">
-            <i class="bi bi-question-circle me-1"></i>
-            Tengo otra duda, ¿cómo los contacto?
-        </h2>
-        <p class="mb-0">
-            Podés usar los datos de contacto publicados en la sección
-            <a href="/index.html#contacto"><strong>Contacto</strong></a> o acercarte
-            al local para recibir asesoramiento personalizado.
-        </p>
-    </div>
-
-    <section class="mt-4">
-        <a href="/index.html" class="btn btn-outline-secondary btn-sm">
-            <i class="bi bi-arrow-left"></i> Volver al inicio
-        </a>
+    <!-- Tarjeta de intro -->
+    <section class="faq-hero">
+        <div class="faq-hero-icon">
+            <i class="bi bi-chat-dots"></i>
+        </div>
+        <div>
+            <div class="faq-hero-title">¿Tenés dudas sobre el sistema?</div>
+            <p class="faq-hero-text">
+                Acá vas a encontrar respuestas rápidas sobre solicitudes de presupuesto,
+                pagos, seguimiento de tu motor y comprobantes. Si algo no aparece,
+                siempre podés escribirnos o acercarte al taller.
+            </p>
+            <span class="faq-pill mt-1"><i class="bi bi-lightning-charge-fill"></i> Respuestas rápidas</span>
+        </div>
     </section>
+
+    <!-- Acordeón de preguntas -->
+    <div class="accordion faq-accordion" id="faqAccordion">
+
+        <div class="accordion-item">
+            <h2 class="accordion-header" id="faq1-heading">
+                <button class="accordion-button collapsed" type="button"
+                        data-bs-toggle="collapse" data-bs-target="#faq1"
+                        aria-expanded="false" aria-controls="faq1">
+                    <i class="bi bi-question-circle me-2"></i>
+                    ¿Cómo hago una solicitud de presupuesto?
+                </button>
+            </h2>
+            <div id="faq1" class="accordion-collapse collapse"
+                 aria-labelledby="faq1-heading" data-bs-parent="#faqAccordion">
+                <div class="accordion-body">
+                    Desde la página principal podés ingresar a <strong>“Pedir cotización”</strong>
+                    o al formulario de solicitud. Completás los datos del vehículo, el problema
+                    que notaste y tus datos de contacto. Al enviarla, el sistema genera un
+                    <strong>número de solicitud</strong> para que puedas seguir el estado.
+                </div>
+            </div>
+        </div>
+
+        <div class="accordion-item">
+            <h2 class="accordion-header" id="faq2-heading">
+                <button class="accordion-button collapsed" type="button"
+                        data-bs-toggle="collapse" data-bs-target="#faq2"
+                        aria-expanded="false" aria-controls="faq2">
+                    <i class="bi bi-hourglass-split me-2"></i>
+                    ¿Cuánto tarda en responderse una solicitud?
+                </button>
+            </h2>
+            <div id="faq2" class="accordion-collapse collapse"
+                 aria-labelledby="faq2-heading" data-bs-parent="#faqAccordion">
+                <div class="accordion-body">
+                    El tiempo puede variar según la carga de trabajo, pero normalmente la revisión
+                    y decisión del presupuesto se realiza dentro de las
+                    <strong>24 a 48 horas hábiles</strong>.
+                    Cuando se actualiza el estado, se envía una notificación al correo registrado
+                    o al medio de contacto que dejaste.
+                </div>
+            </div>
+        </div>
+
+        <div class="accordion-item">
+            <h2 class="accordion-header" id="faq3-heading">
+                <button class="accordion-button collapsed" type="button"
+                        data-bs-toggle="collapse" data-bs-target="#faq3"
+                        aria-expanded="false" aria-controls="faq3">
+                    <i class="bi bi-gear-wide-connected me-2"></i>
+                    ¿Cómo consulto el estado de mi motor?
+                </button>
+            </h2>
+            <div id="faq3" class="accordion-collapse collapse"
+                 aria-labelledby="faq3-heading" data-bs-parent="#faqAccordion">
+                <div class="accordion-body">
+                    Podés usar la sección <strong>“Consulta”</strong> ingresando el número de orden
+                    (por ejemplo, <code>OT-0001</code>). Vas a ver:
+                    <ul class="mb-0 mt-1">
+                        <li>El <strong>estado actual</strong> de la orden.</li>
+                        <li>Las fechas de <strong>garantía</strong>, si corresponden.</li>
+                        <li>El <strong>historial de etapas</strong> que recorrió tu motor.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="accordion-item">
+            <h2 class="accordion-header" id="faq4-heading">
+                <button class="accordion-button collapsed" type="button"
+                        data-bs-toggle="collapse" data-bs-target="#faq4"
+                        aria-expanded="false" aria-controls="faq4">
+                    <i class="bi bi-credit-card me-2"></i>
+                    ¿Cómo pago la seña del trabajo?
+                </button>
+            </h2>
+            <div id="faq4" class="accordion-collapse collapse"
+                 aria-labelledby="faq4-heading" data-bs-parent="#faqAccordion">
+                <div class="accordion-body">
+                    Una vez que tu presupuesto está <strong>APROBADO</strong>, el sistema puede habilitar
+                    el botón de pago de seña desde el detalle del presupuesto. Dependiendo del caso,
+                    se puede abonar mediante medios electrónicos (por ejemplo, link de pago)
+                    o registrarse un pago manual directamente en el taller.
+                </div>
+            </div>
+        </div>
+
+        <div class="accordion-item">
+            <h2 class="accordion-header" id="faq5-heading">
+                <button class="accordion-button collapsed" type="button"
+                        data-bs-toggle="collapse" data-bs-target="#faq5"
+                        aria-expanded="false" aria-controls="faq5">
+                    <i class="bi bi-exclamation-circle me-2"></i>
+                    Hice un pago y no veo el cambio de estado, ¿qué hago?
+                </button>
+            </h2>
+            <div id="faq5" class="accordion-collapse collapse"
+                 aria-labelledby="faq5-heading" data-bs-parent="#faqAccordion">
+                <div class="accordion-body">
+                    Algunos pagos electrónicos pueden demorar unos minutos en acreditarse.
+                    Si ya pasó un tiempo razonable o fue un pago en efectivo, te sugerimos
+                    comunicarte con el taller para que puedan verificarlo y actualizarlo
+                    en el sistema. Guardá el comprobante por cualquier duda.
+                </div>
+            </div>
+        </div>
+
+        <div class="accordion-item">
+            <h2 class="accordion-header" id="faq6-heading">
+                <button class="accordion-button collapsed" type="button"
+                        data-bs-toggle="collapse" data-bs-target="#faq6"
+                        aria-expanded="false" aria-controls="faq6">
+                    <i class="bi bi-file-earmark-text me-2"></i>
+                    ¿Puedo descargar una factura o comprobante?
+                </button>
+            </h2>
+            <div id="faq6" class="accordion-collapse collapse"
+                 aria-labelledby="faq6-heading" data-bs-parent="#faqAccordion">
+                <div class="accordion-body">
+                    Cuando se encuentra disponible, vas a poder descargar el comprobante
+                    desde el enlace enviado por correo o desde la sección de seguimiento
+                    correspondiente. Si no lo ves, podés solicitarlo directamente en el taller.
+                </div>
+            </div>
+        </div>
+
+        <div class="accordion-item">
+            <h2 class="accordion-header" id="faq7-heading">
+                <button class="accordion-button collapsed" type="button"
+                        data-bs-toggle="collapse" data-bs-target="#faq7"
+                        aria-expanded="false" aria-controls="faq7">
+                    <i class="bi bi-telephone-outbound me-2"></i>
+                    Tengo otra duda, ¿cómo los contacto?
+                </button>
+            </h2>
+            <div id="faq7" class="accordion-collapse collapse"
+                 aria-labelledby="faq7-heading" data-bs-parent="#faqAccordion">
+                <div class="accordion-body">
+                    Podés usar los datos de contacto publicados en la sección
+                    <a href="/index.html#contacto"><strong>Contacto</strong></a> o acercarte
+                    al local para recibir asesoramiento personalizado. También podés mencionarnos
+                    el número de orden o solicitud para que la atención sea más rápida.
+                </div>
+            </div>
+        </div>
+
+    </div>
+
 </main>
 
 <footer class="site-footer">
@@ -416,14 +605,14 @@
         <div class="footer-top">
             <div class="footer-brand">
                 <div class="footer-logo-mark">R</div>
-                <span class="footer-logo-text">RECTIFICADORA CORNEJO</span>
+                <span class="footer-logo-text">RECTIFICACIONES CORNEJO</span>
             </div>
 
             <div class="footer-links">
                 <div class="footer-column">
                     <h4>Soluciones</h4>
                     <a href="/consulta.html">Estado del motor</a>
-                    <a href="/historial.html">Historial</a>
+<!--                    <a href="/historial.html">Historial</a>-->
                     <a href="/estado-solicitud.html">Estado de solicitud</a>
                 </div>
 
