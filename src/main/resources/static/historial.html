@@ -743,45 +743,45 @@
 
 
 <!-- ======= TOAST HU13 ======= -->
-<div class="position-fixed bottom-0 end-0 p-3" style="z-index:1080">
-    <div id="toastNotif" class="toast align-items-center text-bg-success border-0" role="alert">
-        <div class="d-flex">
-            <div class="toast-body" id="toastBody">Notificación</div>
-            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
-        </div>
-    </div>
-</div>
+<!--<div class="position-fixed bottom-0 end-0 p-3" style="z-index:1080">-->
+<!--    <div id="toastNotif" class="toast align-items-center text-bg-success border-0" role="alert">-->
+<!--        <div class="d-flex">-->
+<!--            <div class="toast-body" id="toastBody">Notificación</div>-->
+<!--            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>-->
+<!--        </div>-->
+<!--    </div>-->
+<!--</div>-->
 
-<!-- ======= SSE HU13 ======= -->
-<script>
-    function __showToast(msg) {
-        const el = document.getElementById('toastNotif');
-        const body = document.getElementById('toastBody');
-        if (!el || !body) return;
-        body.textContent = msg || 'Tu motor está listo para retirar';
-        const t = new bootstrap.Toast(el, { delay: 6000 });
-        t.show();
-    }
+<!--&lt;!&ndash; ======= SSE HU13 ======= &ndash;&gt;-->
+<!--<script>-->
+<!--    function __showToast(msg) {-->
+<!--        const el = document.getElementById('toastNotif');-->
+<!--        const body = document.getElementById('toastBody');-->
+<!--        if (!el || !body) return;-->
+<!--        body.textContent = msg || 'Tu motor está listo para retirar';-->
+<!--        const t = new bootstrap.Toast(el, { delay: 6000 });-->
+<!--        t.show();-->
+<!--    }-->
 
-    let __es = null;
-    function startSSE(nroOrden) {
-        try {
-            if (__es) { __es.close(); __es = null; }
-        } catch {}
+<!--    let __es = null;-->
+<!--    function startSSE(nroOrden) {-->
+<!--        try {-->
+<!--            if (__es) { __es.close(); __es = null; }-->
+<!--        } catch {}-->
 
-        if (!nroOrden) return;
+<!--        if (!nroOrden) return;-->
 
-        const url = `/public/notificaciones/stream?nroOrden=${encodeURIComponent(nroOrden)}`;
-        __es = new EventSource(url);
+<!--        const url = `/public/notificaciones/stream?nroOrden=${encodeURIComponent(nroOrden)}`;-->
+<!--        __es = new EventSource(url);-->
 
-        __es.addEventListener('connected', () => {});
-        __es.addEventListener('listo-retirar', (ev) => {
-            __showToast(ev?.data || 'Tu motor está listo para retirar');
-        });
+<!--        __es.addEventListener('connected', () => {});-->
+<!--        __es.addEventListener('listo-retirar', (ev) => {-->
+<!--            __showToast(ev?.data || 'Tu motor está listo para retirar');-->
+<!--        });-->
 
-        __es.onerror = () => { /* reconexión opcional */ };
-    }
-</script>
+<!--        __es.onerror = () => { /* reconexión opcional */ };-->
+<!--    }-->
+<!--</script>-->
 
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
