@@ -12,169 +12,263 @@
 
     <style>
         :root {
-            --recti-red: #e53935;
-            --recti-red-dark: #c62828;
-            --recti-black: #111;
-            --recti-white: #ffffff;
-            --recti-bg-light: #f3f3f3;
-            --recti-card-light: #ffffff;
+            --primary: #d65a5a;          /* rojo aesthetic suave */
+            --primary-dark: #b14444;     /* rojo más profundo */
+            --bg-light: #f5f5f5;
+            --bg-card: #ffffff;
+            --text-main: #222;
+            --text-soft: #555;
+            --border-soft: #e6e6e6;
+
+            --chart-bar: #bfbfbf; /* 🆕 barras del gráfico en gris */
         }
 
+        /* ===== BODY ===== */
         body {
             margin: 0;
-            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-            background: var(--recti-bg-light) url("/img/fondo-figura.png") repeat;
-            background-size: 260px;
-            color: var(--recti-black);
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
+            font-family: "Inter", system-ui;
+            background: var(--bg-light);
+            color: var(--text-main);
         }
 
-        /* ===== MINI NAV SUPERIOR ===== */
+        /* ===== NAV ===== */
         .mini-nav {
-            position: sticky;
-            top: 0;
-            z-index: 1100;
-            background: rgba(255,255,255,0.92);
-            backdrop-filter: blur(8px);
-            border-bottom: 1px solid rgba(0,0,0,0.05);
+            background: #fff;
+            border-bottom: 1px solid var(--border-soft);
+            padding: .4rem 0;
         }
 
         .mini-nav-inner {
             max-width: 1200px;
-            margin: 0 auto;
-            padding: .45rem 1rem;
+            margin: auto;
+            padding: 0 1rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-size: .85rem;
         }
 
         .mini-nav-left a {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: .25rem .7rem;
-            border-radius: 999px;
-            border: 1px solid rgba(0,0,0,0.08);
+            padding: .4rem .9rem;
+            border-radius: 10px;
             background: #fff;
+            border: 1px solid var(--border-soft);
+            text-decoration: none;
+            color: var(--text-main);
+            transition: .2s;
         }
-
         .mini-nav-left a:hover {
-            border-color: rgba(0,0,0,0.18);
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary-dark);
         }
 
         .mini-nav-pill {
-            padding: .25rem .7rem;
-            border-radius: 999px;
-            background: #111;
+            padding: .38rem .95rem;
+            border-radius: 12px;
+            background: var(--primary);
             color: white;
             font-size: .8rem;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
         }
 
-        /* ===== PAGE WRAP ===== */
+        /* ===== CONTENIDO ===== */
         main.page-wrap {
             max-width: 1200px;
-            margin: 0 auto;
-            padding: 30px 16px 40px;
-            flex: 1 0 auto;
-            width: 100%;
+            margin: auto;
+            padding: 28px 16px 40px;
         }
 
+        /* TITULOS */
         .page-header h1 {
-            margin: 0;
             font-size: 1.9rem;
-            font-weight: 700;
-            letter-spacing: .03em;
+            font-weight: 600;
+            margin-bottom: 6px;
         }
 
         .badge-report {
-            background: var(--recti-red);
-            color: #fff;
-            padding: .35rem .75rem;
-            border-radius: 999px;
-            font-size: .78rem;
-            text-transform: uppercase;
-            letter-spacing: .06em;
+            background: var(--primary);
+            padding: .33rem .85rem;
+            border-radius: 8px;
+            color: white;
+            font-size: .75rem;
         }
 
-        /* ===== CARD ===== */
+        /* ===== TARJETAS ===== */
         .card {
             border-radius: 16px;
-            background: rgba(255,255,255,0.96);
-            border: 1px solid rgba(0,0,0,0.04);
-            box-shadow: 0 12px 30px rgba(0,0,0,0.08);
-            animation: fadeIn .5s ease forwards;
+            background: var(--bg-card);
+            border: 1px solid var(--border-soft);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.05);
+            transition: .25s ease;
+            width: 100%; /* 🆕 cards alineadas visualmente */
         }
 
-        @keyframes fadeIn {
-            0% {opacity: 0; transform: translateY(8px);}
-            100% {opacity: 1; transform: translateY(0);}
+        .card:hover {
+            box-shadow: 0 12px 26px rgba(0,0,0,0.07);
         }
 
-        .table thead th { color:#444; }
-        .badge { font-size:.75rem; }
+        .card-body {
+            padding: 24px;
+        }
 
-        footer {
+        /* ===== INPUTS ===== */
+        .form-control-sm {
+            border-radius: 10px;
+            border: 1px solid var(--border-soft);
+            padding: .35rem .6rem;
+        }
+
+        /* ===== BOTONES ===== */
+        .btn-sm {
+            border-radius: 10px;
+            padding: .4rem .9rem;
             font-size: .8rem;
-            padding: 12px 16px;
+            font-weight: 500;
+        }
+
+        /* outline aesthetic */
+        .btn-outline-dark {
+            border: 1px solid var(--border-soft);
+            background: white;
+            color: var(--text-main);
+        }
+        .btn-outline-dark:hover {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary-dark);
+        }
+
+        /* 🆕 botones principales → blanco + rojo aesthetic */
+        .btn-primary {
+            background: white !important;
+            color: var(--primary) !important;
+            border: 1px solid var(--primary) !important;
+        }
+        .btn-primary:hover {
+            background: var(--primary) !important;
+            color: white !important;
+        }
+
+        /* 🆕 botón exportar blanco con borde rojo */
+        .btn-success {
+            background: white !important;
+            color: var(--primary) !important;
+            border: 1px solid var(--primary) !important;
+        }
+        .btn-success:hover {
+            background: var(--primary) !important;
+            color: white !important;
+        }
+
+        /* ===== TABLA ===== */
+        .table thead th {
+            background: var(--bg-light);
+            color: var(--text-soft);
+            border-bottom: 1px solid var(--border-soft);
+            font-weight: 600;
+        }
+
+        .badge {
+            background: var(--primary) !important;
+        }
+
+        /* ===== GRAFICO ===== */
+
+        /* 🆕 barras más finas visualmente */
+        canvas {
+            padding: 20px 60px !important;
+        }
+
+        #chartClientes {
+            max-height: 240px !important;
+        }
+
+        /* 🆕 Cards de ranking bien alineadas verticales */
+        @media (min-width: 992px) {
+            .row.g-3 {
+                display: flex;
+                flex-direction: column;
+                gap: 25px;
+            }
+            .row.g-3 > .col-lg-6 {
+                width: 100%;
+            }
+        }
+
+        /* ===== FOOTER ===== */
+        footer {
+            margin-top: 40px;
+            padding: 20px;
             text-align: center;
-            color: #555;
-            background: rgba(255,255,255,0.9);
-            border-top: 1px solid rgba(0,0,0,0.05);
+            font-size: .85rem;
+            color: #777;
+            border-top: 1px solid var(--border-soft);
+            background: #fff;
         }
     </style>
+
+
+
 </head>
 
 <body>
 
-<!-- NAV SUPERIOR -->
+<!-- NAV -->
 <div class="mini-nav">
     <div class="mini-nav-inner">
         <div class="mini-nav-left">
-            <a href="/admin-menu.html"><i class="bi bi-arrow-left-short"></i> Volver al panel</a>
+            <a href="/admin-menu.html">
+                <i class="bi bi-arrow-left-short"></i> Volver al panel
+            </a>
         </div>
-        <div class="mini-nav-right">
-            <span class="mini-nav-pill"><i class="bi bi-bar-chart-fill"></i> Reporte</span>
+        <div>
+            <span class="mini-nav-pill">
+                <i class="bi bi-bar-chart-fill"></i> Reporte
+            </span>
         </div>
     </div>
 </div>
 
 <main class="page-wrap">
 
+    <!-- HEADER -->
     <div class="page-header mb-4">
         <h1>Clientes frecuentes</h1>
         <span class="badge-report">Ranking Top N</span>
     </div>
 
-    <!-- FILTROS -->
+    <!-- ====== FILTROS ====== -->
     <div class="card mb-4">
         <div class="card-body">
+
             <div class="d-flex flex-wrap gap-3 align-items-end">
+
                 <div>
                     <label class="form-label small mb-1">Desde</label>
                     <input id="fFrom" type="date" class="form-control form-control-sm">
                 </div>
+
                 <div>
                     <label class="form-label small mb-1">Hasta</label>
                     <input id="fTo" type="date" class="form-control form-control-sm">
                 </div>
+
                 <div>
                     <label class="form-label small mb-1">Top</label>
-                    <input id="fLimit" type="number" min="3" max="50" step="1" value="10" class="form-control form-control-sm" style="width:90px">
+                    <input id="fLimit" type="number" min="3" max="50" value="10"
+                           class="form-control form-control-sm" style="width:90px">
                 </div>
 
-                <div class="ms-auto d-flex gap-2">
+                <!-- TOOLBAR UNIFICADA -->
+                <div class="ms-auto d-flex flex-wrap gap-2">
+
                     <button id="r7" class="btn btn-outline-dark btn-sm">Últimos 7 días</button>
                     <button id="rMes" class="btn btn-outline-dark btn-sm">Mes actual</button>
                     <button id="rYtd" class="btn btn-outline-dark btn-sm">Hasta hoy</button>
+
                     <button id="btnAplicar" class="btn btn-primary btn-sm">
                         <i class="bi bi-funnel"></i> Aplicar
                     </button>
+
                     <button id="btnRefresh" class="btn btn-primary btn-sm">
                         <i class="bi bi-arrow-repeat"></i>
                     </button>
@@ -189,17 +283,14 @@
                         </ul>
                     </div>
 
-                    <button id="btnCsv"
-                            class="btn btn-outline-dark btn-sm"
-                            data-bs-toggle="tooltip"
-                            title="Exportar en Csv">
-                        <i class="bi bi-filetype-csv"></i></button>
-                    <button id="btnPng"
-                            class="btn btn-outline-dark btn-sm"
-                            data-bs-toggle="tooltip"
-                            title="Exportar gráfico como imagen PNG">
+                    <button id="btnCsv" class="btn btn-outline-dark btn-sm" data-bs-toggle="tooltip" title="Exportar CSV">
+                        <i class="bi bi-filetype-csv"></i>
+                    </button>
+
+                    <button id="btnPng" class="btn btn-outline-dark btn-sm" data-bs-toggle="tooltip" title="Exportar PNG">
                         <i class="bi bi-image"></i>
                     </button>
+
                 </div>
             </div>
 
@@ -207,12 +298,16 @@
         </div>
     </div>
 
-    <!-- TABLA + GRÁFICO -->
+    <!-- ====== TABLA + GRAFICO ====== -->
     <div class="row g-3">
+
+        <!-- TABLA -->
         <div class="col-lg-6">
             <div class="card">
                 <div class="card-body">
+
                     <h6 class="text-secondary">Ranking (tabla)</h6>
+
                     <div class="table-responsive">
                         <table class="table table-sm align-middle">
                             <thead>
@@ -226,20 +321,28 @@
                             <tbody id="tbodyClientes"></tbody>
                         </table>
                     </div>
-                    <div id="emptyTbl" class="text-secondary small d-none">No hay datos para este período.</div>
+
+                    <div id="emptyTbl" class="text-secondary small d-none">
+                        No hay datos para este período.
+                    </div>
+
                 </div>
             </div>
         </div>
 
-        <!-- GRAFICO -->
+        <!-- GRÁFICO -->
         <div class="col-lg-6">
             <div class="card">
                 <div class="card-body">
+
                     <h6 class="text-secondary">Ranking (gráfico)</h6>
+
                     <canvas id="chartClientes" height="360"></canvas>
+
                 </div>
             </div>
         </div>
+
     </div>
 
     <p id="lastRefresh" class="text-secondary small mt-3"></p>
@@ -300,20 +403,39 @@
 
     function renderChart(labels, data){
         chart?.destroy();
-        chart = new Chart($("chartClientes"), {
+
+        const ctx = $("chartClientes").getContext("2d");
+
+        // 🎨 DEGRADÉ AESTHETIC: NEGRO → GRIS → ROJO SUAVE PERO NO PÁLIDO
+        const gradient = ctx.createLinearGradient(0, 0, 600, 0);
+        gradient.addColorStop(0, "#000000");   // negro
+        gradient.addColorStop(0.5, "#999999"); // gris aesthetic
+        gradient.addColorStop(1, "#d26a6a");   // rojo calmado, aesthetic (ni fuerte ni clarito)
+
+        chart = new Chart(ctx, {
             type: "bar",
-            data: { labels, datasets: [{ label: "Órdenes completadas", data, borderRadius: 8, backgroundColor: "#2f81f7" }] },
+            data: {
+                labels,
+                datasets: [{
+                    label: "Órdenes completadas",
+                    data,
+                    borderRadius: 8,
+                    backgroundColor: gradient   // ✨ degradé aesthetic aplicado
+                }]
+            },
             options: {
                 indexAxis: "y",
                 animation: { duration: 600 },
                 plugins: { legend: { display:false } },
                 scales: {
-                    x: { beginAtZero:true, grid:{ color:"#20262c" }, ticks:{ precision:0, stepSize:1 } },
+                    x: { beginAtZero:true, grid:{ color:"#ccc" }, ticks:{ precision:0, stepSize:1 } },
                     y: { grid:{ display:false } }
                 }
             }
         });
     }
+
+
 
     async function load(){
         try{
