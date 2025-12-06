@@ -239,22 +239,6 @@
             background-color: var(--recti-red-dark);
             border-color: var(--recti-red-dark);
         }
-
-        /* Chips de servicios y extras */
-        #serviciosGrid .btn,
-        #extrasChips .btn {
-            border-radius: 999px;
-            color: var(--recti-red-dark);   /* texto rojo */
-            /* el borde queda azul por defecto de Bootstrap (outline-primary) */
-        }
-
-        /* Chips seleccionados: fondo rojo */
-        #serviciosGrid .btn.btn-primary,
-        #extrasChips .btn.btn-primary {
-            background-color: var(--recti-red);
-            border-color: var(--recti-red);
-            color: #fff;
-        }
         /* ===== ACCIONES EN TABLA DE PRESUPUESTOS ===== */
         .tabla-presupuestos tbody tr {
             border-bottom: 1px solid rgba(0,0,0,0.03);
@@ -296,11 +280,13 @@
         .card-table {
             border-radius: 18px;
             overflow: hidden;
-            box-shadow: 0 12px 30px rgba(0,0,0,.12);
+            box-shadow: 0 12px 30px rgba(0,0,0,.10);
+            border: 1px solid rgba(0,0,0,0.04);
         }
 
         .table-scroll {
-            max-height: 60vh;
+            max-height: calc(100vh - 200px);  /* ajusta el 260 si hace falta */
+            min-height: 320px;                 /* que no quede demasiado bajita si hay pocos datos */
             overflow-y: auto;
         }
 
@@ -341,7 +327,240 @@
             gap: .25rem .35rem;
             align-items: center;
         }
+        /* ===== Ajustes diseño columna ACCIONES ===== */
+        .acciones-stack {
+            gap: .35rem;
+        }
 
+        .acciones-stack .acciones-line:first-child {
+            font-size: .75rem;
+            color: #555;
+            flex-wrap: wrap;
+        }
+
+        .acciones-stack .acciones-line:first-child .badge {
+            border-radius: 999px;
+            font-weight: 500;
+        }
+
+        .acciones-stack .acciones-line:last-child {
+            display: flex;
+            flex-wrap: wrap;
+            gap: .25rem;
+        }
+
+        /* Botones redondos un poco más discretos */
+        .btn-icon-circle {
+            width: 30px;
+            height: 30px;
+            border-radius: 999px;
+            padding: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-color: #d0d0d0 !important;
+        }
+
+        .btn-icon-circle i {
+            font-size: 1rem;
+        }
+
+        .btn-icon-circle:hover {
+            background: var(--recti-red);
+            color: #fff;
+            border-color: var(--recti-red) !important;
+        }
+
+        /* Badges más suaves en la tabla */
+        .tabla-presupuestos .badge.bg-success {
+            background: #2e7d32 !important;
+        }
+        .tabla-presupuestos .badge.bg-danger {
+            background: #c62828 !important;
+        }
+        .tabla-presupuestos .badge.bg-warning,
+        .tabla-presupuestos .badge.text-bg-warning {
+            background: #f9a825 !important;
+            color: #111 !important;
+        }
+
+        /* Layout general */
+        .layout-main {
+            margin-top: .25rem;
+        }
+
+        .card-gen .card-title i {
+            font-size: 1.2rem;
+        }
+        /* === Tabs Motor / Tapa dentro de Generar presupuesto === */
+        .card-gen .btn-outline-primary {
+            border-color: rgba(0,0,0,.15);
+            color: #333;
+            background-color: #fff;
+            transition: all .15s ease;
+        }
+
+        .card-gen .btn-outline-primary:hover {
+            border-color: var(--recti-red);
+            background-color: #fff5f5;
+            color: var(--recti-red-dark);
+        }
+
+        /* Estado seleccionado (radio checkeado) */
+        .card-gen .btn-check:checked + .btn-outline-primary {
+            background-color: var(--recti-red);
+            border-color: var(--recti-red);
+            color: #fff;
+        }
+
+        /* Para que el grupo parezca una pastilla entera */
+        .card-gen .btn-group .btn-outline-primary:first-of-type {
+            border-radius: 999px 0 0 999px;
+        }
+        .card-gen .btn-group .btn-outline-primary:last-of-type {
+            border-radius: 0 999px 999px 0;
+        }
+        /* === Caja de servicios === */
+        .servicios-box {
+            border-radius: 12px;
+            border: 1px solid rgba(0,0,0,.06);
+            background: #fafafa;
+            padding: .75rem .75rem .45rem;
+        }
+
+        /* Lista scrolleable */
+        .servicios-list {
+            max-height: 180px;
+            overflow-y: auto;
+            padding: 0;
+            margin: 0;
+        }
+
+        /* Cada opción de servicio */
+        .servicio-option {
+            display: flex;
+            gap: .45rem;
+            align-items: flex-start;
+            padding: .25rem .1rem;
+            font-size: .9rem;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: background-color .12s ease;
+        }
+
+        .servicio-option input {
+            margin-top: .25rem;
+        }
+
+        .servicio-option:hover {
+            background-color: #fff;
+        }
+
+        /* Tags de resumen abajo */
+        .servicios-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: .35rem;
+            min-height: 1.4rem;
+        }
+
+        .servicios-tags .tag {
+            display: inline-flex;
+            align-items: center;
+            gap: .25rem;
+            border-radius: 999px;
+            background: #ffe5e5;
+            color: var(--recti-red-dark);
+            padding: .15rem .5rem;
+            font-size: .75rem;
+        }
+
+        .servicios-tags .tag button {
+            border: none;
+            background: transparent;
+            padding: 0;
+            font-size: .85rem;
+            line-height: 1;
+        }
+        .card-gen {
+            transition: box-shadow .2s ease, transform .15s ease;
+        }
+
+        .card-gen:hover {
+            box-shadow: 0 18px 40px rgba(0,0,0,.12);
+            transform: translateY(-1px);
+        }
+        .servicio-tag {
+            animation: fadeInTag .18s ease-out;
+        }
+
+        @keyframes fadeInTag {
+            from { opacity: 0; transform: translateY(4px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        /* Encabezados */
+        .tabla-presupuestos thead th:nth-child(1),
+        .tabla-presupuestos thead th:nth-child(3),
+        .tabla-presupuestos thead th:nth-child(5),
+        .tabla-presupuestos thead th:nth-child(6),
+        .tabla-presupuestos thead th:nth-child(7) {
+            text-align: center;
+        }
+
+        .tabla-presupuestos thead th:nth-child(4) { /* Total */
+            text-align: right;
+        }
+
+        /* Celdas */
+        .tabla-presupuestos tbody td:nth-child(1),
+        .tabla-presupuestos tbody td:nth-child(3),
+        .tabla-presupuestos tbody td:nth-child(5),
+        .tabla-presupuestos tbody td:nth-child(6),
+        .col-acciones {
+            text-align: center;
+        }
+
+        .tabla-presupuestos tbody td:nth-child(4) { /* Total */
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+            font-weight: 600;
+        }
+        /* Línea de info arriba de los botones en la columna Acciones */
+        .acciones-meta {
+            font-size: .72rem;
+            color: #666;
+            display: flex;
+            flex-wrap: wrap;
+            gap: .25rem;
+        }
+
+        /* Pastillitas neutras (OT, factura, seña, etc.) */
+        .acciones-pill {
+            padding: .1rem .45rem;
+            border-radius: 999px;
+            background: #f3f3f3;
+        }
+
+        /* Pastillita de alerta suave (ej: seña pendiente) */
+        .acciones-pill--alert {
+            background: #fff4d3;
+            color: #7a5a00;
+        }
+        /* Botones de acciones todos grisecitos por defecto */
+        .acciones-stack .btn-icon-circle,
+        .acciones-stack .btn-sm {
+            border-color: #d0d0d0 !important;
+            color: #555;
+        }
+
+        /* El hover sigue usando tu rojo de marca */
+        .acciones-stack .btn-icon-circle:hover,
+        .acciones-stack .btn-sm:hover {
+            background: var(--recti-red);
+            color: #fff;
+            border-color: var(--recti-red) !important;
+        }
+        
     </style>
 </head>
 <body>
@@ -380,124 +599,144 @@
         </div>
     </header>
 
-    <!-- Generación rápida -->
-    <div class="card card-gen mb-3">
-        <div class="card-body">
-            <h5 class="card-title mb-3">
-                <i class="bi bi-magic me-2 text-danger"></i>
-                Generar presupuesto desde solicitud aprobada
-            </h5>
+    <!-- LAYOUT PRINCIPAL: IZQUIERDA (formularios) / DERECHA (tabla) -->
+    <div class="row g-3 layout-main">
+        <!-- COLUMNA IZQUIERDA -->
+        <div class="col-lg-4 col-12 d-flex flex-column gap-3">
+            <!-- Generación rápida -->
+            <div class="card card-gen">
+                <div class="card-body">
+                    <h5 class="card-title mb-3">
+                        <i class="bi bi-magic me-2 text-danger"></i>
+                        Generar presupuesto desde solicitud aprobada
+                    </h5>
 
-            <form id="gen" class="row g-3">
-                <div class="col-md-2">
-                    <label class="form-label">Solicitud ID</label>
-                    <input class="form-control" name="solicitudId" required>
-                    <div id="solicitudInfo" class="form-text text-muted"></div>
+                    <form id="gen" class="row g-3">
+                        <div class="col-12 col-md-6">
+                            <label class="form-label">Solicitud ID</label>
+                            <input class="form-control" name="solicitudId" required>
+                            <div id="solicitudInfo" class="form-text text-muted"></div>
+                        </div>
+
+                        <div class="col-12 col-md-6">
+                            <label class="form-label">Tipo vehículo</label>
+                            <select class="form-select" name="vehiculoTipo" required>
+                                <option value="CONVENCIONAL">Convencional</option>
+                                <option value="IMPORTADO">Importado</option>
+                            </select>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label d-block">Pieza</label>
+                            <div class="btn-group w-100" role="group" aria-label="piezaTipo">
+                                <input type="radio" class="btn-check" name="piezaTipo" id="piezaMotor" value="MOTOR" autocomplete="off" checked data-lockable>
+                                <label class="btn btn-outline-primary w-50" for="piezaMotor">Motor</label>
+
+                                <input type="radio" class="btn-check" name="piezaTipo" id="piezaTapa" value="TAPA" autocomplete="off" data-lockable>
+                                <label class="btn btn-outline-primary w-50" for="piezaTapa">Tapa</label>
+                            </div>
+                        </div>
+
+                        <label class="form-label d-block">Servicios</label>
+
+                        <div class="servicios-box">
+                            <small class="text-muted d-block mb-1">
+                                Marcá los servicios incluidos en el presupuesto:
+                            </small>
+                            <!-- Lista scrolleable de servicios -->
+                            <div id="serviciosGrid" class="servicios-list"></div>
+
+                            <!-- Resumen de seleccionados -->
+                            <div id="serviciosSeleccionados" class="servicios-tags mt-2"></div>
+                        </div>
+
+                            <!-- Agregar otro -->
+                            <div class="input-group mt-3">
+                                <input id="srvOtro" type="text" class="form-control" placeholder="Agregar otro servicio…">
+                                <input id="srvOtroPrecio" type="number" class="form-control" placeholder="Precio ($)" min="0" step="0.01" style="max-width: 140px;">
+                                <button id="btnSrvOtro" class="btn btn-outline-secondary" type="button">
+                                    <i class="bi bi-plus-lg"></i>
+                                </button>
+                            </div>
+                        <div class="form-text">
+                            Marcá los servicios que incluye el trabajo o agregá uno personalizado con su precio.
+                        </div>
+
+
+
+                        <div class="col-12 d-grid">
+                            <button class="btn btn-primary" type="submit">
+                                <i class="bi bi-clipboard-plus me-1"></i> Generar presupuesto
+                            </button>
+                        </div>
+                    </form>
+
+                    <div id="genOk"  class="alert alert-success mt-3 d-none"></div>
+                    <div id="genErr" class="alert alert-danger  mt-3 d-none"></div>
                 </div>
+            </div>
 
-                <div class="col-md-3">
-                    <label class="form-label">Tipo vehículo</label>
-                    <select class="form-select" name="vehiculoTipo" required>
-                        <option value="CONVENCIONAL">Convencional</option>
-                        <option value="IMPORTADO">Importado</option>
-                    </select>
-                </div>
-
-                <div class="col-md-3">
-                    <label class="form-label d-block">Pieza</label>
-                    <div class="btn-group d-flex" role="group" aria-label="piezaTipo">
-                        <input type="radio" class="btn-check" name="piezaTipo" id="piezaMotor" value="MOTOR" autocomplete="off" checked data-lockable>
-                        <label class="btn btn-outline-primary" for="piezaMotor">Motor</label>
-
-                        <input type="radio" class="btn-check" name="piezaTipo" id="piezaTapa" value="TAPA" autocomplete="off" data-lockable>
-                        <label class="btn btn-outline-primary" for="piezaTapa">Tapa</label>
+            <!-- FILTROS LISTADO -->
+            <div class="card card-filters">
+                <div class="card-body">
+                    <h6 class="mb-3 text-uppercase text-muted" style="letter-spacing:.09em; font-size:.78rem;">
+                        Filtros del listado
+                    </h6>
+                    <div class="row g-2 align-items-end">
+                        <div class="col-12">
+                            <label for="fEstado" class="form-label small mb-1">Estado</label>
+                            <select id="fEstado" class="form-select">
+                                <option value="" selected>Todos</option>
+                                <option value="PENDIENTE" >Pendientes</option>
+                                <option value="APROBADO">Aprobados</option>
+                                <option value="RECHAZADO">Rechazados</option>
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label for="fSolicitud" class="form-label small mb-1">Solicitud</label>
+                            <input id="fSolicitud" class="form-control" placeholder="Ej: 15">
+                        </div>
+                        <div class="col-12 d-grid">
+                            <button id="btnBuscar" class="btn btn-secondary">
+                                <i class="bi bi-search me-1"></i> Aplicar filtros
+                            </button>
+                        </div>
                     </div>
-                </div>
-
-                <div class="col-12">
-                    <label class="form-label d-block">Servicios</label>
-
-                    <!-- GRILLA de chips -->
-                    <div id="serviciosGrid" class="row g-2"></div>
-
-                    <!-- Agregar otro -->
-                    <div class="input-group mt-3" style="max-width: 560px;">
-                        <input id="srvOtro" type="text" class="form-control" placeholder="Agregar otro servicio…">
-                        <input id="srvOtroPrecio" type="number" class="form-control" placeholder="Precio ($)" min="0" step="0.01" style="max-width: 150px;">
-                        <button id="btnSrvOtro" class="btn btn-outline-secondary" type="button">
-                            <i class="bi bi-plus-lg"></i> Agregar
-                        </button>
-                    </div>
-                    <div class="form-text">Hacé click en un servicio para seleccionarlo. Podés agregar servicios personalizados con su precio.</div>
-                </div>
-
-                <div class="col-md-3 d-grid mt-2">
-                    <button class="btn btn-primary" type="submit">
-                        <i class="bi bi-clipboard-plus me-1"></i> Generar
-                    </button>
-                </div>
-            </form>
-
-            <div id="genOk"  class="alert alert-success mt-3 d-none"></div>
-            <div id="genErr" class="alert alert-danger  mt-3 d-none"></div>
-        </div>
-    </div>
-
-    <!-- FILTROS LISTADO -->
-    <div class="card card-filters mb-3">
-        <div class="card-body">
-            <h6 class="mb-3 text-uppercase text-muted" style="letter-spacing:.09em; font-size:.78rem;">
-                Filtrar presupuestos
-            </h6>
-            <div class="row g-2 align-items-end">
-                <div class="col-md-3">
-                    <label for="fEstado" class="form-label small mb-1">Estado</label>
-                    <select id="fEstado" class="form-select">
-                        <option value="" selected>Todos</option>
-                        <option value="PENDIENTE" >Pendientes</option>
-                        <option value="APROBADO">Aprobados</option>
-                        <option value="RECHAZADO">Rechazados</option>
-                    </select>
-                </div>
-                <div class="col-md-3">
-                    <label for="fSolicitud" class="form-label small mb-1">Filtrar por Solicitud ID</label>
-                    <input id="fSolicitud" class="form-control" placeholder="Ej: 15">
-                </div>
-                <div class="col-md-2 d-grid">
-                    <button id="btnBuscar" class="btn btn-secondary mt-3 mt-md-0">
-                        <i class="bi bi-search me-1"></i> Buscar
-                    </button>
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- TABLA -->
-    <div class="card card-table">
-        <div class="card-body p-0">
-            <div class="d-flex justify-content-between align-items-center p-3 pb-2">
-                <h6 class="mb-0 text-uppercase text-muted" style="letter-spacing:.09em; font-size:.78rem;">
-                    Listado
-                </h6>
-                <small class="text-secondary">ID, solicitud, cliente, tipo, total, estado y acciones.</small>
-            </div>
+        <!-- COLUMNA DERECHA (TABLA) -->
+        <div class="col-lg-8 col-12">
+            <div class="card card-table">
+                <div class="card-body p-0">
+                    <div class="d-flex justify-content-between align-items-center p-3 pb-2">
+                        <h6 class="mb-0 text-uppercase text-muted" style="letter-spacing:.09em; font-size:.78rem;">
+                            Listado de presupuestos
+                        </h6>
+                        <small class="text-secondary">
+                            Solicitud, cliente, total, estado y acciones rápidas.
+                        </small>
+                    </div>
 
-            <div class="table-responsive table-scroll">
-                <table class="table table-bordered align-middle mb-0 table-hover tabla-presupuestos">
-                    <thead class="sticky-header">
-                    <tr>
-                        <th>ID</th>
-                        <th>Solicitud</th>
-                        <th>Cliente</th>
-                        <th>Tipo</th>
-                        <th>Total</th>
-                        <th>Estado</th>
-                        <th>Creada</th>
-                        <th class="col-acciones">Acciones</th>
-                    </tr>
-                    </thead>
-                    <tbody id="tbody"></tbody>
-                </table>
+                    <div class="table-responsive table-scroll">
+                        <table class="table table-bordered align-middle mb-0 table-hover tabla-presupuestos">
+                            <thead class="sticky-header">
+                            <tr>
+                                <!-- SACAMOS ID -->
+                                <th>Solicitud</th>
+                                <th>Cliente</th>
+                                <th>Tipo</th>
+                                <th>Total</th>
+                                <th>Estado</th>
+                                <th>Creada</th>
+                                <th class="col-acciones">Acciones</th>
+                            </tr>
+                            </thead>
+                            <tbody id="tbody"></tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -581,7 +820,7 @@
             const grid = document.getElementById("serviciosGrid");
             const wrap = document.createElement("div");
             wrap.id = "extrasChips";
-            wrap.className = "row g-2 mt-2";
+            wrap.className = "servicios-tags mt-2";   // mismo estilo que los tags de arriba
             grid.parentElement.appendChild(wrap);
         }
     }
@@ -591,17 +830,14 @@
         const cont = document.getElementById("extrasChips");
         cont.innerHTML = "";
         if (!window.extras.length) return;
+
         window.extras.forEach((ex, i) => {
             cont.insertAdjacentHTML(
                 "beforeend",
-                `<div class="col-md-4" data-extra-idx="${i}">
-           <div class="d-flex align-items-stretch">
-             <button type="button" class="btn w-100 btn-primary" data-chip="extra">
-               ${ex.nombre} (${money(ex.precio)})
-             </button>
-             <button type="button" class="btn btn-outline-danger ms-1" data-chip="extra-remove">&times;</button>
-           </div>
-         </div>`
+                `<span class="tag" data-extra-idx="${i}">
+                <span>${ex.nombre} (${money(ex.precio)})</span>
+                <button type="button" data-extra-remove="${i}">&times;</button>
+            </span>`
             );
         });
     }
@@ -610,34 +846,45 @@
         const grid = document.getElementById("serviciosGrid");
         grid.innerHTML = "";
         const base = pieza === "TAPA" ? TAPA_SERVICES : MOTOR_SERVICES;
+
         base.forEach((nombre) => {
-            const isSel = selectedServices.has(nombre);
+            const checked = selectedServices.has(nombre) ? "checked" : "";
             grid.insertAdjacentHTML(
                 "beforeend",
-                `<div class="col-md-4">
-           <button type="button"
-                   class="btn w-100 ${isSel ? "btn-primary" : "btn-outline-primary"}"
-                   data-chip="servicio"
-                   data-nombre="${nombre}">
-             ${nombre}
-           </button>
-         </div>`
+                `<label class="servicio-option">
+                <input type="checkbox"
+                       class="servicio-check"
+                       data-nombre="${nombre}"
+                       ${checked}>
+                <span>${nombre}</span>
+            </label>`
             );
         });
-        renderExtrasChips();
+
+        renderServiciosSeleccionados();
     }
 
-    function toggleChip(btn) {
-        const nombre = btn.dataset.nombre;
-        if (selectedServices.has(nombre)) {
-            selectedServices.delete(nombre);
-            btn.classList.remove("btn-primary");
-            btn.classList.add("btn-outline-primary");
-        } else {
-            selectedServices.add(nombre);
-            btn.classList.remove("btn-outline-primary");
-            btn.classList.add("btn-primary");
+    function renderServiciosSeleccionados() {
+        const cont = document.getElementById("serviciosSeleccionados");
+        if (!cont) return;
+
+        cont.innerHTML = "";
+        const items = Array.from(selectedServices);
+
+        if (items.length === 0) {
+            cont.innerHTML = `<small class="text-muted">Ningún servicio seleccionado todavía.</small>`;
+            return;
         }
+
+        items.forEach((nombre) => {
+            cont.insertAdjacentHTML(
+                "beforeend",
+                `<span class="tag servicio-tag">
+                <span>${nombre}</span>
+                <button type="button" data-tag-remove="${nombre}">&times;</button>
+            </span>`
+            );
+        });
     }
 
     function initServiciosForCurrentPieza() {
@@ -724,160 +971,170 @@
             let acciones = "-";
 
             if (p.estado === "PENDIENTE") {
+                // 🔸 Solo texto neutro + 2 botones
                 acciones =
                     `<div class="acciones-stack">
-           <div class="acciones-line">
-             <span class="badge text-bg-warning">Pendiente</span>
-           </div>
-           <div class="acciones-line">
-             <button type="button"
-                     class="btn btn-outline-success btn-sm btn-icon-circle"
-                     data-act="aprobar" data-id="${p.id}"
-                     title="Aprobar presupuesto">
-               <i class="bi bi-check2"></i>
-             </button>
-             <button type="button"
-                     class="btn btn-outline-danger btn-sm btn-icon-circle"
-                     data-act="rechazar" data-id="${p.id}"
-                     title="Rechazar presupuesto">
-               <i class="bi bi-x-lg"></i>
-             </button>
-           </div>
-         </div>`;
+                        <div class="acciones-meta">
+                            <span class="acciones-pill">Pendiente de aprobación</span>
+                        </div>
+                        <div class="acciones-line">
+                            <button type="button"
+                                    class="btn btn-outline-secondary btn-sm btn-icon-circle"
+                                    data-act="aprobar" data-id="${p.id}"
+                                    title="Aprobar presupuesto">
+                                <i class="bi bi-check2"></i>
+                            </button>
+                            <button type="button"
+                                    class="btn btn-outline-secondary btn-sm btn-icon-circle"
+                                    data-act="rechazar" data-id="${p.id}"
+                                    title="Rechazar presupuesto">
+                                <i class="bi bi-x-lg"></i>
+                            </button>
+                        </div>
+                    </div>`;
             } else if (p.estado === "APROBADO") {
-                const senaOK = (p.senaEstado || "").toUpperCase() === "ACREDITADA";
-                const finalOK = (p.finalEstado || "").toUpperCase() === "ACREDITADA";
+                const senaOK   = (p.senaEstado  || "").toUpperCase() === "ACREDITADA";
+                const finalOK  = (p.finalEstado || "").toUpperCase() === "ACREDITADA";
+                const tieneOT  = !!p.otNroOrden;
+                const tieneFactura = !!p.facturaNumero;
 
-                // 🔧 Botón Repuestos (solo si hay OT Y NO está el pago final acreditado)
-                const btnRepuestos = (!finalOK && p.otNroOrden)
+                // 🔹 Armamos las pastillitas de info
+                const metaParts = [];
+
+                if (finalOK) {
+                    metaParts.push(`<span class="acciones-pill">Pagado</span>`);
+                } else {
+                    const labelSena = senaOK ? "Seña acreditada" : "Seña pendiente";
+                    const extraClass = senaOK ? "" : " acciones-pill--alert";
+                    metaParts.push(`<span class="acciones-pill${extraClass}">${labelSena}</span>`);
+                }
+
+                if (tieneOT) {
+                    const otLimpia = String(p.otNroOrden || "").replace(/^OT-?/i, "");
+                    metaParts.push(`<span class="acciones-pill">OT ${otLimpia}</span>`);
+                }
+
+                if (tieneFactura) {
+                    const tipo = (p.facturaTipo || "B").toUpperCase();
+                    const nro = String(p.facturaNumero || "")
+                        .replace(/^F[ABC]-?/i, "")   // Saca prefijos FA, FB, FC con o sin guion
+                        .replace(/^0+/, "");         // Saca ceros a la izquierda
+
+                    metaParts.push(
+                        `<span class="acciones-pill">
+            Factura ${tipo} ${nro.padStart(3, "0")}
+        </span>`
+                    );
+                }
+
+                const metaHtml = metaParts.join("");
+
+                const btnRepuestosIcon = tieneOT
                     ? `<button type="button"
-               class="btn btn-outline-dark btn-sm ms-2"
-               data-act="repuestos"
-               data-ot-nro="${p.otNroOrden}">
-           <i class="bi bi-tools"></i> Repuestos
-       </button>`
+                               class="btn btn-outline-secondary btn-sm btn-icon-circle"
+                               data-act="repuestos"
+                               data-ot-nro="${p.otNroOrden}"
+                               title="Ver repuestos de la OT">
+                           <i class="bi bi-tools"></i>
+                       </button>`
                     : "";
 
                 if (finalOK) {
-                    const tieneFactura = !!p.facturaNumero;
-
-                    const btnRepuestosIcon = (!p.otNroOrden) ? "" : `
-        <button type="button"
-                class="btn btn-outline-dark btn-sm btn-icon-circle"
-                data-act="repuestos"
-                data-ot-nro="${p.otNroOrden}"
-                title="Ver repuestos de la OT">
-          <i class="bi bi-tools"></i>
-        </button>`;
-
+                    // ✅ Ya está pagado todo
                     if (tieneFactura) {
+                        // Pagado + Factura existente
                         acciones =
                             `<div class="acciones-stack">
-             <div class="acciones-line">
-               <span class="badge bg-success">Monto total pagado</span>
-               ${p.facturaNumero ? `<span class="text-muted small ms-1">${p.facturaNumero}</span>` : ""}
-               ${p.otNroOrden ? `<span class="badge text-bg-warning ms-1">OT: ${p.otNroOrden}</span>` : ""}
-             </div>
-             <div class="acciones-line">
-               <button type="button"
-                       class="btn btn-success btn-sm btn-icon-circle"
-                       data-act="descargar-factura"
-                       data-id="${p.id}"
-                       data-tipo="${p.facturaTipo || "B"}"
-                       title="Descargar factura ${p.facturaTipo || "B"}">
-                 <i class="bi bi-download"></i>
-               </button>
-               <a class="btn btn-outline-primary btn-sm btn-icon-circle"
-                href="/historial.html?nro=${p.otNroOrden ?? ""}"
-                target="_blank"
-                title="Ver historial de la OT">
-                <i class="bi bi-gear-wide-connected"></i>
-                </a>
-               ${btnRepuestosIcon}
-             </div>
-           </div>`;
+                                <div class="acciones-meta">
+                                    ${metaHtml}
+                                </div>
+                                <div class="acciones-line">
+                                    <button type="button"
+                                            class="btn btn-outline-secondary btn-sm btn-icon-circle"
+                                            data-act="descargar-factura"
+                                            data-id="${p.id}"
+                                            data-tipo="${p.facturaTipo || "B"}"
+                                            title="Descargar factura ${p.facturaTipo || "B"}">
+                                        <i class="bi bi-download"></i>
+                                    </button>
+                                    <a class="btn btn-outline-secondary btn-sm btn-icon-circle"
+                                       href="/historial.html?nro=${p.otNroOrden ?? ""}"
+                                       target="_blank"
+                                       title="Ver historial de la OT">
+                                        <i class="bi bi-gear-wide-connected"></i>
+                                    </a>
+                                    ${btnRepuestosIcon}
+                                </div>
+                            </div>`;
                     } else {
+                        // Pagado pero falta generar factura
                         acciones =
                             `<div class="acciones-stack">
-             <div class="acciones-line">
-               <span class="badge bg-success">Monto total pagado</span>
-               ${p.otNroOrden ? `<span class="badge text-bg-warning ms-1">OT: ${p.otNroOrden}</span>` : ""}
-             </div>
-             <div class="acciones-line">
-               <button type="button"
-                       class="btn btn-outline-success btn-sm btn-icon-circle"
-                       data-act="facturar" data-id="${p.id}"
-                       title="Generar factura (A/B/C)">
-                 <i class="bi bi-receipt"></i>
-               </button>
-               <a class="btn btn-outline-primary btn-sm btn-icon-circle"
-                href="/historial.html?nro=${p.otNroOrden ?? ""}"
-                target="_blank"
-                title="Ver historial de la OT">
-                <i class="bi bi-gear-wide-connected"></i>
-                </a>
-               ${btnRepuestosIcon}
-             </div>
-           </div>`;
+                                <div class="acciones-meta">
+                                    ${metaHtml}
+                                    <span class="acciones-pill acciones-pill--alert">Sin factura</span>
+                                </div>
+                                <div class="acciones-line">
+                                    <button type="button"
+                                            class="btn btn-outline-secondary btn-sm btn-icon-circle"
+                                            data-act="facturar" data-id="${p.id}"
+                                            title="Generar factura (A/B/C)">
+                                        <i class="bi bi-receipt"></i>
+                                    </button>
+                                    <a class="btn btn-outline-secondary btn-sm btn-icon-circle"
+                                       href="/historial.html?nro=${p.otNroOrden ?? ""}"
+                                       target="_blank"
+                                       title="Ver historial de la OT">
+                                        <i class="bi bi-gear-wide-connected"></i>
+                                    </a>
+                                    ${btnRepuestosIcon}
+                                </div>
+                            </div>`;
                     }
                 } else {
-                    const senaOK2 = (p.senaEstado || "").toUpperCase() === "ACREDITADA";
-
-                    const chip = senaOK2
-                        ? `<span class="badge bg-success">Seña acreditada</span>`
-                        : `<span class="badge bg-warning text-dark">Seña pendiente</span>`;
-
-                    const puedeCrearOT = (senaOK2 || finalOK) && !p.otNroOrden;
-
-                    const btnRepuestosIcon = (!p.otNroOrden) ? "" : `
-        <button type="button"
-                class="btn btn-outline-dark btn-sm btn-icon-circle"
-                data-act="repuestos"
-                data-ot-nro="${p.otNroOrden}"
-                title="Ver repuestos de la OT">
-          <i class="bi bi-tools"></i>
-        </button>`;
+                    // 🟡 Aprobado pero todavía en flujo de pagos
+                    const puedeCrearOT = (senaOK || finalOK) && !p.otNroOrden;
 
                     const btnCrearOT = `
-        <button type="button"
-                class="btn btn-warning btn-sm btn-icon-circle"
-                data-act="crear-ot" data-id="${p.id}"
-                ${puedeCrearOT ? "" : 'disabled title="Requiere seña acreditada o ya existe OT"'}
-                title="${puedeCrearOT ? "Crear Orden de Trabajo" : "Requiere seña acreditada o ya existe OT"}">
-          <i class="bi bi-plus-square"></i>
-        </button>`;
+                        <button type="button"
+                                class="btn btn-outline-secondary btn-sm btn-icon-circle"
+                                data-act="crear-ot" data-id="${p.id}"
+                                ${puedeCrearOT ? "" : 'disabled'}
+                                title="${puedeCrearOT ? "Crear Orden de Trabajo" : "Requiere seña acreditada o ya existe OT"}">
+                            <i class="bi bi-plus-square"></i>
+                        </button>`;
 
                     acciones =
                         `<div class="acciones-stack">
-         <div class="acciones-line">
-           ${chip}
-           ${p.otNroOrden ? `<span class="badge text-bg-warning ms-1">OT: ${p.otNroOrden}</span>` : ""}
-         </div>
-         <div class="acciones-line">
-           <button type="button"
-                   class="btn btn-outline-primary btn-sm btn-icon-circle"
-                   data-act="pago-manual"
-                   data-id="${p.id}"
-                   data-total="${p.total ?? 0}"
-                   data-sena-monto="${p.senaMonto ?? ""}"
-                   data-sena-estado="${p.senaEstado ?? ""}"
-                   data-final-estado="${p.finalEstado ?? ""}"
-                   data-ot-nro="${p.otNroOrden ?? ""}"
-                   title="Registrar pago manual">
-             <i class="bi bi-cash-coin"></i>
-           </button>
+                            <div class="acciones-meta">
+                                ${metaHtml}
+                            </div>
+                            <div class="acciones-line">
+                                <button type="button"
+                                        class="btn btn-outline-secondary btn-sm btn-icon-circle"
+                                        data-act="pago-manual"
+                                        data-id="${p.id}"
+                                        data-total="${p.total ?? 0}"
+                                        data-sena-monto="${p.senaMonto ?? ""}"
+                                        data-sena-estado="${p.senaEstado ?? ""}"
+                                        data-final-estado="${p.finalEstado ?? ""}"
+                                        data-ot-nro="${p.otNroOrden ?? ""}"
+                                        title="Registrar pago manual">
+                                    <i class="bi bi-cash-coin"></i>
+                                </button>
 
-          <a class="btn btn-outline-primary btn-sm btn-icon-circle"
-                href="/historial.html?nro=${p.otNroOrden ?? ""}"
-                target="_blank"
-                title="Ver historial de la OT">
-                <i class="bi bi-gear-wide-connected"></i>
-                </a>
+                                ${tieneOT ? `
+                                <a class="btn btn-outline-secondary btn-sm btn-icon-circle"
+                                   href="/historial.html?nro=${p.otNroOrden ?? ""}"
+                                   target="_blank"
+                                   title="Ver historial de la OT">
+                                    <i class="bi bi-gear-wide-connected"></i>
+                                </a>` : ""}
 
-           ${btnRepuestosIcon}
-           ${btnCrearOT}
-         </div>
-       </div>`;
+                                ${btnRepuestosIcon}
+                                ${btnCrearOT}
+                            </div>
+                        </div>`;
                 }
             }
 
@@ -885,15 +1142,14 @@
             tb.insertAdjacentHTML(
                 "beforeend",
                 `<tr data-row-id="${p.id}">
-           <td>${p.id}</td>
-           <td>${solicitudTxt}</td>
-           <td>${p.clienteNombre}</td>
-           <td>${p.vehiculoTipo}</td>
-           <td>${money(p.total)}</td>
-           <td><span class="badge ${badgeClass(p.estado)}">${p.estado}</span></td>
-           <td>${fmt(p.creadaEn)}</td>
-           <td>${acciones}</td>
-         </tr>`
+       <td>${solicitudTxt}</td>
+       <td>${p.clienteNombre}</td>
+       <td>${p.vehiculoTipo}</td>
+       <td>${money(p.total)}</td>
+       <td><span class="badge ${badgeClass(p.estado)}">${p.estado}</span></td>
+       <td>${fmt(p.creadaEn)}</td>
+       <td>${acciones}</td>
+     </tr>`
             );
         });
     }
@@ -1273,28 +1529,21 @@
 
     // ======= Interacciones UI =======
     document.addEventListener("click", (e) => {
-        const chip = e.target.closest('button[data-chip="servicio"]');
-        if (chip) return toggleChip(chip);
+        // Click en un servicio de la lista (checkbox “visual”)
+        const chip = e.target.closest('[data-chip="servicio"]');
+        if (chip) {
+            return;
+        }
 
-        const rm = e.target.closest('button[data-chip="extra-remove"]');
-        if (rm) {
-            const col = rm.closest('[data-extra-idx]');
-            const idx = Number(col?.dataset?.extraIdx);
+        // Click en la "x" de un extra (tag rosa)
+        const rmExtraTag = e.target.closest('button[data-extra-remove]');
+        if (rmExtraTag) {
+            const idx = Number(rmExtraTag.dataset.extraRemove);
             if (!Number.isNaN(idx)) {
                 window.extras.splice(idx, 1);
                 renderExtrasChips();
             }
             return;
-        }
-
-        const extra = e.target.closest('button[data-chip="extra"]');
-        if (extra) {
-            const col = extra.closest('[data-extra-idx]');
-            const idx = Number(col?.dataset?.extraIdx);
-            if (!Number.isNaN(idx)) {
-                window.extras.splice(idx, 1);
-                renderExtrasChips();
-            }
         }
     });
 
@@ -1330,6 +1579,39 @@
         await cargarPiezaDesdeSolicitud(sid);
         if (inpSid) inpSid.value = sid;
     }
+    document.addEventListener("change", (e) => {
+        const chk = e.target.closest(".servicio-check");
+        if (!chk) return;
+
+        const nombre = chk.dataset.nombre;
+        if (chk.checked) {
+            selectedServices.add(nombre);
+        } else {
+            selectedServices.delete(nombre);
+        }
+        renderServiciosSeleccionados();
+    });
+    document.addEventListener("click", (e) => {
+        // ... (acá ya tenés tu código de extras, pagos, etc.)
+
+        const closeTag = e.target.closest('button[data-tag-remove]');
+        if (closeTag) {
+            const nombre = closeTag.dataset.tagRemove;
+            selectedServices.delete(nombre);
+
+            // desmarco el checkbox correspondiente
+            const check = document.querySelector(
+                `.servicio-check[data-nombre="${CSS.escape(nombre)}"]`
+            );
+            if (check) check.checked = false;
+
+            renderServiciosSeleccionados();
+            return;
+        }
+
+        // resto de tu listener (extras, etc) sigue igual
+    });
+
 
     await initAutofillFromQuery();
     initServiciosForCurrentPieza();
