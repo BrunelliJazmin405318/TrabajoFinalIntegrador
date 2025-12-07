@@ -21,6 +21,9 @@
             --gray-border: #e6e6e6;
             --gray-text: #555;
             --gray-dark: #222;
+            --border-soft: #e6e6e6;
+            --text-main: #222;
+
 
             --chart-bar: #bfbfbf; /* fallback */
         }
@@ -31,28 +34,37 @@
         body {
             margin: 0;
             font-family: "Inter", system-ui;
-            background: var(--gray-soft);
-            color: var(--gray-dark);
+            background: var(--bg-light);
+            color: var(--text-main);
         }
 
-        /* =============================
-           NAV
-           ============================= */
         .mini-nav {
-            background: white;
-            border-bottom: 1px solid var(--gray-border);
-            backdrop-filter: blur(8px);
+            background: #fff;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            padding: .4rem 0;
+        }
+
+        .mini-nav-inner {
+            max-width: 1200px;
+            margin: auto;
+            padding: 0 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
         .mini-nav-left a {
-            padding: .35rem .8rem;
-            border-radius: 10px;
-            border: 1px solid var(--gray-border);
-            background: white;
-            color: var(--gray-dark);
+            padding: .25rem .7rem;
+            border-radius: 999px;
+            background: #fff;
+            border: 1px solid rgba(0,0,0,0.08);
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            text-decoration: none;
+            color: var(--text-main);
             transition: .2s;
         }
-
         .mini-nav-left a:hover {
             background: var(--primary);
             color: white;
@@ -60,70 +72,81 @@
         }
 
         .mini-nav-pill {
+            padding: .38rem .95rem;
             border-radius: 12px;
-            padding: .35rem .9rem;
             background: var(--primary);
             color: white;
             font-size: .8rem;
         }
 
-        /* =============================
-           PAGE
-           ============================= */
+        /* ===== CONTENIDO ===== */
         main.page-wrap {
-            max-width: 1100px;
+            max-width: 1200px;
             margin: auto;
             padding: 28px 16px 40px;
         }
 
+        /* TITULOS */
         .page-header h1 {
             font-size: 1.9rem;
             font-weight: 600;
+            margin-bottom: 6px;
         }
 
-        .page-header p {
-            color: var(--gray-text);
-        }
-
-        /* BADGE */
         .badge-report {
             background: var(--primary);
-            padding: .35rem .8rem;
+            padding: .33rem .85rem;
             border-radius: 8px;
             color: white;
+            font-size: .75rem;
         }
 
-        /* =============================
-           CARD GENERAL
-           ============================= */
+        /* ===== TARJETAS ===== */
         .card {
             border-radius: 16px;
-            background: white;
-            border: 1px solid var(--gray-border);
-            box-shadow: 0 6px 20px rgba(0,0,0,0.06);
+            background: var(--bg-card);
+            border: 1px solid var(--border-soft);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.05);
+            transition: .25s ease;
+            width: 100%; /* 🆕 cards alineadas visualmente */
         }
 
-        /* =============================
-           🎨 FILTROS
-           ============================= */
+        .card:hover {
+            box-shadow: 0 12px 26px rgba(0,0,0,0.07);
+        }
+
+        .card-body {
+            padding: 24px;
+        }
+
+        /* ===== INPUTS ===== */
+        .form-control-sm {
+            border-radius: 10px;
+            border: 1px solid var(--border-soft);
+            padding: .35rem .6rem;
+        }
+
+        /* ===== BOTONES ===== */
         .btn-sm {
             border-radius: 10px;
+            padding: .4rem .9rem;
             font-size: .8rem;
-            padding: .42rem .9rem;
+            font-weight: 500;
         }
 
-        /* Botones outline */
+        /* outline aesthetic */
         .btn-outline-dark {
-            border: 1px solid var(--gray-border);
+            border: 1px solid var(--border-soft);
             background: white;
-            color: var(--gray-dark);
+            color: var(--text-main);
         }
         .btn-outline-dark:hover {
             background: var(--primary);
             color: white;
+            border-color: var(--primary-dark);
         }
 
-        /* Botón aplicar, refresh → blanco con borde rojo */
+        /* 🆕 botones principales → blanco + rojo aesthetic */
         .btn-primary {
             background: white !important;
             color: var(--primary) !important;
@@ -134,7 +157,7 @@
             color: white !important;
         }
 
-        /* Exportar → blanco con borde rojo */
+        /* 🆕 botón exportar blanco con borde rojo */
         .btn-success {
             background: white !important;
             color: var(--primary) !important;
@@ -186,15 +209,15 @@
             max-height: 260px !important;
         }
 
-        /* =============================
-           FOOTER
-           ============================= */
+        /* ===== FOOTER ===== */
         footer {
-            background: white;
-            border-top: 1px solid var(--gray-border);
-            padding: 18px;
-            color: var(--gray-text);
+            margin-top: 40px;
+            padding: 20px;
+            text-align: center;
             font-size: .85rem;
+            color: #777;
+            border-top: 1px solid var(--border-soft);
+            background: #fff;
         }
     </style>
 
@@ -203,22 +226,22 @@
 <body>
 
 <!-- NAV SUPERIOR -->
+<!-- NAV -->
 <div class="mini-nav">
     <div class="mini-nav-inner">
         <div class="mini-nav-left">
             <a href="/admin-menu.html">
-                <i class="bi bi-arrow-left-short"></i>
-                Volver al panel
+                <i class="bi bi-arrow-left-short"></i> Volver al panel
             </a>
         </div>
-        <div class="mini-nav-right">
+        <div>
             <span class="mini-nav-pill">
-                <i class="bi bi-bar-chart-fill"></i>
-                Reporte
+                <i class="bi bi-bar-chart-fill"></i> Reporte
             </span>
         </div>
     </div>
 </div>
+
 
 <main class="page-wrap">
     <!-- HEADER -->
@@ -227,64 +250,62 @@
             <h1>Ingresos: Señas vs Finales</h1>
             <p>Visualizá cómo se distribuyen los ingresos entre señas y pagos finales.</p>
         </div>
-        <span class="badge-report">Dashboard</span>
     </div>
 
     <!-- Filtros / Toolbar -->
+    <!-- ====== FILTROS ====== -->
     <div class="card mb-4">
         <div class="card-body">
-            <div class="d-flex flex-wrap gap-2 align-items-end toolbar">
-                <div class="btn-group me-2" role="group" aria-label="rangos">
+
+            <div class="d-flex flex-wrap gap-3 align-items-end">
+
+                <div>
+                    <label class="form-label small mb-1">Desde</label>
+                    <input id="fFrom" type="date" class="form-control form-control-sm">
+                </div>
+
+                <div>
+                    <label class="form-label small mb-1">Hasta</label>
+                    <input id="fTo" type="date" class="form-control form-control-sm">
+                </div>
+
+                <!-- TOOLBAR UNIFICADA -->
+                <div class="ms-auto d-flex flex-wrap gap-2">
+
                     <button id="r7" class="btn btn-outline-dark btn-sm">Últimos 7 días</button>
                     <button id="rMes" class="btn btn-outline-dark btn-sm">Mes actual</button>
                     <button id="rYtd" class="btn btn-outline-dark btn-sm">Hasta hoy</button>
-                </div>
 
-                <div class="d-flex align-items-end gap-2 me-2">
-                    <div>
-                        <label class="form-label m-0 small">Desde</label>
-                        <input id="fFrom" type="date" class="form-control form-control-sm" style="width: 160px;">
-                    </div>
-                    <div>
-                        <label class="form-label m-0 small">Hasta</label>
-                        <input id="fTo" type="date" class="form-control form-control-sm" style="width: 160px;">
-                    </div>
                     <button id="btnAplicar" class="btn btn-primary btn-sm">
                         <i class="bi bi-funnel"></i> Aplicar
                     </button>
-                </div>
 
-                <div class="ms-auto d-flex flex-wrap gap-2">
-                    <!-- Exportar (PDF/XLSX) -->
-                    <div class="btn-group">
-                        <button class="btn btn-success btn-sm dropdown-toggle" data-bs-toggle="dropdown">
-                            <i class="bi bi-download me-1"></i>Exportar
-                        </button>
-                        <ul class="dropdown-menu dropdown-menu-light">
-                            <li><a class="dropdown-item" href="#" id="expPdf">PDF</a></li>
-                            <li><a class="dropdown-item" href="#" id="expXlsx">Excel (.xlsx)</a></li>
-                        </ul>
-                    </div>
-
-                    <button id="btnRefresh" class="btn btn-primary btn-sm" title="Actualizar datos">
+                    <button id="btnRefresh" class="btn btn-primary btn-sm">
                         <i class="bi bi-arrow-repeat"></i>
                     </button>
 
-                    <button id="btnCsv"
-                            class="btn btn-outline-dark btn-sm"
-                            data-bs-toggle="tooltip"
-                            title="Exportar tabla como CSV">
+                    <div class="btn-group">
+                        <button class="btn btn-success btn-sm dropdown-toggle" data-bs-toggle="dropdown">
+                            <i class="bi bi-download"></i> Exportar
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-light">
+                            <li><a class="dropdown-item" href="#" id="expPdf">PDF</a></li>
+                            <li><a class="dropdown-item" href="#" id="expXlsx">Excel</a></li>
+
+                        </ul>
+                    </div>
+
+                    <button id="btnCsv" class="btn btn-outline-dark btn-sm" data-bs-toggle="tooltip" title="Exportar CSV">
                         <i class="bi bi-filetype-csv"></i>
                     </button>
 
-                    <button id="btnPng"
-                            class="btn btn-outline-dark btn-sm"
-                            data-bs-toggle="tooltip"
-                            title="Exportar gráfico como PNG">
+                    <button id="btnPng" class="btn btn-outline-dark btn-sm" data-bs-toggle="tooltip" title="Exportar PNG">
                         <i class="bi bi-image"></i>
                     </button>
+
                 </div>
             </div>
+
             <p id="periodoTxt" class="text-secondary small mt-2 mb-0"></p>
         </div>
     </div>
@@ -403,7 +424,7 @@
         const ctx = document.getElementById("chartIngresos").getContext("2d");
 
         // 🔥 Degradé aesthetic para las barras
-        const gradient = ctx.createLinearGradient(0, 0, 600, 0);
+        const gradient = ctx.createLinearGradient(0, 300, 0, 0);
         gradient.addColorStop(0, "#000000");   // negro
         gradient.addColorStop(0.5, "#999999"); // gris
         gradient.addColorStop(1, "#d26a6a");   // rojo aesthetic intermedio
@@ -441,10 +462,14 @@
                 responsive: true,
                 plugins: { legend: { position: "bottom" } },
                 scales: {
-                    x: { grid: { color: "#ccc" } },
-                    y: { beginAtZero: true, grid: { color: "#ccc" } }
+                    x: { beginAtZero:true, grid:{ color:"#ccc" }, ticks:{ precision:0, stepSize:1 } },
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: "#ccc" }
+                    }
                 }
             }
+
         });
     }
 

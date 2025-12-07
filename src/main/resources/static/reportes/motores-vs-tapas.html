@@ -17,18 +17,27 @@
             --recti-black: #111111;
             --recti-white: #ffffff;
             --recti-bg-light: #f3f3f3;
-            --recti-card-light: #ffffff;
 
             /* Colores específicos de este reporte */
-            --c-motor:#4e79a7;
+            --c-motor:#555555;
             --c-tapa:#e15759;
+
+            /* 🎨 Paleta unificada con los otros reportes */
+            --primary: #d65a5a;
+            --primary-dark: #b14444;
+            --gray-soft: #f4f4f4;
+            --gray-border: #e6e6e6;
+            --gray-text: #555;
+            --gray-dark: #222;
+            --text-main: #222;
+            --border-soft: #e6e6e6;
         }
 
         * { box-sizing: border-box; }
 
         body{
             margin:0;
-            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
             background: var(--recti-bg-light) url("/img/fondo-figura.png") repeat;
             background-size:260px;
             color: var(--recti-black);
@@ -37,14 +46,11 @@
             flex-direction:column;
         }
 
-        /* ===== MINI NAV SUPERIOR ===== */
+        /* ===== MINI NAV SUPERIOR (misma idea que los otros) ===== */
         .mini-nav{
-            position:sticky;
-            top:0;
-            z-index:1100;
-            background:rgba(255,255,255,0.92);
-            backdrop-filter:blur(8px);
-            border-bottom:1px solid rgba(0,0,0,0.05);
+            background:#fff;
+            border-bottom:1px solid var(--gray-border);
+            padding:.4rem 0;
         }
         .mini-nav-inner{
             max-width:1200px;
@@ -59,25 +65,25 @@
             display:inline-flex;
             align-items:center;
             gap:6px;
-            padding:.25rem .7rem;
-            border-radius:999px;
-            border:1px solid rgba(0,0,0,0.08);
+            padding:.35rem .9rem;
+            border-radius:10px;
+            border:1px solid var(--gray-border);
             background:#fff;
             text-decoration:none;
-            color:#222;
+            color:var(--text-main);
+            transition:.2s;
         }
         .mini-nav-left a:hover{
-            border-color:rgba(0,0,0,0.18);
+            background:var(--primary);
+            color:#fff;
+            border-color:var(--primary-dark);
         }
-        .mini-nav-pill{
-            padding:.25rem .7rem;
-            border-radius:999px;
-            background:#111;
-            color:#f5f5f5;
-            font-size:.8rem;
-            display:inline-flex;
-            align-items:center;
-            gap:6px;
+        .mini-nav-pill {
+            padding: .38rem .95rem;
+            border-radius: 12px;
+            background: var(--primary);
+            color: white;
+            font-size: .8rem;
         }
 
         /* ===== PAGE WRAP ===== */
@@ -108,22 +114,17 @@
             font-size:.95rem;
             color:#555;
         }
-        .badge-report{
-            background:var(--recti-red);
-            color:#fff;
-            padding:.35rem .75rem;
-            border-radius:999px;
-            font-size:.78rem;
-            text-transform:uppercase;
-            letter-spacing:.06em;
-        }
 
-        /* ===== CARD GENÉRICA ===== */
+        /* ===== CARD GENÉRICA (igual look que los otros filtros) ===== */
         .card{
             border-radius:16px;
-            background:rgba(255,255,255,0.96);
-            border:1px solid rgba(0,0,0,0.04);
-            box-shadow:0 12px 30px rgba(0,0,0,0.08);
+            background:#fff;
+            border:1px solid var(--border-soft);
+            box-shadow:0 6px 20px rgba(0,0,0,0.05);
+            transition:.25s ease;
+        }
+        .card:hover{
+            box-shadow:0 12px 26px rgba(0,0,0,0.07);
         }
 
         /* ===== FILTROS / TOOLBAR ===== */
@@ -138,6 +139,52 @@
         .legend-dot.motor{ background:var(--c-motor); }
         .legend-dot.tapa{  background:var(--c-tapa);  }
 
+        /* Inputs chiquitos con bordes suaves */
+        .form-control-sm {
+            border-radius: 10px;
+            border: 1px solid var(--border-soft);
+            padding: .35rem .6rem;
+        }
+
+        /* Botones aesthetic (igual que Señas vs Finales / Motores por etapa) */
+        .btn-sm {
+            border-radius: 10px !important;
+            padding: .4rem .9rem !important;
+            font-size: .8rem !important;
+            font-weight: 500 !important;
+        }
+
+        .btn-outline-dark {
+            border: 1px solid var(--border-soft) !important;
+            background: white !important;
+            color: var(--text-main) !important;
+        }
+        .btn-outline-dark:hover {
+            background: var(--primary) !important;
+            color: white !important;
+            border-color: var(--primary-dark) !important;
+        }
+
+        .btn-primary {
+            background: white !important;
+            color: var(--primary) !important;
+            border: 1px solid var(--primary) !important;
+        }
+        .btn-primary:hover {
+            background: var(--primary) !important;
+            color: white !important;
+        }
+
+        .btn-success {
+            background: white !important;
+            color: var(--primary) !important;
+            border: 1px solid var(--primary) !important;
+        }
+        .btn-success:hover {
+            background: var(--primary) !important;
+            color: white !important;
+        }
+
         /* ===== KPIs ===== */
         .kpi{
             min-height:110px;
@@ -146,9 +193,9 @@
             justify-content:space-between;
             padding:1rem 1.25rem;
             border-radius:16px;
-            background:rgba(255,255,255,0.96);
-            border:1px solid rgba(0,0,0,0.04);
-            box-shadow:0 10px 26px rgba(0,0,0,0.08);
+            background:white;
+            box-shadow:0 10px 20px rgba(0,0,0,.05);
+            border: 2px solid var(--primary);   /* 🔴 borde rojo */
         }
         .kpi h2{
             margin:0;
@@ -192,6 +239,12 @@
             background:rgba(255,255,255,0.9);
             border-top:1px solid rgba(0,0,0,0.05);
         }
+        .card.same-height {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
     </style>
 </head>
 <body>
@@ -221,12 +274,10 @@
             <h1>Motores vs Tapas</h1>
             <p>Comparativa de trabajos de motores y tapas en el período seleccionado.</p>
         </div>
-        <div>
-            <span class="badge-report">Dashboard</span>
-        </div>
+        <div></div>
     </div>
 
-    <!-- CONTROLES / FILTROS — VERSION UNIFICADA -->
+    <!-- CONTROLES / FILTROS — IGUAL QUE MOTORES POR ETAPA -->
     <div class="card mb-4">
         <div class="card-body">
             <div class="d-flex flex-wrap gap-3 align-items-end">
@@ -244,7 +295,7 @@
                 </div>
 
                 <!-- Botonera derecha (rangos + acciones + exportar) -->
-                <div class="ms-auto d-flex gap-2">
+                <div class="ms-auto d-flex flex-wrap gap-2">
 
                     <!-- Rangos rápidos -->
                     <button id="r7" class="btn btn-outline-dark btn-sm">
@@ -252,11 +303,11 @@
                     </button>
 
                     <button id="rMes" class="btn btn-outline-dark btn-sm">
-                        Mes actual
+                        Últimos 30 días
                     </button>
 
                     <button id="rAnno" class="btn btn-outline-dark btn-sm">
-                        Año actual
+                        Hasta hoy
                     </button>
 
                     <!-- Aplicar -->
@@ -333,7 +384,7 @@
             </div>
         </div>
         <div class="col-sm-6 col-lg-3">
-            <div class="kpi">
+            <div class="kpi" data-bs-toggle="tooltip" data-bs-title="Relación entre motores y tapas. Calcula cuántos motores hay por cada tapa. Si Tapas=0, el resultado es infinito.">
                 <div>
                     <div class="sub">Ratio M/T</div>
                     <h2 id="kpiRatio">0</h2>
@@ -352,10 +403,11 @@
             </div>
         </div>
         <div class="col-lg-7">
-            <div class="card chart-wrap fade-in">
+            <div class="card chart-wrap fade-in same-height">
                 <h6 class="mb-3 text-secondary">Comparativa</h6>
-                <canvas id="chartBar" height="260"></canvas>
+                <canvas id="chartBar" height="460"></canvas>
             </div>
+
         </div>
     </div>
 
@@ -414,7 +466,7 @@
     function renderCharts(m, t){
         const labels = ["Motores", "Tapas"];
         const data = [m, t];
-        const colors = [cssVar('--c-motor') || '#4e79a7', cssVar('--c-tapa') || '#e15759'];
+        const colors = [cssVar('--c-motor') || '#555555', cssVar('--c-tapa') || '#e15759'];
 
         donut?.destroy(); bar?.destroy();
 
@@ -438,7 +490,12 @@
                 animation: { duration: 700 },
                 scales: {
                     x: { grid: { color:"#20262c" } },
-                    y: { grid: { color:"#20262c" }, ticks: { precision:0, stepSize:1 }, beginAtZero:true }
+                    y: {
+                        beginAtZero: true,
+                        suggestedMax: 15,       // 🔥 Aumenta la altura disponible del eje
+                        ticks: { stepSize: 1 },
+                        grid: { color: "#20262c" }
+                    }
                 },
                 plugins: { legend: { display:false } }
             }
@@ -527,14 +584,13 @@
     });
     $("btnPng").addEventListener("click", exportPNG);
 
-    // Rangos rápidos
+    // Rangos rápidos (mismo criterio que en los otros reportes)
     $("r7").addEventListener("click", ()=>{
         const to = new Date(); const from = new Date(); from.setDate(to.getDate()-7);
         $("fFrom").value = fmtISO(from); $("fTo").value = fmtISO(to); load();
     });
     $("rMes").addEventListener("click", ()=>{
-        const now = new Date(); const from = new Date(now.getFullYear(), now.getMonth(), 1);
-        const to   = new Date(now.getFullYear(), now.getMonth()+1, 0);
+        const to = new Date(); const from = new Date(); from.setDate(to.getDate()-30);
         $("fFrom").value = fmtISO(from); $("fTo").value = fmtISO(to); load();
     });
     $("rAnno").addEventListener("click", ()=>{
@@ -545,6 +601,13 @@
 
     setDefaultRange();
     load();
+
+    // Inicializar tooltips Bootstrap
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>

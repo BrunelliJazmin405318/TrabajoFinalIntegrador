@@ -12,116 +12,192 @@
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
 
     <style>
+        /* =========================================================
+           🎨 PALETA BASE (igual a Ingresos Señas vs Finales)
+           ========================================================= */
         :root {
-            --recti-red: #e53935;
-            --recti-black: #111;
-            --recti-white: #ffffff;
-            --recti-bg-light: #f3f3f3;
+            --primary: #d65a5a;
+            --primary-dark: #b14444;
+            --gray-soft: #f4f4f4;
+            --gray-border: #e6e6e6;
+            --gray-text: #555;
+            --gray-dark: #222;
+            --text-main: #222;
+            --border-soft: #e6e6e6;
         }
 
+        /* =========================================================
+           BODY
+           ========================================================= */
         body {
             margin: 0;
-            font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
-            background: var(--recti-bg-light) url("/img/fondo-figura.png") repeat;
-            background-size: 260px;
-            color: var(--recti-black);
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
+            font-family: "Inter", system-ui;
+            background: var(--gray-soft);
+            color: var(--text-main);
         }
 
-        /* NAV superior — igual que en clientes frecuentes */
+        /* =========================================================
+           NAV SUPERIOR — EXACTO AL DE SEÑAS/FINALES
+           ========================================================= */
         .mini-nav {
-            position: sticky;
-            top: 0;
-            background: rgba(255,255,255,0.92);
-            backdrop-filter: blur(8px);
-            border-bottom: 1px solid rgba(0,0,0,0.05);
-            z-index: 1000;
+            background: #fff;
+            border-bottom: 1px solid var(--gray-border);
+            padding: .4rem 0;
         }
+
         .mini-nav-inner {
             max-width: 1200px;
             margin: auto;
-            padding: .45rem 1rem;
+            padding: 0 1rem;
             display: flex;
-            justify-content: space-between;
+            justify-content: space-between; /* ← Ubica: izquierda Volver - derecha Reporte */
             align-items: center;
-            font-size: .85rem;
-        }
-        .mini-nav-left a {
-            padding: .25rem .7rem;
-            background: #fff;
-            border-radius: 999px;
-            border: 1px solid rgba(0,0,0,0.08);
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            text-decoration: none;
-            color: inherit;
-        }
-        .mini-nav-pill {
-            padding: .25rem .7rem;
-            background: #111;
-            border-radius: 999px;
-            color: white;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
         }
 
-        /* CONTENT */
+        .mini-nav-left a {
+            padding: .35rem .9rem;
+            border-radius: 10px;
+            background: #fff;
+            border: 1px solid var(--gray-border);
+            color: var(--text-main);
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: .2s;
+        }
+
+        .mini-nav-left a:hover {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary-dark);
+        }
+
+        .mini-nav-pill {
+            padding: .38rem .95rem;
+            border-radius: 12px;
+            background: var(--primary);
+            color: white;
+            font-size: .8rem;
+        }
+
+        /* =========================================================
+           CONTENIDO BASE
+           ========================================================= */
         main.page-wrap {
             max-width: 1200px;
-            width: 100%;
             margin: auto;
-            padding: 30px 16px 40px;
-            flex: 1 0 auto;
-        }
-        .badge-report {
-            background: var(--recti-red);
-            color: #fff;
-            padding: .35rem .75rem;
-            border-radius: 999px;
-            font-size: .78rem;
+            padding: 28px 16px 40px;
         }
 
-        /* CARDS */
+        /* =========================================================
+           CARDS
+           ========================================================= */
         .card {
             border-radius: 16px;
-            background: rgba(255,255,255,0.96);
-            border: 1px solid rgba(0,0,0,0.04);
-            box-shadow: 0 12px 30px rgba(0,0,0,0.08);
-            animation: fadeIn .4s ease;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(8px); }
-            to   { opacity: 1; transform: translateY(0); }
-        }
-
-        .kpi {
-            padding: 1.3rem;
-            border-radius: 16px;
             background: #fff;
-            border: 1px solid rgba(0,0,0,0.06);
-            box-shadow: 0 10px 22px rgba(0,0,0,0.05);
+            border: 1px solid var(--border-soft);
+            box-shadow: 0 6px 20px rgba(0,0,0,.05);
+            transition: .25s ease;
         }
+
+        .card:hover {
+            box-shadow: 0 12px 26px rgba(0,0,0,.07);
+        }
+
+        /* =========================================================
+           INPUTS
+           ========================================================= */
+        .form-control-sm {
+            border-radius: 10px;
+            border: 1px solid var(--border-soft);
+            padding: .35rem .6rem;
+        }
+
+        /* =========================================================
+           BOTONES — MISMO ESTILO AESTHETIC
+           ========================================================= */
+        .btn-sm {
+            border-radius: 10px !important;
+            padding: .4rem .9rem !important;
+            font-size: .8rem !important;
+            font-weight: 500 !important;
+        }
+
+        .btn-outline-dark {
+            border: 1px solid var(--border-soft) !important;
+            background: white !important;
+            color: var(--text-main) !important;
+        }
+        .btn-outline-dark:hover {
+            background: var(--primary) !important;
+            color: white !important;
+            border-color: var(--primary-dark) !important;
+        }
+
+        .btn-primary {
+            background: white !important;
+            color: var(--primary) !important;
+            border: 1px solid var(--primary) !important;
+        }
+        .btn-primary:hover {
+            background: var(--primary) !important;
+            color: white !important;
+        }
+
+        .btn-success {
+            background: white !important;
+            color: var(--primary) !important;
+            border: 1px solid var(--primary) !important;
+        }
+        .btn-success:hover {
+            background: var(--primary) !important;
+            color: white !important;
+        }
+
+        /* =========================================================
+           KPI BOXES
+           ========================================================= */
+        /* ==== KPI IGUAL A SEÑAS VS FINALES ==== */
+        .kpi {
+            text-align: center;
+            background: white;
+            border-radius: 16px;
+            padding: 1.3rem;
+            border: 2px solid var(--primary);   /* 🔥 borde rojo aesthetic */
+            box-shadow: 0 10px 20px rgba(0,0,0,.05);
+            height: 160px;   /* ajustable si querés más o menos altura */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .kpi .sub {
+            font-weight: 600;
+            color: var(--gray-text);
+        }
+
         .kpi h2 {
             margin: 0;
-            font-weight: 800;
             font-size: 2rem;
+            font-weight: 800;
+            color: var(--gray-dark);
         }
-        .kpi .sub { font-size: .9rem; color: #444; }
 
+        /* =========================================================
+           FOOTER
+           ========================================================= */
         footer {
-            font-size: .8rem;
+            margin-top: 40px;
+            padding: 20px;
             text-align: center;
-            padding: 14px;
-            background: rgba(255,255,255,0.9);
-            border-top: 1px solid rgba(0,0,0,0.05);
-            color: #555;
+            font-size: .85rem;
+            color: #777;
+            border-top: 1px solid var(--border-soft);
+            background: #fff;
         }
     </style>
+
 </head>
 
 <body>
@@ -145,12 +221,13 @@
             <h1 class="mb-1">Motores por etapa</h1>
             <p class="text-secondary">Visualización de órdenes agrupadas por etapa de trabajo.</p>
         </div>
-        <span class="badge-report">Dashboard</span>
+
     </div>
 
-    <!-- FILTROS -->
+    <!-- FILTROS NUEVO → TOTALMENTE IGUAL A SEÑAS VS FINALES -->
     <div class="card mb-4">
         <div class="card-body">
+
             <div class="d-flex flex-wrap gap-3 align-items-end">
 
                 <div>
@@ -163,17 +240,32 @@
                     <input id="fTo" type="date" class="form-control form-control-sm">
                 </div>
 
-                <div class="ms-auto d-flex gap-2">
-                    <button id="btnLast7" class="btn btn-outline-dark btn-sm">Últimos 7 días</button>
-                    <button id="btnLast30" class="btn btn-outline-dark btn-sm">Últimos 30 días</button>
-                    <button id="btnYTD" class="btn btn-outline-dark btn-sm">Hasta hoy</button>
+                <!-- TOOLBAR IDÉNTICA A SEÑAS VS FINALES -->
+                <div class="ms-auto d-flex flex-wrap gap-2">
+
+                    <button id="btnLast7" class="btn btn-outline-dark btn-sm">
+                        Últimos 7 días
+                    </button>
+
+                    <button id="btnLast30" class="btn btn-outline-dark btn-sm">
+                        Últimos 30 días
+                    </button>
+
+                    <button id="btnYTD" class="btn btn-outline-dark btn-sm">
+                        Hasta hoy
+                    </button>
+
+                    <button id="btnAplicar" class="btn btn-primary btn-sm">
+                        <i class="bi bi-funnel"></i> Aplicar
+                    </button>
 
                     <button id="btnRefresh" class="btn btn-primary btn-sm">
                         <i class="bi bi-arrow-repeat"></i>
                     </button>
 
                     <div class="btn-group">
-                        <button class="btn btn-success btn-sm dropdown-toggle" data-bs-toggle="dropdown">
+                        <button class="btn btn-success btn-sm dropdown-toggle"
+                                data-bs-toggle="dropdown">
                             <i class="bi bi-download"></i> Exportar
                         </button>
                         <ul class="dropdown-menu dropdown-menu-light">
@@ -182,20 +274,27 @@
                         </ul>
                     </div>
 
-                    <button id="btnPng" class="btn btn-outline-dark btn-sm" data-bs-toggle="tooltip" title="Exportar imagen PNG">
-                        <i class="bi bi-image"></i>
+                    <button id="btnCsv"
+                            class="btn btn-outline-dark btn-sm"
+                            data-bs-toggle="tooltip"
+                            title="Exportar CSV">
+                        <i class="bi bi-filetype-csv"></i>
                     </button>
 
-                    <button id="btnCsv" class="btn btn-outline-dark btn-sm" data-bs-toggle="tooltip" title="Exportar CSV">
-                        <i class="bi bi-filetype-csv"></i>
+                    <button id="btnPng"
+                            class="btn btn-outline-dark btn-sm"
+                            data-bs-toggle="tooltip"
+                            title="Exportar PNG">
+                        <i class="bi bi-image"></i>
                     </button>
 
                 </div>
             </div>
 
-            <p id="rangoActivo" class="small text-secondary mt-2"></p>
+            <p id="rangoActivo" class="text-secondary small mt-2 mb-0"></p>
         </div>
     </div>
+
 
     <!-- KPIs -->
     <div class="row g-3 mb-4">
@@ -273,18 +372,40 @@
         $("emptyHint").classList.toggle("d-none", !(values.length===0 || values.every(v=>v===0)));
 
         chart?.destroy();
-        chart = new Chart($("chartEtapas"), {
+
+
+
+        // 🎨 DEGRADÉ AESTHETIC: negro → gris → rojo suave (vertical)
+        const ctx = document.getElementById("chartEtapas").getContext("2d");
+        const gradient = ctx.createLinearGradient(0, 300, 0, 0);
+        gradient.addColorStop(0, "#000000");   // negro
+        gradient.addColorStop(0.5, "#999999"); // gris
+        gradient.addColorStop(1, "#d26a6a");   // rojo aesthetic
+
+        backgroundColor: gradient,
+
+
+            chart = new Chart($("chartEtapas"), {
             type: "bar",
-            data: { labels, datasets: [{
+            data: {
+                labels,
+                datasets: [{
                     label: "Motores",
                     data: values,
                     borderRadius: 8,
-                    backgroundColor: "#2f80ed"
-                }] },
+                    backgroundColor: gradient      // ← 🔥 ACÁ SE APLICA EL DEGRADÉ
+                }]
+            },
             options: {
                 plugins: {
                     legend:{ display:false },
-                    datalabels:{ anchor:"end", align:"top", color:"#333", font:{weight:"700"}, formatter:v=>v||"" }
+                    datalabels:{
+                        anchor:"end",
+                        align:"top",
+                        color:"#333",
+                        font:{weight:"700"},
+                        formatter:v=>v||""
+                    }
                 },
                 scales:{
                     y:{ beginAtZero:true, ticks:{precision:0} }
@@ -292,6 +413,7 @@
             }
         });
     }
+
 
     function qs(){
         const p = new URLSearchParams();
