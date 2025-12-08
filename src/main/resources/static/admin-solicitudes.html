@@ -6,7 +6,6 @@
     <title>Admin | Solicitudes de Presupuesto</title>
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-<!--    <link href="/css/styles.css" rel="stylesheet">-->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
 
     <style>
@@ -32,7 +31,7 @@
             flex-direction: column;
         }
 
-        /* ===== MINI NAV SUPERIOR ADMIN ===== */
+        /* ===== MINI NAV SUPERIOR ADMIN (igual que admin-presupuestos) ===== */
         .mini-nav {
             position: sticky;
             top: 0;
@@ -60,6 +59,16 @@
             border-radius: 999px;
             border: 1px solid rgba(0,0,0,0.08);
             background: #fff;
+            text-decoration: none;
+            color: #222;
+        }
+
+        .mini-nav-left a i {
+            font-size: 1.1rem;
+        }
+
+        .mini-nav-left a:hover {
+            background: #f5f5f5;
         }
 
         .mini-nav-pill {
@@ -158,7 +167,7 @@
             background-color: #f7f7f7;
         }
 
-        /* ===== BANNERS ===== */
+        /* ===== BANNERS (mismos IDs, solo estilos) ===== */
         #sucMsg, #errMsg {
             border-radius: 12px;
         }
@@ -170,8 +179,18 @@
 
         #btnBuscar {
             border-radius: 999px;
-            background-color: #c62828;
+            background-color: var(--recti-red);
             border: none;
+        }
+
+        #btnBuscar:hover {
+            background-color: var(--recti-red-dark);
+        }
+
+        /* Botones de acciones en la tabla: suavizar un poco */
+        .table .btn-sm {
+            font-size: .78rem;
+            border-radius: 999px;
         }
 
         /* ===== FOOTER ===== */
@@ -191,26 +210,36 @@
             gap: 8px;
             flex-wrap: wrap;
         }
-        /* CARD QUE CONTIENE LA TABLA */
+
+        /* ===== CARD QUE CONTIENE LA TABLA (igual criterio que admin-presupuestos) ===== */
         .card-table {
             border-radius: 18px;
             overflow: hidden;
-            box-shadow: 0 12px 30px rgba(0,0,0,.12);
+            box-shadow: 0 12px 30px rgba(0,0,0,.10);
+            border: 1px solid rgba(0,0,0,0.04);
         }
 
         /* ÁREA DE TABLA SCROLLEABLE */
         .table-scroll {
-            max-height: 60vh;     /* límite de altura (60% pantalla) */
-            overflow-y: auto;     /* scroll vertical */
+            max-height: calc(100vh - 220px);
+            min-height: 320px;
+            overflow-y: auto;
         }
 
-        /* HEADER DE LA TABLA FIJO */
+        /* HEADER DE LA TABLA FIJO (pegado arriba del scroll) */
         .sticky-header th {
             position: sticky;
             top: 0;
-            z-index: 5;
-            background: #111;     /* mismo fondo que el nav oscuro */
-            color: white;
+            z-index: 2;
+            background: #fafafa;
+            color: #555;
+        }
+
+        /* Acciones más prolijas en desktop */
+        @media (min-width: 992px) {
+            .col-acciones {
+                white-space: nowrap;
+            }
         }
     </style>
 </head>
@@ -244,15 +273,18 @@
         </div>
     </header>
 
-    <!-- BANNERS (MISMA LÓGICA, SOLO ESTILO) -->
+    <!-- BANNERS (misma lógica, solo estilo) -->
     <div id="sucMsg" class="alert alert-success d-none mb-3"></div>
     <div id="errMsg" class="alert alert-danger d-none mb-3"></div>
 
     <!-- FILTRO -->
     <div class="card card-filters mb-3">
         <div class="card-body">
+            <h6 class="mb-3 text-uppercase text-muted" style="letter-spacing:.09em; font-size:.78rem;">
+                Filtros del listado
+            </h6>
             <div class="row g-2 align-items-end">
-                <div class="col-md-4">
+                <div class="col-md-4 col-12">
                     <label for="filtro" class="form-label small mb-1">Estado de la solicitud</label>
                     <select id="filtro" class="form-select">
                         <option value="" selected>Todas</option>
@@ -261,12 +293,12 @@
                         <option value="RECHAZADO">Rechazadas</option>
                     </select>
                 </div>
-                <div class="col-md-3 d-grid">
+                <div class="col-md-3 col-12 d-grid">
                     <button id="btnBuscar" class="btn btn-primary">
                         <i class="bi bi-search me-1"></i> Buscar
                     </button>
                 </div>
-                <div class="col-md-5 text-md-end mt-2 mt-md-0">
+                <div class="col-md-5 col-12 text-md-end mt-2 mt-md-0">
                     <small class="text-secondary">
                         Filtrá por estado de la solicitud.
                     </small>
@@ -284,7 +316,9 @@
                 <h6 class="mb-0 text-uppercase text-muted" style="letter-spacing:.09em; font-size:.78rem;">
                     Listado de solicitudes
                 </h6>
-                <small class="text-secondary">ID, cliente, unidad, estado y acciones rápidas.</small>
+                <small class="text-secondary">
+                    ID, cliente, unidad, tipo de consulta, estado y acciones rápidas.
+                </small>
             </div>
 
             <!-- Tabla scrolleable -->
@@ -299,7 +333,7 @@
                         <th>Tipo consulta</th>
                         <th>Estado</th>
                         <th>Creada</th>
-                        <th style="width:240px;">Acciones</th>
+                        <th class="col-acciones" style="width:240px;">Acciones</th>
                     </tr>
                     </thead>
                     <tbody id="tbody"></tbody>
@@ -321,7 +355,7 @@
     import { getAuthHeader, isAuthenticated } from "/js/auth.js";
 
     /* =======================
-       BANNERS (NUEVO)
+       BANNERS (MISMA LÓGICA)
     ======================== */
     const suc = document.getElementById("sucMsg");
     const err = document.getElementById("errMsg");
@@ -336,8 +370,6 @@
         err.classList.remove("d-none");
         suc.classList.add("d-none");
     }
-
-    /* ======================= */
 
     function badge(est){
         return est==='APROBADO' ? 'bg-success'
@@ -363,14 +395,13 @@
         list.forEach(s => {
             const puedeGenerar = (s.estado === 'APROBADO') && (s.presupuestoGenerado !== true);
 
-            // Traducimos el tipo de consulta a algo lindo para la tabla
+            // Traducción del tipo de consulta
             let tipoConsultaLabel = '-';
             if (s.tipoConsulta === 'COTIZACION') {
                 tipoConsultaLabel = 'Cotización estimada';
             } else if (s.tipoConsulta === 'DIAGNOSTICO') {
                 tipoConsultaLabel = 'Diagnóstico presencial';
             } else if (s.tipoConsulta) {
-                // fallback por si en BD hay otro texto
                 tipoConsultaLabel = s.tipoConsulta;
             }
 
@@ -387,9 +418,9 @@
                 ${s.estado === 'APROBADO' ? (
                 puedeGenerar
                     ? `<a class="btn btn-outline-primary btn-sm"
-                            href="/admin-presupuestos.html?sid=${s.id}">
-                            <i class="bi bi-clipboard-plus"></i> Generar presupuesto
-                         </a>`
+                                href="/admin-presupuestos.html?sid=${s.id}">
+                                <i class="bi bi-clipboard-plus"></i> Generar presupuesto
+                           </a>`
                     : `<span class="badge bg-success">Presupuesto generado</span>`
             ) : ''}
             `;
