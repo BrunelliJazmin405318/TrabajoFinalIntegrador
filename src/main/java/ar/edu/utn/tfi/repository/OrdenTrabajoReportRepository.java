@@ -15,11 +15,13 @@ public interface OrdenTrabajoReportRepository extends JpaRepository<OrdenTrabajo
     // ---- Proyección para /motores-vs-tapas
     interface TipoCantidad {
         String getTipo();   // 'MOTOR' | 'TAPA'
+
         Long getCnt();
     }
 
     @Query(value = """
-    SELECT 
+
+            SELECT 
         COALESCE(UPPER(p.pieza_tipo), UPPER(ut.tipo)) AS tipo,
         COUNT(*) AS cnt
     FROM orden_trabajo ot
@@ -44,7 +46,7 @@ public interface OrdenTrabajoReportRepository extends JpaRepository<OrdenTrabajo
         GROUP BY ot.estado_actual, ec.orden
         ORDER BY COALESCE(ec.orden, 999)
         """, nativeQuery = true)
-    List<Map<String,Object>> contarMotoresPorEtapaRango(@Param("desde") LocalDateTime desde,
+    List<Map<String ,Object>> contarMotoresPorEtapaRango(@Param("desde") LocalDateTime desde,
                                                         @Param("hasta") LocalDateTime hasta);
 
     // --- Proyección para ranking de clientes frecuentes ---
@@ -56,22 +58,25 @@ public interface OrdenTrabajoReportRepository extends JpaRepository<OrdenTrabajo
     }
 
     @Query(value = """
-        SELECT c.id          AS cliente_id,
-               c.nombre      AS nombre,
-               c.telefono    AS telefono,
-               COUNT(*)      AS cantidad
-        FROM orden_trabajo ot
-        JOIN unidad_trabajo ut ON ut.id = ot.unidad_id
-        JOIN cliente c         ON c.id = ut.cliente_id
-        WHERE ot.estado_actual = 'ENTREGADO'
-          AND ot.creada_en >= :desde
-          AND ot.creada_en  < :hasta
-        GROUP BY c.id, c.nombre, c.telefono
-        ORDER BY cantidad DESC
-        """, nativeQuery = true)
+    SELECT
+        c.id       AS cliente_id,
+        c.nombre   AS nombre,
+        c.telefono AS telefono,
+        COUNT(DISTINCT ot.id) AS cantidad
+    FROM orden_trabajo ot
+    JOIN unidad_trabajo ut        ON ut.id = ot.unidad_id
+    JOIN cliente c                ON c.id = ut.cliente_id
+    JOIN orden_etapa_historial oe ON oe.orden_id = ot.id
+    WHERE oe.etapa_codigo = 'ENTREGADO'
+      AND oe.fecha_inicio >= :desde
+      AND oe.fecha_inicio <  :hasta
+    GROUP BY c.id, c.nombre, c.telefono
+    ORDER BY cantidad DESC
+    """, nativeQuery = true)
     List<ClienteRanking> rankingClientesEntre(
             @Param("desde") LocalDateTime desde,
             @Param("hasta") LocalDateTime hasta,
             Pageable pageable
     );
-}
+    }
+
