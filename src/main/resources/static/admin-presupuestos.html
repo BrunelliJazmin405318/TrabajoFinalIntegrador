@@ -1167,6 +1167,7 @@
         if (act === "aprobar" || act === "rechazar") {
             const nota = prompt(act.toUpperCase() + ": nota/observación (opcional)") ?? null;
             if (nota === null) return;
+
             btn.disabled = true;
             const r = await fetch(`/admin/presupuestos/${id}/${act}`, {
                 method: "PUT",
@@ -1174,9 +1175,20 @@
                 body: JSON.stringify({ nota }),
             });
             btn.disabled = false;
+
             const j = await r.json().catch(() => ({}));
+
+            if (!r.ok) {
+                const msg = j.message || `Error HTTP ${r.status}`;
+                showBanner("err", msg);
+                return;
+            }
+
             const verb = act === "aprobar" ? "aprobado" : "rechazado";
             showBanner("ok", `Presupuesto ${verb} correctamente.`);
+
+            // 🔁 recargar tabla para reflejar el nuevo estado
+            await cargar();
         }
 
         // Abrir pantalla de repuestos de la OT
