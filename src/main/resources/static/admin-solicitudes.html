@@ -31,7 +31,7 @@
             flex-direction: column;
         }
 
-        /* ===== MINI NAV SUPERIOR ADMIN (igual que admin-presupuestos) ===== */
+        /* ===== MINI NAV SUPERIOR ADMIN ===== */
         .mini-nav {
             position: sticky;
             top: 0;
@@ -167,7 +167,7 @@
             background-color: #f7f7f7;
         }
 
-        /* ===== BANNERS (mismos IDs, solo estilos) ===== */
+        /* ===== BANNERS ===== */
         #sucMsg, #errMsg {
             border-radius: 12px;
         }
@@ -185,12 +185,6 @@
 
         #btnBuscar:hover {
             background-color: var(--recti-red-dark);
-        }
-
-        /* Botones de acciones en la tabla: suavizar un poco */
-        .table .btn-sm {
-            font-size: .78rem;
-            border-radius: 999px;
         }
 
         /* ===== FOOTER ===== */
@@ -211,35 +205,95 @@
             flex-wrap: wrap;
         }
 
-        /* ===== CARD QUE CONTIENE LA TABLA (igual criterio que admin-presupuestos) ===== */
+        /* CARD QUE CONTIENE LA TABLA */
         .card-table {
             border-radius: 18px;
             overflow: hidden;
-            box-shadow: 0 12px 30px rgba(0,0,0,.10);
-            border: 1px solid rgba(0,0,0,0.04);
+            box-shadow: 0 12px 30px rgba(0,0,0,.12);
         }
 
         /* ÁREA DE TABLA SCROLLEABLE */
         .table-scroll {
-            max-height: calc(100vh - 220px);
+            max-height: calc(100vh - 200px);
             min-height: 320px;
             overflow-y: auto;
         }
 
-        /* HEADER DE LA TABLA FIJO (pegado arriba del scroll) */
+        /* HEADER DE LA TABLA FIJO */
         .sticky-header th {
             position: sticky;
             top: 0;
-            z-index: 2;
+            z-index: 5;
             background: #fafafa;
             color: #555;
         }
 
-        /* Acciones más prolijas en desktop */
-        @media (min-width: 992px) {
-            .col-acciones {
-                white-space: nowrap;
-            }
+        /* === Columna de acciones compacta === */
+        .col-acciones {
+            white-space: nowrap;
+            font-size: .8rem;
+        }
+
+        /* ===== Diseño columna ACCIONES (igual que Presupuestos) ===== */
+        .acciones-stack {
+            display: flex;
+            flex-direction: column;
+            gap: .35rem;
+        }
+
+        .acciones-stack .acciones-line {
+            display: flex;
+            flex-wrap: wrap;
+            gap: .25rem;
+            align-items: center;
+        }
+
+        .acciones-meta {
+            font-size: .72rem;
+            color: #666;
+            display: flex;
+            flex-wrap: wrap;
+            gap: .25rem;
+        }
+
+        .acciones-pill {
+            padding: .1rem .45rem;
+            border-radius: 999px;
+            background: #f3f3f3;
+        }
+
+        .acciones-pill--alert {
+            background: #fff4d3;
+            color: #7a5a00;
+        }
+
+        /* Botones redondos icon-only */
+        .btn-icon-circle {
+            width: 30px;
+            height: 30px;
+            border-radius: 999px;
+            padding: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-color: #d0d0d0 !important;
+        }
+
+        .btn-icon-circle i {
+            font-size: 1rem;
+        }
+
+        .acciones-stack .btn-icon-circle,
+        .acciones-stack .btn-sm {
+            border-color: #d0d0d0 !important;
+            color: #555;
+        }
+
+        .acciones-stack .btn-icon-circle:hover,
+        .acciones-stack .btn-sm:hover {
+            background: var(--recti-red);
+            color: #fff;
+            border-color: var(--recti-red) !important;
         }
     </style>
 </head>
@@ -273,7 +327,7 @@
         </div>
     </header>
 
-    <!-- BANNERS (misma lógica, solo estilo) -->
+    <!-- BANNERS (MISMA LÓGICA, SOLO ESTILO) -->
     <div id="sucMsg" class="alert alert-success d-none mb-3"></div>
     <div id="errMsg" class="alert alert-danger d-none mb-3"></div>
 
@@ -316,9 +370,7 @@
                 <h6 class="mb-0 text-uppercase text-muted" style="letter-spacing:.09em; font-size:.78rem;">
                     Listado de solicitudes
                 </h6>
-                <small class="text-secondary">
-                    ID, cliente, unidad, tipo de consulta, estado y acciones rápidas.
-                </small>
+                <small class="text-secondary">ID, cliente, unidad, estado y acciones rápidas.</small>
             </div>
 
             <!-- Tabla scrolleable -->
@@ -355,7 +407,7 @@
     import { getAuthHeader, isAuthenticated } from "/js/auth.js";
 
     /* =======================
-       BANNERS (MISMA LÓGICA)
+       BANNERS
     ======================== */
     const suc = document.getElementById("sucMsg");
     const err = document.getElementById("errMsg");
@@ -395,7 +447,7 @@
         list.forEach(s => {
             const puedeGenerar = (s.estado === 'APROBADO') && (s.presupuestoGenerado !== true);
 
-            // Traducción del tipo de consulta
+            // Traducimos el tipo de consulta a algo lindo para la tabla
             let tipoConsultaLabel = '-';
             if (s.tipoConsulta === 'COTIZACION') {
                 tipoConsultaLabel = 'Cotización estimada';
@@ -405,25 +457,66 @@
                 tipoConsultaLabel = s.tipoConsulta;
             }
 
-            const accionesHtml = `
-                ${s.estado === 'PENDIENTE' ? `
-                    <button class="btn btn-success btn-sm me-1" data-act="aprobar" data-id="${s.id}">
-                      <i class="bi bi-check2"></i> Aprobar
-                    </button>
-                    <button class="btn btn-danger btn-sm me-2" data-act="rechazar" data-id="${s.id}">
-                      <i class="bi bi-x-lg"></i> Rechazar
-                    </button>
-                ` : ''}
+            // ===== Acciones, con mismo estilo que Presupuestos =====
+            let accionesHtml = "-";
 
-                ${s.estado === 'APROBADO' ? (
-                puedeGenerar
-                    ? `<a class="btn btn-outline-primary btn-sm"
-                                href="/admin-presupuestos.html?sid=${s.id}">
-                                <i class="bi bi-clipboard-plus"></i> Generar presupuesto
-                           </a>`
-                    : `<span class="badge bg-success">Presupuesto generado</span>`
-            ) : ''}
+            if (s.estado === "PENDIENTE") {
+                accionesHtml = `
+                <div class="acciones-stack">
+                    <div class="acciones-meta">
+                        <span class="acciones-pill acciones-pill--alert">Pendiente de revisión</span>
+                    </div>
+                    <div class="acciones-line">
+                        <button class="btn btn-outline-secondary btn-sm btn-icon-circle"
+                                data-act="aprobar" data-id="${s.id}"
+                                title="Aprobar solicitud">
+                            <i class="bi bi-check2"></i>
+                        </button>
+                        <button class="btn btn-outline-secondary btn-sm btn-icon-circle"
+                                data-act="rechazar" data-id="${s.id}"
+                                title="Rechazar solicitud">
+                            <i class="bi bi-x-lg"></i>
+                        </button>
+                    </div>
+                </div>
             `;
+            } else if (s.estado === "APROBADO") {
+                if (puedeGenerar) {
+                    // Aprobada, todavía sin presupuesto generado
+                    accionesHtml = `
+                    <div class="acciones-stack">
+                        <div class="acciones-meta">
+                            <span class="acciones-pill acciones-pill--alert">Sin presupuesto</span>
+                        </div>
+                        <div class="acciones-line">
+                            <a class="btn btn-outline-secondary btn-sm btn-icon-circle"
+                               href="/admin-presupuestos.html?sid=${s.id}"
+                               title="Generar presupuesto">
+                                <i class="bi bi-clipboard-plus"></i>
+                            </a>
+                        </div>
+                    </div>
+                `;
+                } else {
+                    // Aprobada y ya tiene presupuesto → solo info
+                    accionesHtml = `
+                    <div class="acciones-stack">
+                        <div class="acciones-meta">
+                            <span class="acciones-pill">Presupuesto generado</span>
+                        </div>
+                    </div>
+                `;
+                }
+            } else if (s.estado === "RECHAZADO") {
+                // Estado ya dice RECHAZADO, acá solo aclaramos que no hay acciones
+                accionesHtml = `
+                <div class="acciones-stack">
+                    <div class="acciones-meta">
+                        <span class="acciones-pill">Sin acciones disponibles</span>
+                    </div>
+                </div>
+            `;
+            }
 
             tb.insertAdjacentHTML('beforeend', `
                 <tr>
