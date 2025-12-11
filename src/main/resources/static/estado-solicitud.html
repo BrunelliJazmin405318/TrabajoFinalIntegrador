@@ -4,22 +4,13 @@
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Estado de tu solicitud | Rectificadora</title>
-
+    <link rel="stylesheet" href="./css/styles.css">
     <!-- Bootstrap + íconos + MP -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
     <script src="https://sdk.mercadopago.com/js/v2"></script>
 
     <style>
-        :root {
-            --recti-red: #e53935;
-            --recti-red-dark: #c62828;
-            --recti-black: #111111;
-            --recti-gray-light: #f5f5f5;
-            --recti-gray-mid: #dcdcdc;
-            --recti-white: #ffffff;
-        }
-
         * { box-sizing: border-box; }
 
         html, body {
@@ -34,147 +25,6 @@
             background-size: 260px 260px;
             display: flex;
             flex-direction: column;
-        }
-
-        a { color: inherit; text-decoration: none; }
-
-        /* ===== NAVBAR (igual home/consulta/historial) ===== */
-
-        .main-header {
-            background: var(--recti-white);
-            border-bottom: none;
-            box-shadow: 0 1px 0 rgba(0,0,0,0.05);
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-        }
-
-        .main-header-inner {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0.6rem 1.5rem;
-            gap: 24px;
-        }
-
-        .nav-logo {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: .08em;
-            color: var(--recti-black);
-        }
-
-        .nav-logo-mark {
-            width: 28px;
-            height: 28px;
-            border-radius: 6px;
-            background: var(--recti-red);
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: .9rem;
-        }
-
-        .nav-main {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-        }
-
-        .nav-list {
-            display: flex;
-            list-style: none;
-            gap: 18px;
-            margin: 0;
-            padding: 0;
-        }
-
-        .nav-link {
-            border: none;
-            background: transparent;
-            padding: .25rem 0;
-            font-size: .92rem;
-            font-weight: 500;
-            color: #444;
-            cursor: pointer;
-            text-decoration: none;
-        }
-
-        .nav-link:hover {
-            color: var(--recti-red-dark);
-        }
-
-        .nav-link.is-active {
-            color: var(--recti-red-dark);
-            font-weight: 600;
-        }
-
-        .btn-login {
-            border-radius: 999px;
-            border: 1px solid var(--recti-red);
-            padding: .35rem 1rem;
-            font-size: .9rem;
-            font-weight: 600;
-            color: var(--recti-red);
-            white-space: nowrap;
-            transition: all .15s ease;
-        }
-
-        .btn-login:hover {
-            background: var(--recti-red);
-            color: var(--recti-white);
-        }
-
-        .nav-toggle {
-            display: none;
-            border: none;
-            background: transparent;
-            font-size: 1.4rem;
-            cursor: pointer;
-            color: #444;
-        }
-
-        @media (max-width: 992px) {
-            .main-header-inner { padding-inline: 1rem; }
-
-            .nav-toggle { display: inline-flex; }
-
-            .nav-main {
-                position: fixed;
-                inset: 64px 0 auto 0;
-                background: var(--recti-white);
-                flex-direction: column;
-                align-items: stretch;
-                gap: 0;
-                max-height: 0;
-                overflow: hidden;
-                transition: max-height .25s ease;
-                box-shadow: 0 12px 30px rgba(0, 0, 0, .18);
-            }
-
-            .nav-main.nav-open { max-height: 80vh; }
-
-            .nav-list {
-                flex-direction: column;
-                align-items: stretch;
-                padding: .75rem 1rem;
-                gap: .25rem;
-            }
-
-            .nav-link {
-                justify-content: space-between;
-                width: 100%;
-                text-align: left;
-            }
-
-            .btn-login {
-                margin: .4rem 1rem 1rem;
-                align-self: flex-start;
-            }
         }
 
         /* ===== PAGE WRAP ===== */
@@ -249,6 +99,7 @@
             box-shadow: 0 14px 30px rgba(0,0,0,.08);
             margin-top: 8px;
             animation: fadeIn .35s ease-out;
+            background: rgba(255,255,255,0.96);
         }
 
         @keyframes fadeIn {
@@ -259,16 +110,17 @@
         .card-body {
             padding: 24px 28px;
         }
+
         .muted {
             color: #777;
             font-size: .9rem;
         }
+
         .prewrap {
             white-space: pre-wrap;
         }
 
         /* CHIP ESTADO (mismo diseño que otras páginas) */
-
         .status {
             padding: .35rem .75rem;
             border-radius: 999px;
@@ -288,104 +140,198 @@
             background: currentColor;
         }
 
-        .status.ok { background: #d4edda; color: #2e7d32; }
+        .status.ok   { background: #d4edda; color: #2e7d32; }
         .status.warn { background: #fff3cd; color: #ff8f00; }
         .status.stop { background: #f8d7da; color: #c62828; }
 
-        .muted {
-            color: #777;
+        /* ===== TONO MÁS SUAVE PARA MENSAJES Y BADGES ===== */
+
+        /* Todos los alerts dentro del resultado, en gris suave */
+        #cardResultado .alert-primary,
+        #cardResultado .alert-info,
+        #cardResultado .alert-danger {
+            background: #f7f7f7;
+            border: none;
+            color: #444;
+            border-radius: 12px;
             font-size: .9rem;
         }
 
-        /* ===== FOOTER (igual a home/historial) ===== */
-
-        .site-footer {
-            background: #111;
-            color: #ccc;
-            padding: 40px 0 24px;
+        /* Notificaciones (campanita) también neutras */
+        #notifList .alert-success,
+        #notifList .alert-info {
+            background: #f7f7f7;
+            border: none;
+            color: #444;
+            border-radius: 12px;
             font-size: .9rem;
         }
 
-        .footer-container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 16px;
+        /* Badge de estado de pago: pastillita prolija */
+        #pagoBox #pagoEstado.badge {
+            border-radius: 999px;
+            padding: .25rem .75rem;
+            font-size: .8rem;
+            font-weight: 600;
         }
 
-        .footer-top {
+        #pagoBox .badge.bg-secondary {
+            background: #eee !important;
+            color: #555 !important;
+        }
+
+        #pagoBox .badge.bg-success {
+            background: #2e7d32 !important;
+            color: #fff !important;
+        }
+
+        #pagoBox .badge.bg-warning,
+        #pagoBox .badge.text-bg-warning {
+            background: #fff3cd !important;
+            color: #7a5a00 !important;
+        }
+
+        /* Botón de pagar más discreto */
+        #pagoBox #btnPagar.btn-primary {
+            height: auto;
+            padding: .45rem .9rem;
+            font-size: .9rem;
+            border-radius: 999px;
+        }
+
+        /* Tabla de repuestos más liviana */
+        #repuestosBox table.table {
+            font-size: .9rem;
+        }
+
+        #repuestosBox table thead th {
+            background: #fafafa;
+            border-bottom: 1px solid #e0e0e0;
+            font-size: .8rem;
+            text-transform: uppercase;
+            letter-spacing: .04em;
+        }
+
+        #repuestosBox tbody td {
+            vertical-align: middle;
+        }
+        /* ===== LAYOUT DETALLE SOLICITUD ===== */
+        .result-header {
             display: flex;
-            flex-wrap: wrap;
             justify-content: space-between;
-            gap: 40px;
-            padding-bottom: 32px;
+            align-items: flex-start;
+            gap: 16px;
+            margin-bottom: 18px;
         }
 
-        .footer-brand {
+        .result-tag {
+            font-size: .8rem;
+            text-transform: uppercase;
+            letter-spacing: .12em;
+            color: #888;
+            margin-bottom: 4px;
+        }
+
+        .result-title {
+            margin: 0;
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+
+        .result-sub {
+            font-size: .9rem;
+            color: #666;
+        }
+
+        .result-status-block {
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 6px;
+            align-items: flex-end;
+            text-align: right;
         }
 
-        .footer-logo-mark {
-            width: 40px;
-            height: 40px;
-            border-radius: 8px;
-            background: var(--recti-red);
-            color: white;
-            font-weight: 800;
-            font-size: 1.2rem;
+        .result-ot {
+            max-width: 260px;
+        }
+
+        /* Grid dos columnas para el resumen */
+        .result-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+            gap: 24px;
+            margin-bottom: 12px;
+        }
+
+        .result-column {
             display: flex;
-            align-items: center;
-            justify-content: center;
+            flex-direction: column;
+            gap: 14px;
         }
 
-        .footer-logo-text {
-            font-size: 1.1rem;
-            font-weight: 700;
-            letter-spacing: .08em;
-            text-transform: uppercase;
+        .result-block {
+            background: #fafafa;
+            border-radius: 12px;
+            padding: 10px 12px;
         }
 
-        .footer-links {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 40px;
+        /* Barra de notificaciones */
+        .result-notif-bar {
+            margin-top: 10px;
+            margin-bottom: 4px;
         }
 
-        .footer-column h4 {
-            font-size: .85rem;
-            color: #eee;
-            text-transform: uppercase;
-            letter-spacing: .08em;
-            margin-bottom: 10px;
-        }
-
-        .footer-column a {
-            display: block;
-            color: #bbb;
-            font-size: .85rem;
-            margin-bottom: 6px;
-            text-decoration: none;
-        }
-
-        .footer-column a:hover {
-            color: var(--recti-red);
-        }
-
-        .footer-bottom {
-            border-top: 1px solid rgba(255,255,255,0.1);
-            padding-top: 16px;
+        /* Tabs */
+        .result-tabs-wrapper {
             margin-top: 16px;
-            display: flex;
-            justify-content: space-between;
-            flex-wrap: wrap;
-            font-size: .8rem;
-            color: #888;
         }
 
+        .result-tabs-nav {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .result-tab-btn {
+            border-radius: 999px;
+            border: 1px solid #ddd;
+            background: #f9f9f9;
+            font-size: .85rem;
+            padding: .35rem .9rem;
+            cursor: pointer;
+            color: #555;
+        }
+
+        .result-tab-btn.is-active {
+            background: var(--recti-red);
+            border-color: var(--recti-red);
+            color: #fff;
+        }
+
+        .result-tab-panel {
+            display: none;
+            border-top: 1px solid #eee;
+            padding-top: 12px;
+        }
+
+        .result-tab-panel.is-active {
+            display: block;
+        }
+
+        /* Responsive */
         @media (max-width: 768px) {
-            .footer-links {
-                flex-direction: column;
+            .result-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .result-status-block {
+                align-items: flex-start;
+                text-align: left;
+            }
+
+            .result-ot {
+                max-width: 100%;
             }
         }
     </style>
@@ -407,14 +353,14 @@
         <nav id="mainNav" class="nav-main">
             <ul class="nav-list">
                 <li><a href="/consulta.html" class="nav-link">Consulta</a></li>
-                <li><a href="/estado-solicitud.html" class="nav-link is-active">Solicitud</a></li>
-                <li><a id="logoutLink" class="nav-link" href="#">Salir</a></li>
+                <li><a href="/estado-solicitud.html" class="nav-link is-active">Estado solicitud</a></li>
+                <li><a href="/presupuesto.html" class="nav-link">Presupuesto</a></li>
+                <li><a href="/faq.html" class="nav-link">Preguntas frecuentes</a></li>
             </ul>
             <a href="/login.html" class="btn-login">Login taller</a>
         </nav>
     </div>
 </header>
-
 <!-- ===== CONTENIDO ===== -->
 <main class="page-wrap">
     <div class="page-title">
@@ -430,126 +376,172 @@
         <div class="col-lg-3 col-md-4 col-12 d-grid align-items-end">
             <button class="btn btn-primary" type="submit">Consultar</button>
         </div>
-        <div class="muted">Tip: poniendo tu numero de solicitud vas a poder ver el estado de recorrido mas completo de tu solicitud.</div>
+        <div class="muted">
+            Tip: poniendo tu número de solicitud vas a poder ver el estado de recorrido más completo de tu solicitud.
+        </div>
     </form>
 
+    <!-- CARD QUE SE MUESTRA CUANDO HAY RESULTADO -->
     <div id="cardResultado" class="card d-none">
         <div class="card-body">
-
-            <!-- 🔔 Mensaje con N° de orden (se completa por JS) -->
-            <div id="otInfoBox" class="alert alert-primary mt-3 d-none"></div>
-
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <h5 class="card-title m-0">Detalle</h5>
-                <span id="chipEstado" class="status"><span class="dot"></span><span class="label">-</span></span>
-            </div>
-
-            <!-- ===== HU13: Barra y lista de notificaciones in-app ===== -->
-            <div class="d-flex align-items-center gap-2 mb-2" id="notifBar" style="display:none;">
-                <button id="btnNotif" type="button" class="btn btn-outline-warning btn-sm position-relative">
-                    <i class="bi bi-bell"></i> Notificaciones
-                    <span id="notifCount" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">0</span>
-                </button>
-            </div>
-            <div id="notifList" class="mt-2 d-none"></div>
-            <!-- ===== /HU13 ===== -->
-
-            <div class="row g-3 mt-2">
-                <div class="col-md-6">
-                    <div class="small text-muted mb-1">Cliente</div>
-                    <div id="c_nombre" class="fw-semibold">-</div>
-                    <div class="text-muted"><span id="c_tel">-</span> · <span id="c_mail">-</span></div>
+            <!-- CABECERA RESUMEN -->
+            <div class="result-header">
+                <div>
+                    <div class="result-tag">
+                        Solicitud #<span id="solicitudId">-</span>
+                    </div>
+                    <h5 class="result-title">Detalle de tu solicitud</h5>
+                    <div class="result-sub">
+                        Creada el <span id="creada">-</span>
+                    </div>
                 </div>
-                <div class="col-md-6">
-                    <div class="small text-muted mb-1">Unidad</div>
-                    <div id="u_desc" class="fw-semibold">-</div>
-                    <div class="text-muted">N° motor: <span id="u_motor">-</span></div>
-                </div>
-                <div class="col-12">
-                    <div class="small text-muted mb-1">Descripción</div>
-                    <div id="desc" class="prewrap">-</div>
-                </div>
-                <div class="col-md-6">
-                    <div class="small text-muted mb-1">Creada</div>
-                    <div id="creada">-</div>
-                </div>
-                <div class="col-md-6">
-                    <div class="small text-muted mb-1">Decisión</div>
-                    <div><span id="dec_usuario">-</span> · <span id="dec_fecha">-</span></div>
-                    <div class="text-muted" id="dec_motivo">-</div>
+
+                <div class="result-status-block">
+                <span id="chipEstado" class="status">
+                    <span class="dot"></span>
+                    <span class="label">-</span>
+                </span>
+
+                    <!-- Mensaje con N° de orden (llenado por JS) -->
+                    <div id="otInfoBox" class="result-ot small text-muted d-none"></div>
                 </div>
             </div>
 
-            <hr class="my-4">
-            <div id="pagoBox" class="d-none">
-                <div class="d-flex align-items-center justify-content-between mb-2">
-                    <h6 class="m-0">Seña (30%)</h6>
-                    <span id="pagoEstado" class="badge bg-secondary">Pendiente</span>
-                </div>
-                <div class="small text-muted">Monto: <span id="pagoMonto">-</span></div>
-                <div class="small text-muted">Pago #: <span id="pagoId">-</span></div>
+            <!-- RESUMEN EN 2 COLUMNAS -->
+            <div class="result-grid">
+                <!-- Columna izquierda: Cliente + Unidad -->
+                <section class="result-column">
+                    <div class="result-block">
+                        <div class="small text-muted mb-1">Cliente</div>
+                        <div id="c_nombre" class="fw-semibold">-</div>
+                        <div class="text-muted">
+                            <span id="c_tel">-</span> · <span id="c_mail">-</span>
+                        </div>
+                    </div>
 
-                <!-- Mensajes lindos -->
-                <div id="pagoAlert" class="alert alert-info mt-3 d-none"></div>
-                <div id="pagoError" class="alert alert-danger mt-3 d-none"></div>
+                    <div class="result-block">
+                        <div class="small text-muted mb-1">Unidad</div>
+                        <div id="u_desc" class="fw-semibold">-</div>
+                        <div class="text-muted">
+                            N° motor: <span id="u_motor">-</span>
+                        </div>
+                    </div>
+                </section>
 
-                <div id="pagarActions" class="mt-3">
-                    <button id="btnPagar" class="btn btn-primary btn-sm">
-                        <i class="bi bi-credit-card"></i> Pagar seña (30%)
+                <!-- Columna derecha: Descripción + Decisión -->
+                <section class="result-column">
+                    <div class="result-block">
+                        <div class="small text-muted mb-1">Descripción del problema</div>
+                        <div id="desc" class="prewrap">-</div>
+                    </div>
+
+                    <div class="result-block">
+                        <div class="small text-muted mb-1">Decisión sobre el presupuesto</div>
+                        <div>
+                            <span id="dec_usuario">-</span> ·
+                            <span id="dec_fecha">-</span>
+                        </div>
+                        <div class="text-muted" id="dec_motivo">-</div>
+                    </div>
+                </section>
+            </div>
+            <!-- TABS: PAGO / REPUESTOS -->
+            <div class="result-tabs-wrapper mt-4">
+                <div class="result-tabs-nav">
+                    <button type="button"
+                            class="result-tab-btn is-active"
+                            data-tab-target="pago">
+                        Pago y facturación
+                    </button>
+                    <button type="button"
+                            class="result-tab-btn"
+                            data-tab-target="repuestos">
+                        Repuestos utilizados
                     </button>
                 </div>
 
-                <div id="mp-card-container" class="mt-3"></div>
-                <div id="mp-status" class="small mt-2 text-muted"></div>
+                <!-- TAB PAGO -->
+                <div id="tab-pago" class="result-tab-panel is-active">
+                    <div id="pagoBox" class="mt-2 d-none">
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <h6 class="m-0">Seña (30%)</h6>
+                            <span id="pagoEstado" class="badge bg-secondary">Pendiente</span>
+                        </div>
+                        <div class="small text-muted">
+                            Monto: <span id="pagoMonto">-</span>
+                        </div>
+                        <div class="small text-muted">
+                            Pago #: <span id="pagoId">-</span>
+                        </div>
 
-                <!-- Botón de factura para el cliente -->
-                <div id="facturaActions" class="mt-3 d-none">
-                    <button id="btnFactura" class="btn btn-outline-success btn-sm">
-                        <i class="bi bi-download"></i> Descargar factura
-                    </button>
-                </div>
-            </div>
-            <hr class="my-4">
+                        <!-- Mensajes UX -->
+                        <div id="pagoAlert" class="alert alert-info mt-3 d-none"></div>
+                        <div id="pagoError" class="alert alert-danger mt-3 d-none"></div>
 
-            <div id="repuestosBox" class="d-none">
-                <h6 class="fw-semibold mb-3">Repuestos utilizados</h6>
+                        <div id="pagarActions" class="mt-3">
+                            <button id="btnPagar" class="btn btn-primary btn-sm">
+                                <i class="bi bi-credit-card"></i>
+                                Pagar seña (30%)
+                            </button>
+                        </div>
 
-                <div class="table-responsive">
-                    <table class="table table-sm table-bordered align-middle">
-                        <thead>
-                        <tr>
-                            <th>Descripción</th>
-                            <th style="width: 80px;">Cant.</th>
-                            <th style="width: 120px;">Precio</th>
-                            <th style="width: 120px;">Subtotal</th>
-                        </tr>
-                        </thead>
-                        <tbody id="repBody"></tbody>
-                    </table>
-                </div>
+                        <div id="mp-card-container" class="mt-3"></div>
+                        <div id="mp-status" class="small mt-2 text-muted"></div>
 
-                <div class="mt-3">
-                    <div class="d-flex justify-content-between">
-                        <span>Total mano de obra:</span>
-                        <span id="repTotalMo">-</span>
-                    </div>
-                    <div class="d-flex justify-content-between">
-                        <span>Total repuestos:</span>
-                        <span id="repTotalRep">-</span>
-                    </div>
-                    <hr>
-                    <div class="d-flex justify-content-between fw-bold">
-                        <span>Total final:</span>
-                        <span id="repTotalFinal">-</span>
+                        <!-- Botón de factura -->
+                        <div id="facturaActions" class="mt-3 d-none">
+                            <button id="btnFactura" class="btn btn-outline-success btn-sm">
+                                <i class="bi bi-download"></i>
+                                Descargar factura
+                            </button>
+                        </div>
                     </div>
 
-                    <p class="small text-muted mt-3">
-                        Este total incluye el costo de los repuestos utilizados durante la reparación.
-                    </p>
+                    <div id="pagoInfoNoDisponible" class="alert alert-info d-none mt-3">
+                        Aún no hay un presupuesto aprobado asociado a esta solicitud.
+                    </div>
                 </div>
-            </div>
-            <div id="pagoInfoNoDisponible" class="alert alert-info d-none mt-3">
-                Aún no hay un presupuesto aprobado asociado a esta solicitud.
+
+                <!-- TAB REPUESTOS -->
+                <div id="tab-repuestos" class="result-tab-panel">
+                    <div id="repuestosBox" class="mt-2 d-none">
+                        <h6 class="fw-semibold mb-3">Repuestos utilizados</h6>
+
+                        <div class="table-responsive">
+                            <table class="table table-sm table-bordered align-middle">
+                                <thead>
+                                <tr>
+                                    <th>Descripción</th>
+                                    <th style="width: 80px;">Cant.</th>
+                                    <th style="width: 120px;">Precio</th>
+                                    <th style="width: 120px;">Subtotal</th>
+                                </tr>
+                                </thead>
+                                <tbody id="repBody"></tbody>
+                            </table>
+                        </div>
+
+                        <div class="mt-3">
+                            <div class="d-flex justify-content-between">
+                                <span>Total mano de obra:</span>
+                                <span id="repTotalMo">-</span>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <span>Total repuestos:</span>
+                                <span id="repTotalRep">-</span>
+                            </div>
+                            <hr>
+                            <div class="d-flex justify-content-between fw-bold">
+                                <span>Total final:</span>
+                                <span id="repTotalFinal">-</span>
+                            </div>
+
+                            <p class="small text-muted mt-3">
+                                Este total incluye el costo de los repuestos utilizados durante la reparación.
+                            </p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -570,6 +562,7 @@
                     <h4>Soluciones</h4>
                     <a href="/consulta.html">Estado del motor</a>
                     <a href="/estado-solicitud.html">Estado de solicitud</a>
+                    <a href="/presupuesto.html">Pedir cotización</a>
                 </div>
 
                 <div class="footer-column">
@@ -585,15 +578,19 @@
                 </div>
 
                 <div class="footer-column">
-                    <h4>Seguimientos</h4>
-                    <a href="/consulta.html">Estado del motor</a>
-                    <a href="/estado-solicitud.html">Solicitud</a>
+                    <h4>Ayuda</h4>
+                    <a href="/faq.html">Preguntas frecuentes</a>
+                    <a href="/terminos.html">Términos y condiciones</a>
                 </div>
             </div>
         </div>
 
         <div class="footer-bottom">
-            <span>© 2025 Rectificaciones Cornejo. Todos los derechos reservados. • Aviso legal</span>
+            <span>
+                © 2025 Rectificaciones Cornejo. Todos los derechos reservados.
+                • <a href="/terminos.html">Términos y Condiciones</a>
+                · <a href="/faq.html">Preguntas Frecuentes</a>
+            </span>
             <span>2025</span>
         </div>
 
@@ -601,23 +598,6 @@
 </footer>
 
 <script>
-    // ===== NAVBAR público (Consulta / Historial / Solicitud) =====
-    const navToggle = document.querySelector('.nav-toggle');
-    const mainNav   = document.getElementById('mainNav');
-
-    if (navToggle && mainNav) {
-        navToggle.addEventListener('click', () => {
-            const isOpen = mainNav.classList.toggle('nav-open');
-            navToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-        });
-
-        mainNav.addEventListener('click', (e) => {
-            if (e.target.classList.contains('nav-link')) {
-                mainNav.classList.remove('nav-open');
-                navToggle.setAttribute('aria-expanded', 'false');
-            }
-        });
-    }
 
     // ===== Manejo logout + módulo de auth =====
     let authModule = null;  // acá guardamos el módulo para usarlo en repuestos / notifs
@@ -639,7 +619,26 @@
         } catch {}
     })();
 </script>
+<script>
+    // Tabs de Pago / Repuestos
+    document.addEventListener('DOMContentLoaded', () => {
+        const tabBtns  = document.querySelectorAll('.result-tab-btn');
+        const panels   = document.querySelectorAll('.result-tab-panel');
 
+        tabBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const target = btn.dataset.tabTarget; // "pago" o "repuestos"
+
+                tabBtns.forEach(b => b.classList.remove('is-active'));
+                panels.forEach(p => p.classList.remove('is-active'));
+
+                btn.classList.add('is-active');
+                const panel = document.getElementById('tab-' + target);
+                if (panel) panel.classList.add('is-active');
+            });
+        });
+    });
+</script>
 <script>
     const fmt   = s => s ? s.replace('T',' ').substring(0,19) : '-';
     const money = n => new Intl.NumberFormat('es-AR',{style:'currency',currency:'ARS'}).format(Number(n||0));
@@ -661,143 +660,6 @@
     let presupuestoIdForPay = null;
     let currentSolicitudId = null; // Para factura
 
-    // =================== HU13: IN-APP NOTIFS (SSE) ===================
-    let sseSource = null;
-    let sseEmailActual = null;
-    let notifsCache = [];
-
-    function renderNotifList() {
-        const list  = document.getElementById('notifList');
-        const count = document.getElementById('notifCount');
-        if (!list || !count) return;
-
-        const unread = notifsCache.filter(n => !n.readAt);
-        count.textContent = unread.length;
-
-        list.innerHTML = '';
-        if (notifsCache.length === 0) {
-            list.classList.add('d-none');
-            return;
-        }
-
-        notifsCache.forEach(n => {
-            const fecha = (n.createdAt || '').replace('T',' ').substring(0,19);
-            list.insertAdjacentHTML('afterbegin', `
-        <div class="alert ${n.type==='MOTOR_LISTO' ? 'alert-success' : 'alert-info'} d-flex justify-content-between align-items-start">
-          <div>
-            <div class="fw-semibold">${n.title || 'Notificación'}</div>
-            <div class="small text-muted">${fecha}</div>
-            <div>${n.message || '-'}</div>
-          </div>
-          <div class="ms-3">
-            ${n.readAt
-                ? '<span class="badge bg-secondary">Leída</span>'
-                : `<button class="btn btn-sm btn-outline-secondary" data-mark-read="${n.id}">Marcar leída</button>`}
-          </div>
-        </div>
-      `);
-        });
-
-        list.classList.remove('d-none');
-    }
-
-    async function cargarNoLeidas(email) {
-        // 👉 Solo admin: si no hay authModule o no está logueado, no pide nada
-        if (!authModule || !authModule.isAuthenticated || !authModule.isAuthenticated()) return;
-
-        try {
-            const r = await fetch(`/api/notificaciones/unread?email=${encodeURIComponent(email)}`);
-            const arr = await r.json().catch(()=>[]);
-            if (Array.isArray(arr)) {
-                notifsCache = arr;
-                renderNotifList();
-            }
-        } catch {}
-    }
-
-    function suscribirNotificaciones(email) {
-        const bar  = document.getElementById('notifBar');
-
-        // 👉 Solo admin: si no está logueado, no hay barra ni SSE
-        if (!authModule || !authModule.isAuthenticated || !authModule.isAuthenticated()) {
-            if (bar) bar.style.display = 'none';
-            return;
-        }
-
-        if (!email) {
-            if (sseSource) { try { sseSource.close(); } catch {} sseSource = null; }
-            sseEmailActual = null;
-            if (bar) bar.style.display = 'none';
-            return;
-        }
-
-        if (sseEmailActual === email && sseSource) return;
-
-        if (sseSource) { try { sseSource.close(); } catch {} sseSource = null; }
-
-        sseEmailActual = email;
-        if (bar) bar.style.display = 'inline-flex';
-
-        cargarNoLeidas(email);
-
-        sseSource = new EventSource(`/api/notificaciones/stream?email=${encodeURIComponent(email)}`);
-        sseSource.addEventListener('notif', (ev) => {
-            try {
-                const payload = JSON.parse(ev.data);
-                notifsCache.push({
-                    id: payload.id,
-                    type: payload.type,
-                    title: payload.title,
-                    message: payload.message,
-                    createdAt: payload.createdAt,
-                    readAt: null
-                });
-                renderNotifList();
-
-                try {
-                    const t = document.createElement('div');
-                    t.className = 'toast align-items-center text-bg-success border-0 show position-fixed bottom-0 end-0 m-3';
-                    t.style.zIndex = 1080;
-                    t.setAttribute('role','alert');
-                    t.innerHTML = `
-            <div class="d-flex">
-              <div class="toast-body">
-                ${payload.title || 'Notificación'}: ${payload.message || ''}
-              </div>
-              <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
-            </div>`;
-                    document.body.appendChild(t);
-                    setTimeout(()=> t.remove(), 4500);
-                } catch {}
-            } catch {}
-        });
-
-        sseSource.onerror = () => {
-            try { sseSource.close(); } catch {}
-            sseSource = null;
-        };
-
-        const btn  = document.getElementById('btnNotif');
-        const list = document.getElementById('notifList');
-        btn?.addEventListener('click', () => {
-            if (!list) return;
-            list.classList.toggle('d-none');
-        });
-
-        document.addEventListener('click', async (e) => {
-            const markBtn = e.target.closest('button[data-mark-read]');
-            if (!markBtn) return;
-            const id = markBtn.getAttribute('data-mark-read');
-            try {
-                await fetch(`/api/notificaciones/${encodeURIComponent(id)}/read`, { method: 'PUT' });
-                const idx = notifsCache.findIndex(n => String(n.id) === String(id));
-                if (idx >= 0) {
-                    notifsCache[idx].readAt = new Date().toISOString();
-                    renderNotifList();
-                }
-            } catch {}
-        });
-    }
     // =================== /HU13 ===================
 
     async function consultarSolicitud(id) {
@@ -810,6 +672,7 @@
 
         // 👉 Cliente y admin ven estos datos:
         currentSolicitudId = Number(j.id ?? id);
+        document.getElementById('solicitudId').textContent = currentSolicitudId;
 
         document.getElementById('c_nombre').textContent = j.clienteNombre || '-';
         document.getElementById('c_tel').textContent    = j.clienteTelefono || '-';
@@ -844,9 +707,6 @@
 
         card.classList.remove('d-none');
         card.scrollIntoView({behavior:'smooth', block:'start'});
-
-        // 🔔 Notificaciones HU13: solo para admin
-        suscribirNotificaciones(j.clienteEmail || '');
 
         if (j.presupuestoId) {
             await cargarPagoInfo(j.presupuestoId, j);       // cliente + admin
@@ -1175,7 +1035,7 @@
 
     if (idInput.value) consultarSolicitud(idInput.value);
 </script>
-
+<script src="/js/main.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
