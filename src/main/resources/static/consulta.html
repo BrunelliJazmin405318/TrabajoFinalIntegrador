@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Consulta de Estado | Rectificadora</title>
+    <link rel="stylesheet" href="./css/styles.css">
     <link
             href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
             rel="stylesheet"
@@ -11,15 +12,18 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
 
     <style>
-        :root {
-            --recti-red: #e53935;
-            --recti-red-dark: #c62828;
-            --recti-black: #111111;
-            --recti-gray-light: #f5f5f5;
-            --recti-gray-mid: #dcdcdc;
-            --recti-white: #ffffff;
+        html, body {
+            height: 100%;
         }
 
+        body {
+            display: flex;
+            flex-direction: column;
+        }
+
+        main.page-wrap {
+            flex: 1 0 auto;
+        }
         body {
             margin: 0;
             font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -29,127 +33,11 @@
             background-size: 260px 260px;
         }
 
-        /* ===== NAVBAR (mismo que el home) ===== */
-
-        .main-header {
-            background: var(--recti-white);
-            border-bottom: none;
-            box-shadow: 0 1px 0 rgba(0,0,0,0.05);
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-        }
-
-        .main-header-inner {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0.6rem 1.5rem;
-            gap: 24px;
-        }
-
-        .nav-logo {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: .08em;
-            color: var(--recti-black);
-        }
-
-        .nav-logo-mark {
-            width: 28px;
-            height: 28px;
-            border-radius: 6px;
-            background: var(--recti-red);
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: .9rem;
-        }
-
-        .nav-toggle {
-            display: none;
-            border: none;
-            background: transparent;
-            font-size: 1.4rem;
-            cursor: pointer;
-        }
-
-        .nav-main {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-        }
-
-        .nav-list {
-            display: flex;
-            list-style: none;
-            gap: 18px;
-            margin: 0;
-            padding: 0;
-        }
-
-        .nav-link {
-            color: #444;
-            font-size: .92rem;
-            font-weight: 500;
-            text-decoration: none;
-        }
-
-        .nav-link:hover {
-            color: var(--recti-red-dark);
-        }
-
-        .btn-login {
-            border: 1px solid var(--recti-red);
-            color: var(--recti-red);
-            padding: .35rem 1rem;
-            border-radius: 999px;
-            font-size: .9rem;
-            font-weight: 600;
-        }
-
-        .btn-login:hover {
-            background: var(--recti-red);
-            color: white;
-        }
-
-        @media (max-width: 992px) {
-            .nav-toggle {
-                display: block;
-            }
-            .nav-main {
-                position: fixed;
-                inset: 60px 0 auto 0;
-                background: white;
-                flex-direction: column;
-                max-height: 0;
-                overflow: hidden;
-                transition: max-height .25s ease;
-                padding: 0 1rem;
-                box-shadow: 0 8px 25px rgba(0,0,0,.15);
-            }
-            .nav-main.nav-open {
-                max-height: 70vh;
-            }
-            .nav-list {
-                flex-direction: column;
-                width: 100%;
-                gap: 10px;
-                padding: 1rem 0;
-            }
-            .btn-login { margin-bottom: 1rem; }
-        }
-
         /* ==== PAGE WRAP ==== */
         .page-wrap {
             max-width: 900px;
             margin: 0 auto;
-            padding: 80px 16px 96px; /* arriba / costados / abajo */
-            min-height: calc(100vh - 64px - 260px);
+            padding: 80px 16px 32px;
             display: flex;
             flex-direction: column;
         }
@@ -258,162 +146,6 @@
             font-size: .9rem;
         }
 
-        /* ===== FOOTER ===== */
-
-        .site-footer {
-            background: #111;
-            color: #ccc;
-            padding: 40px 0 24px;
-            font-size: .85rem;
-        }
-
-        .footer-container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 16px;
-        }
-
-        .footer-bottom {
-            border-top: 1px solid rgba(255,255,255,.1);
-            padding-top: 16px;
-            display: flex;
-            justify-content: space-between;
-            flex-wrap: wrap;
-        }
-        .page-wrap {
-            max-width: 900px;
-            margin: 60px auto 70px;
-            padding: 0 16px;
-        }
-        a { color: inherit; text-decoration: none; }
-
-        html, body {
-            height: 100%;
-        }
-
-        body {
-            display: flex;
-            flex-direction: column;
-        }
-
-        main.page-wrap {
-            flex: 1 0 auto;
-        }
-        .nav-link.active {
-            color: var(--recti-red-dark);
-            font-weight: 600;
-        }
-        /* ===== FOOTER (mismo que Home) ===== */
-
-        .site-footer {
-            background: #111;
-            color: #ccc;
-            padding: 40px 0 24px;
-            font-size: .9rem;
-        }
-
-        .footer-container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 16px;
-        }
-
-        /* TOP */
-        .footer-top {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: space-between;
-            gap: 40px;
-            padding-bottom: 32px;
-        }
-
-        /* LOGO */
-        .footer-brand {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .footer-logo-mark {
-            width: 40px;
-            height: 40px;
-            border-radius: 8px;
-            background: var(--recti-red);
-            color: white;
-            font-weight: 800;
-            font-size: 1.2rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .footer-logo-text {
-            font-size: 1.1rem;
-            font-weight: 700;
-            letter-spacing: .08em;
-            text-transform: uppercase;
-        }
-
-        /* LINKS */
-        .footer-links {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 40px;
-        }
-
-        .footer-column h4 {
-            font-size: .85rem;
-            color: #eee;
-            text-transform: uppercase;
-            letter-spacing: .08em;
-            margin-bottom: 10px;
-        }
-
-        .footer-column a {
-            display: block;
-            color: #bbb;
-            font-size: .85rem;
-            margin-bottom: 6px;
-            text-decoration: none;
-        }
-
-        .footer-column a:hover {
-            color: var(--recti-red);
-        }
-
-        /* BOTTOM STRIP */
-        .footer-bottom {
-            border-top: 1px solid rgba(255,255,255,0.1);
-            padding-top: 16px;
-            margin-top: 16px;
-            display: flex;
-            justify-content: space-between;
-            flex-wrap: wrap;
-            font-size: .8rem;
-            color: #888;
-        }
-
-        @media (max-width: 768px) {
-            .footer-top {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 24px;
-            }
-
-            .footer-links {
-                flex-direction: column;
-                gap: 24px;
-            }
-
-            .footer-column {
-                width: 100%;
-            }
-        }
-        .nav-link.is-active {
-            color: var(--recti-red-dark);
-            font-weight: 600;
-        }
-
         /* ===== ESTILOS TABLA HISTORIAL (agregados) ===== */
         #wrapTabla.card {
             border-radius: 22px;
@@ -434,17 +166,6 @@
             font-size: .9rem;
             vertical-align: middle;
         }
-
-        .row-active {
-            background-color: #ffebee !important;
-            font-weight: 600;
-        }
-
-        .row-closed {
-            background-color: #fafafa !important;
-            color: #555;
-            font-style: italic;
-        }
     </style>
 
 </head>
@@ -458,13 +179,16 @@
             <span>RECTIFICACIONES CORNEJO</span>
         </a>
 
-        <button class="nav-toggle"><i class="bi bi-list"></i></button>
+        <button class="nav-toggle" type="button" aria-label="Abrir menú" aria-expanded="false">
+            <i class="bi bi-list"></i>
+        </button>
 
         <nav id="mainNav" class="nav-main">
             <ul class="nav-list">
-                <li><a href="/consulta.html" class="nav-link active">Estado del motor</a></li>
-                <!-- Historial sacado del menú público -->
-                <li><a href="/estado-solicitud.html" class="nav-link">Solicitud</a></li>
+                <li><a href="/consulta.html" class="nav-link is-active">Consulta</a></li>
+                <li><a href="/estado-solicitud.html" class="nav-link">Estado solicitud</a></li>
+                <li><a href="/presupuesto.html" class="nav-link">Presupuesto</a></li>
+                <li><a href="/faq.html" class="nav-link">Preguntas frecuentes</a></li>
             </ul>
             <a href="/login.html" class="btn-login">Login taller</a>
         </nav>
@@ -569,35 +293,36 @@
                 <div class="footer-column">
                     <h4>Soluciones</h4>
                     <a href="/consulta.html">Estado del motor</a>
-                    <!-- Historial sacado acá también -->
                     <a href="/estado-solicitud.html">Estado de solicitud</a>
+                    <a href="/presupuesto.html">Pedir cotización</a>
                 </div>
 
                 <div class="footer-column">
                     <h4>Nosotros</h4>
-                    <a href="/index.html#nosotros">Quiénes somos</a>
-                    <a href="/index.html#por-que">Por qué nos eligen</a>
+                    <a href="/home.html#nosotros">Quiénes somos</a>
+                    <a href="/home.html#por-que">Por qué nos eligen</a>
                 </div>
 
                 <div class="footer-column">
                     <h4>Contacto</h4>
                     <a href="/presupuesto.html">Pedir cotización</a>
-                    <a href="/index.html#contacto">Trabajá con nosotros</a>
+                    <a href="/home.html#contacto">Trabajá con nosotros</a>
                 </div>
 
                 <div class="footer-column">
-                    <h4>Seguimientos</h4>
-                    <a href="/consulta.html">Estado del motor</a>
-                    <!-- Historial removido -->
-                    <a href="/estado-solicitud.html">Solicitud</a>
+                    <h4>Ayuda</h4>
+                    <a href="/faq.html">Preguntas frecuentes</a>
+                    <a href="/terminos.html">Términos y condiciones</a>
                 </div>
             </div>
         </div>
 
         <div class="footer-bottom">
-            <span>© 2025 Rectificaciones Cornejo. Todos los derechos reservados.
-  •
-Aviso legal</span>
+            <span>
+                © 2025 Rectificaciones Cornejo. Todos los derechos reservados.
+                • <a href="/terminos.html">Términos y Condiciones</a>
+                · <a href="/faq.html">Preguntas Frecuentes</a>
+            </span>
             <span>2025</span>
         </div>
 
@@ -605,24 +330,6 @@ Aviso legal</span>
 </footer>
 
 <script>
-    // Navbar público (Consulta / Historial / Solicitud)
-    const navToggle = document.querySelector('.nav-toggle');
-    const mainNav   = document.getElementById('mainNav');
-
-    if (navToggle && mainNav) {
-        navToggle.addEventListener('click', () => {
-            const isOpen = mainNav.classList.toggle('nav-open');
-            navToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-        });
-
-        mainNav.addEventListener('click', (e) => {
-            if (e.target.classList.contains('nav-link')) {
-                mainNav.classList.remove('nav-open');
-                navToggle.setAttribute('aria-expanded', 'false');
-            }
-        });
-    }
-
     const fmtDate = (s) => s ? new Date(s).toLocaleString() : "-";
     function paintStatus(el, estado) {
         el.classList.remove('ok','warn','stop');
@@ -772,6 +479,6 @@ Aviso legal</span>
         </div>
     </div>
 </div>
-
+<script src="/js/main.js"></script>
 </body>
 </html>

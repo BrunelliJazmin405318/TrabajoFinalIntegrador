@@ -4,242 +4,10 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Rectifica | Logística general</title>
-
+    <link rel="stylesheet" href="./css/styles.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
 
     <style>
-        :root {
-            --recti-red: #e53935;
-            --recti-red-dark: #c62828;
-            --recti-black: #111111;
-            --recti-gray-light: #f5f5f5;
-            --recti-gray-mid: #dcdcdc;
-            --recti-white: #ffffff;
-        }
-
-        * { box-sizing: border-box; }
-
-        body {
-            margin: 0;
-            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-            color: var(--recti-black);
-            background: #f3f3f3;
-        }
-
-        a { color: inherit; text-decoration: none; }
-
-        /* ============= NAVBAR ============= */
-
-        .main-header {
-            background: var(--recti-white);
-            border-bottom: none;
-            box-shadow: 0 1px 0 rgba(0,0,0,0.03);
-            position: sticky;
-            top: 0;
-            z-index: 1050;
-        }
-
-        .main-header-inner {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 24px;
-            padding: 0.6rem 1.5rem;
-        }
-
-        .nav-logo {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            font-weight: 800;
-            letter-spacing: .08em;
-            font-size: 1rem;
-            text-transform: uppercase;
-            color: var(--recti-black);
-        }
-
-        .nav-logo-mark {
-            width: 28px;
-            height: 28px;
-            border-radius: 6px;
-            background: var(--recti-red);
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--recti-white);
-            font-size: .9rem;
-        }
-
-        .nav-main {
-            display: flex;
-            align-items: center;
-            gap: 24px;
-        }
-
-        .nav-list {
-            display: flex;
-            align-items: center;
-            gap: 18px;
-            list-style: none;
-            margin: 0;
-            padding: 0;
-        }
-
-        .nav-item { position: relative; }
-
-        .nav-link,
-        .nav-link-toggle {
-            border: none;
-            background: transparent;
-            padding: .25rem 0;
-            font-size: .92rem;
-            font-weight: 500;
-            color: #444;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-        }
-
-        .nav-link-toggle i { font-size: .75rem; }
-
-        .nav-link:hover,
-        .nav-link-toggle:hover {
-            color: var(--recti-red-dark);
-        }
-
-        .btn-login {
-            border-radius: 999px;
-            border: 1px solid var(--recti-red);
-            padding: .35rem 1rem;
-            font-size: .9rem;
-            font-weight: 600;
-            color: var(--recti-red);
-            white-space: nowrap;
-            transition: all .15s ease;
-        }
-
-        .btn-login:hover {
-            background: var(--recti-red);
-            color: var(--recti-white);
-        }
-
-        /* Submenú desktop */
-
-        .submenu {
-            position: absolute;
-            top: 100%;
-            left: 0;
-            min-width: 230px;
-            padding: .5rem 0;
-            background: var(--recti-white);
-            border-radius: 10px;
-            box-shadow: 0 14px 30px rgba(0, 0, 0, .12);
-            opacity: 0;
-            pointer-events: none;
-            transform: translateY(8px);
-            transition: all .18s ease-out;
-            z-index: 1060;
-        }
-
-        .nav-item.submenu-open .submenu {
-            opacity: 1;
-            pointer-events: auto;
-            transform: translateY(0);
-        }
-
-        .submenu-group-title {
-            font-size: .75rem;
-            text-transform: uppercase;
-            letter-spacing: .14em;
-            color: #999;
-            padding: .25rem 1rem .1rem;
-        }
-
-        .submenu a {
-            display: block;
-            padding: .35rem 1rem;
-            font-size: .9rem;
-            color: #444;
-            white-space: nowrap;
-        }
-
-        .submenu a:hover {
-            background: var(--recti-gray-light);
-            color: var(--recti-red-dark);
-        }
-
-        .nav-toggle {
-            display: none;
-            border: none;
-            background: transparent;
-            font-size: 1.4rem;
-            cursor: pointer;
-            color: #444;
-        }
-
-        /* ========= RESPONSIVE NAV ========= */
-
-        @media (max-width: 992px) {
-            .main-header-inner { padding-inline: 1rem; }
-
-            .nav-toggle { display: inline-flex; }
-
-            .nav-main {
-                position: fixed;
-                inset: 64px 0 auto 0;
-                background: var(--recti-white);
-                flex-direction: column;
-                align-items: stretch;
-                gap: 0;
-                max-height: 0;
-                overflow: hidden;
-                transition: max-height .25s ease;
-                box-shadow: 0 12px 30px rgba(0, 0, 0, .18);
-            }
-
-            .nav-main.nav-open { max-height: 80vh; }
-
-            .nav-list {
-                flex-direction: column;
-                align-items: stretch;
-                padding: .75rem 1rem;
-                gap: .25rem;
-            }
-
-            .nav-link-toggle,
-            .nav-link {
-                justify-content: space-between;
-                width: 100%;
-                text-align: left;
-            }
-
-            .nav-item {
-                border-bottom: 1px solid #f0f0f0;
-                padding-bottom: .3rem;
-            }
-
-            .submenu {
-                position: static;
-                box-shadow: none;
-                border-radius: 0;
-                transform: none;
-                opacity: 1;
-                pointer-events: auto;
-                padding: .25rem 0 .5rem;
-                display: none;
-                margin-left: .5rem;
-                border-left: 2px solid #eee;
-            }
-
-            .nav-item.submenu-open .submenu { display: block; }
-
-            .btn-login {
-                margin: .4rem 1rem 1rem;
-                align-self: flex-start;
-            }
-        }
-
         /* ============= HERO SLIDER ============= */
 
         main {
@@ -507,108 +275,14 @@
             .home-hero-title { font-size: 1.9rem; }
         }
 
-        /* =============== FOOTER =============== */
 
-        .site-footer {
-            background: #111;
-            color: #ccc;
-            padding: 40px 0 24px;
-            font-size: .9rem;
-        }
-
-        .footer-container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 16px;
-        }
-
-        /* TOP */
-        .footer-top {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: space-between;
-            gap: 40px;
-            padding-bottom: 32px;
-        }
-
-        /* LOGO */
-        .footer-brand {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .footer-logo-mark {
-            width: 40px;
-            height: 40px;
-            border-radius: 8px;
-            background: var(--recti-red);
-            color: white;
-            font-weight: 800;
-            font-size: 1.2rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .footer-logo-text {
-            font-size: 1.1rem;
-            font-weight: 700;
-            letter-spacing: .08em;
-            text-transform: uppercase;
-        }
-
-        /* LINKS */
-        .footer-links {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 40px;
-        }
-
-        .footer-column h4 {
-            font-size: .85rem;
-            color: #eee;
-            text-transform: uppercase;
-            letter-spacing: .08em;
-            margin-bottom: 10px;
-        }
-
-        .footer-column a {
-            display: block;
-            color: #bbb;
-            font-size: .85rem;
-            margin-bottom: 6px;
-            text-decoration: none;
-        }
-
-        .footer-column a:hover {
-            color: var(--recti-red);
-        }
-
-        /* BOTTOM STRIP */
-        .footer-bottom {
-            border-top: 1px solid rgba(255,255,255,0.1);
-            padding-top: 16px;
-            margin-top: 16px;
-            display: flex;
-            justify-content: space-between;
-            flex-wrap: wrap;
-            font-size: .8rem;
-            color: #888;
-        }
-
-        @media (max-width: 768px) {
-            .footer-links {
-                flex-direction: column;
-            }
-        }
     </style>
 </head>
 <body>
 
 <header class="main-header">
     <div class="main-header-inner">
-        <a href="/index.html" class="nav-logo">
+        <a href="/home.html" class="nav-logo">
             <span class="nav-logo-mark">R</span>
             <span>RECTIFICACIONES CORNEJO</span>
         </a>
@@ -626,9 +300,8 @@
                         <i class="bi bi-chevron-down"></i>
                     </button>
                     <div class="submenu">
-                        <div class="submenu-group-title">Informacion extendida</div>
-                        <a href="/consulta.html">Estado mi de motor</a>
-<!--                        <a href="/historial.html">Historial de mi motor</a>-->
+                        <div class="submenu-group-title">Información extendida</div>
+                        <a href="/consulta.html">Estado de mi motor</a>
                         <a href="/estado-solicitud.html">Estado de mi solicitud</a>
                     </div>
                 </li>
@@ -700,14 +373,14 @@
             </p>
 
             <div class="home-hero-actions">
-                <button class="btn-primary-recti" onclick="location.href='/presupuesto.html'">
+                <a class="btn-primary-recti" href="/presupuesto.html">
                     Pedir cotización
                     <i class="bi bi-arrow-right-short"></i>
-                </button>
-                <button class="btn-ghost-recti" onclick="location.href='/consulta.html'">
+                </a>
+                <a class="btn-ghost-recti" href="/consulta.html">
                     Seguir mi motor
                     <i class="bi bi-search"></i>
-                </button>
+                </a>
             </div>
         </div>
     </section>
@@ -839,28 +512,21 @@
             <div class="footer-links">
                 <div class="footer-column">
                     <h4>Soluciones</h4>
-                    <a href="#servicios">Rectificación integral</a>
-                    <a href="#servicios">Tapa de cilindros</a>
-                    <a href="#servicios">Banco de pruebas</a>
+                    <a href="/consulta.html">Estado del motor</a>
+                    <a href="/estado-solicitud.html">Estado de solicitud</a>
+                    <a href="/presupuesto.html">Pedir cotización</a>
                 </div>
 
                 <div class="footer-column">
                     <h4>Nosotros</h4>
-                    <a href="#nosotros">Quiénes somos</a>
-                    <a href="#por-que">Por qué nos eligen</a>
+                    <a href="/home.html#nosotros">Quiénes somos</a>
+                    <a href="/home.html#por-que">Por qué nos eligen</a>
                 </div>
 
                 <div class="footer-column">
                     <h4>Contacto</h4>
                     <a href="/presupuesto.html">Pedir cotización</a>
-                    <a href="#contacto">Trabajá con nosotros</a>
-                </div>
-
-                <div class="footer-column">
-                    <h4>Seguimientos</h4>
-                    <a href="/consulta.html">Estado del motor</a>
-<!--                    <a href="/historial.html">Historial del motor</a>-->
-                    <a href="/estado-solicitud.html">Estado de solicitud</a>
+                    <a href="/home.html#contacto">Trabajá con nosotros</a>
                 </div>
 
                 <div class="footer-column">
@@ -873,7 +539,7 @@
 
         <div class="footer-bottom">
             <span>
-                © 2025 Rectificadora Cornejo. Todos los derechos reservados.
+                © 2025 Rectificaciones Cornejo. Todos los derechos reservados.
                 • <a href="/terminos.html">Términos y Condiciones</a>
                 · <a href="/faq.html">Preguntas Frecuentes</a>
             </span>
@@ -882,38 +548,7 @@
 
     </div>
 </footer>
-
 <script>
-    // ====== NAVBAR JS ======
-    const navToggle = document.querySelector('.nav-toggle');
-    const mainNav   = document.getElementById('mainNav');
-
-    if (navToggle && mainNav) {
-        navToggle.addEventListener('click', () => {
-            const open = mainNav.classList.toggle('nav-open');
-            navToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
-        });
-    }
-
-    const submenuParents = document.querySelectorAll('.nav-item.has-submenu');
-
-    submenuParents.forEach(item => {
-        const btn = item.querySelector('.nav-link-toggle');
-        if (!btn) return;
-
-        btn.addEventListener('click', (e) => {
-            e.preventDefault();
-            const isOpen = item.classList.contains('submenu-open');
-            submenuParents.forEach(i => i.classList.remove('submenu-open'));
-            if (!isOpen) item.classList.add('submenu-open');
-        });
-    });
-
-    document.addEventListener('click', (e) => {
-        const insideNav = e.target.closest('.main-header');
-        if (!insideNav) submenuParents.forEach(i => i.classList.remove('submenu-open'));
-    });
-
     // ====== HERO SLIDER SIMPLE ======
     const slides = Array.from(document.querySelectorAll('.home-hero-slide'));
     let currentSlide = 0;
@@ -954,5 +589,6 @@
     });
 </script>
 
+<script src="/js/main.js"></script>
 </body>
 </html>
