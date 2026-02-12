@@ -99,6 +99,21 @@
             padding: 0;
             width: 100%;
         }
+        .topbar-search-block {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 6px 14px;
+            border-radius: 999px;
+            border: 1px solid rgba(0,0,0,0.08);
+            background: rgba(0,0,0,0.02);
+            transition: all 0.2s ease;
+        }
+
+        .topbar-search-block:hover {
+            border-color: var(--recti-red);
+            background: rgba(229,57,53,0.05);
+        }
 
         /* Bloque con la imagen de fondo: FULL ancho */
         .hero-inner {
@@ -302,7 +317,7 @@
                     class="topbar-search-input"
                     type="text"
                     name="nro"
-                    placeholder="N° de orden (ej: OT-0001)" />
+                    placeholder=" (ej: OT-0001) " />
             <button class="topbar-search-btn" type="submit" aria-label="Buscar">
                 <i class="bi bi-search"></i>
             </button>
