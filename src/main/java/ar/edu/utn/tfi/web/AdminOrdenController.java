@@ -5,10 +5,7 @@ import ar.edu.utn.tfi.domain.SolicitudPresupuesto;
 import ar.edu.utn.tfi.repository.OrdenTrabajoRepository;
 import ar.edu.utn.tfi.repository.PresupuestoRepository;
 import ar.edu.utn.tfi.repository.SolicitudPresupuestoRepository;
-import ar.edu.utn.tfi.service.CrearOrdenService;
-import ar.edu.utn.tfi.service.OrderAdvanceService;
-import ar.edu.utn.tfi.service.OrderIrreparableService;
-import ar.edu.utn.tfi.service.OrderDelayService;
+import ar.edu.utn.tfi.service.*;
 import ar.edu.utn.tfi.service.CrearOrdenService.CreateOTReq;
 import ar.edu.utn.tfi.service.CrearOrdenService.CreateOTResp;
 import jakarta.persistence.EntityNotFoundException;
@@ -17,6 +14,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
+import ar.edu.utn.tfi.service.OrderQueryService;
+import ar.edu.utn.tfi.web.dto.OrderStageDTO;
+import ar.edu.utn.tfi.web.dto.PublicOrderDetailsDTO;
+import java.util.List;
 
 import java.util.Map;
 
@@ -31,6 +32,9 @@ public class AdminOrdenController {
     private final OrderIrreparableService irreparableService;
     private final OrderDelayService delayService;
     private final CrearOrdenService service;
+    private final PresupuestoService presupuestoService;
+    private final NotificationService notificationService;
+    private final OrderQueryService orderQueryService;
 
     public AdminOrdenController(OrdenTrabajoRepository ordenRepo,
                                 OrderAdvanceService advanceService,
@@ -38,7 +42,10 @@ public class AdminOrdenController {
                                 OrderDelayService delayService,
                                 CrearOrdenService service,
                                 PresupuestoRepository presupuestoRepo,
-                                SolicitudPresupuestoRepository solicitudRepo) {
+                                SolicitudPresupuestoRepository solicitudRepo,
+                                PresupuestoService presupuestoService,
+                                NotificationService notificationService,
+                                OrderQueryService orderQueryService) {
         this.ordenRepo = ordenRepo;
         this.advanceService = advanceService;
         this.irreparableService = irreparableService;
@@ -46,6 +53,9 @@ public class AdminOrdenController {
         this.service = service;
         this.presupuestoRepo = presupuestoRepo;
         this.solicitudRepo = solicitudRepo;
+        this.presupuestoService = presupuestoService;
+        this.notificationService = notificationService;
+        this.orderQueryService = orderQueryService;
     }
 
     // ---------- Avanzar etapa por NRO ----------
@@ -157,9 +167,37 @@ public class AdminOrdenController {
         p.setOtNroOrden(out.nroOrden());
         presupuestoRepo.save(p);
 
+// ✅ regenerar PIN para acceder a consulta por OT
+        if (p.getSolicitudId() != null) {
+            SolicitudPresupuesto solicitud = solicitudRepo.findById(p.getSolicitudId())
+                    .orElseThrow(() -> new EntityNotFoundException("Solicitud no encontrada: " + p.getSolicitudId()));
+
+            String pinPlano = presupuestoService.regenerarPinSolicitud(solicitud.getId(), 20);
+
+            notificationService.notificarOtCreada(
+                    solicitud.getClienteTelefono(),
+                    solicitud.getId(),
+                    out.nroOrden(),
+                    pinPlano,
+                    20
+            );
+        }
+
         return out;
     }
+    // ---------- Ver estado por NRO ----------
+    @GetMapping("/{nro}/estado")
+    public ResponseEntity<?> verEstado(@PathVariable String nro) {
+        PublicOrderDetailsDTO dto = orderQueryService.getPublicDetailsByNro(nro);
+        return ResponseEntity.ok(dto);
+    }
 
+    // ---------- Ver historial por NRO ----------
+    @GetMapping("/{nro}/historial")
+    public ResponseEntity<?> verHistorial(@PathVariable String nro) {
+        List<OrderStageDTO> historial = orderQueryService.getHistorialByNro(nro);
+        return ResponseEntity.ok(historial);
+    }
     // ---------- Helpers ----------
     private static String safe(String s){ return s == null ? null : s.trim(); }
     private static boolean isEmpty(String s){ return s == null || s.isBlank(); }

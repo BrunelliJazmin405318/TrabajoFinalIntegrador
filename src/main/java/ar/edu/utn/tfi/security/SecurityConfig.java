@@ -2,6 +2,7 @@ package ar.edu.utn.tfi.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -12,25 +13,45 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.config.http.SessionCreationPolicy;
 
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
 
     @Bean
-    SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    PublicJwtFilter publicJwtFilter(JwtService jwtService) {
+        return new PublicJwtFilter(jwtService);
+    }
+
+    // 1) ADMIN: con Basic
+    @Bean
+    @Order(1)
+    SecurityFilterChain adminChain(HttpSecurity http) throws Exception {
+        http
+                .securityMatcher("/admin/**")
+                .csrf(csrf -> csrf.disable())
+                .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(auth -> auth.anyRequest().hasRole("ADMIN"))
+                .httpBasic(Customizer.withDefaults());
+        return http.build();
+    }
+
+    // 2) PUBLIC + STATIC: sin Basic (para que NO salga el popup)
+    @Bean
+    @Order(2)
+    SecurityFilterChain appChain(HttpSecurity http, PublicJwtFilter publicJwtFilter) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
+                .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-
-                        // Archivos estáticos y páginas públicas
                         .requestMatchers(
                                 "/", "/index.html",
                                 "/login.html",
                                 "/consulta.html",
                                 "/home.html",
-                                "/index.html",
                                 "/historial.html",
                                 "/presupuesto.html",
                                 "/estado-solicitud.html",
@@ -41,23 +62,21 @@ public class SecurityConfig {
                                 "/swagger-ui.html", "/swagger-ui/**",
                                 "/v3/api-docs/**",
                                 "/favicon.ico",
-                                "/api/notificaciones/**",
                                 "/css/**", "/js/**", "/img/**"
                         ).permitAll()
 
-                        // ✅ APIs públicas (Checkout API cliente)
-                        .requestMatchers("/public/**").permitAll()
-
-                        // ✅ Webhook Mercado Pago
+                        .requestMatchers("/public/auth/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/public/presupuestos/solicitud").permitAll()
                         .requestMatchers("/pagos/webhook-mp/**").permitAll()
 
-                        // Zona admin (APIs)
-                        .requestMatchers("/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/public/**").hasAnyRole("PUBLIC", "ADMIN")
+                        .anyRequest().permitAll()
+                );
 
-                        // Resto autenticado
-                        .anyRequest().authenticated()
-                )
-                .httpBasic(Customizer.withDefaults());
+        http.addFilterBefore(publicJwtFilter, UsernamePasswordAuthenticationFilter.class);
+
+        // 👇 clave: NO basic acá
+        // http.httpBasic(...)  <-- NO
 
         return http.build();
     }

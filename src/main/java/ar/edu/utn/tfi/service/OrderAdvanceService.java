@@ -83,8 +83,7 @@ public class OrderAdvanceService {
             auditoria.registrarCambio(orden.getId(), "garantia_hasta", null,
                     orden.getGarantiaHasta().toString(), usuario);
 
-            System.out.println("🧾 Garantía registrada: desde " + orden.getGarantiaDesde() +
-                    " hasta " + orden.getGarantiaHasta());
+
         }
 
         // 7) Insertar nueva fila en historial (apertura de la nueva etapa)

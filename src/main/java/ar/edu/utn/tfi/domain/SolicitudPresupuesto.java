@@ -50,9 +50,23 @@ public class SolicitudPresupuesto {
     @Column(name = "tipo_consulta", length = 20)
     private String tipoConsulta;   // COTIZACION | DIAGNOSTICO
 
+    @Column(name = "pin_hash", length = 100)
+    private String pinHash;
+
+    @Column(name = "pin_expira_en")
+    private LocalDateTime pinExpiraEn;
+
+    @Column(name = "pin_intentos", nullable = false)
+    private Integer pinIntentos = 0;
+
+    @Column(name = "pin_bloqueado_hasta")
+
+    private LocalDateTime pinBloqueadoHasta;
+
     @PrePersist
     void pre() {
         if (creadaEn == null) creadaEn = LocalDateTime.now();
         if (estado == null) estado = "PENDIENTE";
+        if (pinIntentos == null) pinIntentos = 0;
     }
 }

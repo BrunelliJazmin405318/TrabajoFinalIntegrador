@@ -334,6 +334,42 @@
                 max-width: 100%;
             }
         }
+        .otp-wrap {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 10px;
+        }
+
+        .otp-digit {
+            width: 46px;
+            height: 54px;
+            border: 1px solid #ddd;
+            border-radius: 12px;
+            text-align: center;
+            font-size: 1.4rem;
+            font-weight: 700;
+            outline: none;
+            transition: border-color .2s ease, box-shadow .2s ease;
+            background: #fff;
+        }
+
+        .otp-digit:focus {
+            border-color: var(--recti-red);
+            box-shadow: 0 0 0 3px rgba(229,57,53,0.12);
+        }
+
+        @media (max-width: 576px) {
+            .otp-wrap {
+                gap: 8px;
+            }
+
+            .otp-digit {
+                width: 40px;
+                height: 50px;
+                font-size: 1.2rem;
+            }
+        }
     </style>
 </head>
 <body>
@@ -596,7 +632,46 @@
 
     </div>
 </footer>
+<div class="modal fade" id="pinModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
 
+            <div class="modal-header">
+                <h5 class="modal-title">Validar acceso</h5>
+            </div>
+
+            <div class="modal-body">
+                <p class="small text-muted mb-2">
+                    Ingresá el PIN de 6 dígitos que te enviamos por WhatsApp.
+                </p>
+
+                <div class="otp-wrap" id="otpWrap">
+                    <input type="text" class="otp-digit" maxlength="1" inputmode="numeric">
+                    <input type="text" class="otp-digit" maxlength="1" inputmode="numeric">
+                    <input type="text" class="otp-digit" maxlength="1" inputmode="numeric">
+                    <input type="text" class="otp-digit" maxlength="1" inputmode="numeric">
+                    <input type="text" class="otp-digit" maxlength="1" inputmode="numeric">
+                    <input type="text" class="otp-digit" maxlength="1" inputmode="numeric">
+                </div>
+
+                <div id="pinModalError" class="text-danger small mt-3 d-none"></div>
+            </div>
+
+            <div class="modal-footer d-flex justify-content-between">
+                <button type="button" class="btn btn-outline-secondary" id="btnReenviarPin">
+                    Reenviar código
+                </button>
+
+                <button type="button" class="btn btn-primary" id="btnConfirmPin">
+                    Continuar
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="/js/main.js"></script>
 <script>
 
     // ===== Manejo logout + módulo de auth =====
@@ -620,6 +695,76 @@
     })();
 </script>
 <script>
+    function getOtpDigits() {
+        return Array.from(document.querySelectorAll("#otpWrap .otp-digit"));
+    }
+
+    function getOtpValue() {
+        return getOtpDigits().map(i => i.value).join("");
+    }
+
+    function clearOtp() {
+        getOtpDigits().forEach(i => i.value = "");
+        const err = document.getElementById("pinModalError");
+        if (err) {
+            err.textContent = "";
+            err.classList.add("d-none");
+        }
+    }
+
+    function focusFirstOtp() {
+        const first = getOtpDigits()[0];
+        if (first) first.focus();
+    }
+
+    function initOtpInputs() {
+        const inputs = getOtpDigits();
+
+        inputs.forEach((input, index) => {
+            input.addEventListener("input", () => {
+                input.value = (input.value || "").replace(/\D/g, "").slice(0, 1);
+
+                if (input.value && index < inputs.length - 1) {
+                    inputs[index + 1].focus();
+                }
+            });
+
+            input.addEventListener("keydown", (e) => {
+                if (e.key === "Backspace" && !input.value && index > 0) {
+                    inputs[index - 1].focus();
+                }
+
+                if (e.key === "ArrowLeft" && index > 0) {
+                    inputs[index - 1].focus();
+                }
+
+                if (e.key === "ArrowRight" && index < inputs.length - 1) {
+                    inputs[index + 1].focus();
+                }
+
+                if (e.key === "Enter") {
+                    e.preventDefault();
+                    document.getElementById("btnConfirmPin")?.click();
+                }
+            });
+
+            input.addEventListener("paste", (e) => {
+                e.preventDefault();
+                const pasted = (e.clipboardData.getData("text") || "")
+                    .replace(/\D/g, "")
+                    .slice(0, 6);
+
+                if (!pasted) return;
+
+                pasted.split("").forEach((char, i) => {
+                    if (inputs[i]) inputs[i].value = char;
+                });
+
+                const next = inputs[Math.min(pasted.length, 5)];
+                if (next) next.focus();
+            });
+        });
+    }
     // Tabs de Pago / Repuestos
     document.addEventListener('DOMContentLoaded', () => {
         const tabBtns  = document.querySelectorAll('.result-tab-btn');
@@ -661,68 +806,237 @@
     let currentSolicitudId = null; // Para factura
 
     // =================== /HU13 ===================
+    // ===== Public JWT auth helpers =====
+    function tokenKey(id){
+        return "publicSolicitudToken:" + id;
+    }
 
-    async function consultarSolicitud(id) {
-        const card = document.getElementById('cardResultado');
-        card.classList.add('d-none');
+    function getToken(id){
+        return localStorage.getItem(tokenKey(id));
+    }
 
-        const r = await fetch(`/public/presupuestos/solicitud/${encodeURIComponent(id)}`);
-        const j = await r.json().catch(()=> ({}));
-        if (!r.ok) { alert(j.message || 'No se encontró la solicitud'); return; }
+    function setToken(id, token){
+        localStorage.setItem(tokenKey(id), token);
+    }
 
-        // 👉 Cliente y admin ven estos datos:
+    function clearToken(id){
+        localStorage.removeItem(tokenKey(id));
+    }
+
+    function authHeaders(solicitudId, extra = {}) {
+        const t = getToken(solicitudId);
+        return t ? { ...extra, Authorization: "Bearer " + t } : extra;
+    }
+
+    async function loginSolicitudJWT(solicitudId, pin) {
+        const r = await fetch(`/public/auth/solicitud/${encodeURIComponent(solicitudId)}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ pin })
+        });
+
+        const j = await r.json().catch(() => ({}));
+        if (!r.ok) {
+            // devuelvo code + message para manejar UX
+            const code = j?.error || `HTTP_${r.status}`;
+            const msg  = j?.message || "No se pudo validar el PIN.";
+            const err = new Error(msg);
+            err.code = code;
+            throw err;
+        }
+        if (!j?.accessToken) throw new Error("No vino accessToken.");
+        setToken(solicitudId, j.accessToken);
+        return j.accessToken;
+    }
+
+    function pedirPinEnModal(solicitudId, mensaje = "") {
+        return new Promise((resolve) => {
+            const modalEl = document.getElementById("pinModal");
+            const modal = new bootstrap.Modal(modalEl);
+            const err = document.getElementById("pinModalError");
+            const btn = document.getElementById("btnConfirmPin");
+            const btnReenviar = document.getElementById("btnReenviarPin");
+
+            clearOtp();
+
+            if (mensaje) {
+                err.textContent = mensaje;
+                err.classList.remove("d-none");
+            }
+
+            btn.onclick = () => {
+                const otp = getOtpValue();
+
+                if (otp.length !== 6) {
+                    err.textContent = "Ingresá los 6 dígitos del PIN.";
+                    err.classList.remove("d-none");
+                    return;
+                }
+
+                modal.hide();
+                resolve(otp);
+            };
+
+            if (btnReenviar) {
+                btnReenviar.onclick = async () => {
+                    try {
+                        btnReenviar.disabled = true;
+                        await reenviarPinSolicitud(solicitudId);
+                        err.textContent = "Te reenviamos un nuevo código por WhatsApp.";
+                        err.classList.remove("d-none");
+                        clearOtp();
+                        setTimeout(() => focusFirstOtp(), 150);
+                    } catch (e) {
+                        err.textContent = e.message || "No se pudo reenviar el código.";
+                        err.classList.remove("d-none");
+                    } finally {
+                        btnReenviar.disabled = false;
+                    }
+                };
+            }
+
+            modal.show();
+            setTimeout(() => focusFirstOtp(), 250);
+        });
+    }
+    async function reenviarPinSolicitud(solicitudId) {
+        const resp = await fetch(`/public/auth/solicitud/${encodeURIComponent(solicitudId)}/reenviar-pin`, {
+            method: "POST"
+        });
+
+        const data = await resp.json().catch(() => ({}));
+
+        if (!resp.ok) {
+            throw new Error(data?.message || "No se pudo reenviar el PIN.");
+        }
+
+        return data;
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+        initOtpInputs();
+
+        const tabBtns = document.querySelectorAll(".result-tab-btn");
+        const panels = document.querySelectorAll(".result-tab-panel");
+
+        tabBtns.forEach(btn => {
+            btn.addEventListener("click", () => {
+                const target = btn.dataset.tabTarget;
+
+                tabBtns.forEach(b => b.classList.remove("is-active"));
+                panels.forEach(p => p.classList.remove("is-active"));
+
+                btn.classList.add("is-active");
+                document.getElementById("tab-" + target)?.classList.add("is-active");
+            });
+        });
+    });
+
+    async function consultarSolicitud(id, pinManual = null) {
+        const card = document.getElementById("cardResultado");
+        card.classList.add("d-none");
+
+        currentSolicitudId = Number(id);
+
+        let pin = pinManual || null;
+
+        // 1) si no hay token ni pin -> pedir pin
+        if (!getToken(id) && !pin) {
+            pin = await pedirPinEnModal(id);
+        }
+
+        // 2) login por pin si no hay token
+        if (!getToken(id)) {
+            try {
+                await loginSolicitudJWT(id, pin);
+            } catch (e) {
+                const mensaje =
+                    e.code === "PIN_EXPIRADO"
+                        ? "Tu PIN expiró. Pedí uno nuevo."
+                        : e.code === "PIN_BLOQUEADO"
+                            ? "PIN bloqueado por muchos intentos. Esperá y probá de nuevo."
+                            : (e.message || "PIN inválido.");
+
+                pin = await pedirPinEnModal(id, mensaje);
+                return consultarSolicitud(id, pin);
+            }
+        }
+
+        // 3) GET con Bearer
+        let r = await fetch(`/public/presupuestos/solicitud/${encodeURIComponent(id)}`, {
+            headers: authHeaders(id)
+        });
+
+        // 4) si token venció o no corresponde -> limpiar y pedir pin de nuevo
+        if (r.status === 401 || r.status === 403) {
+            clearToken(id);
+            pin = await pedirPinEnModal(id, "Volvé a ingresar tu PIN para continuar.");
+            return consultarSolicitud(id, pin);
+        }
+
+        const j = await r.json().catch(() => ({}));
+
+        if (!r.ok) {
+            if (r.status === 404) {
+                alert("No se encontró la solicitud.");
+            } else {
+                alert(j?.message || `Error consultando (HTTP ${r.status})`);
+            }
+            return;
+        }
+
         currentSolicitudId = Number(j.id ?? id);
-        document.getElementById('solicitudId').textContent = currentSolicitudId;
+        document.getElementById("solicitudId").textContent = currentSolicitudId;
 
-        document.getElementById('c_nombre').textContent = j.clienteNombre || '-';
-        document.getElementById('c_tel').textContent    = j.clienteTelefono || '-';
-        document.getElementById('c_mail').textContent   = j.clienteEmail || '-';
-        document.getElementById('u_desc').textContent   = [j.tipoUnidad, j.marca, j.modelo].filter(Boolean).join(' ') || '-';
-        document.getElementById('u_motor').textContent  = j.nroMotor || '-';
-        document.getElementById('desc').textContent     = j.descripcion || '-';
-        document.getElementById('creada').textContent   = fmt(j.creadaEn);
-        document.getElementById('dec_usuario').textContent = j.decisionUsuario || '-';
-        document.getElementById('dec_fecha').textContent   = fmt(j.decisionFecha);
-        document.getElementById('dec_motivo').textContent  = j.decisionMotivo || '-';
-        paintStatus(document.getElementById('chipEstado'), j.estado);
+        window.history.replaceState({}, document.title, "/estado-solicitud.html?id=" + id);
 
-        // ===== Mensaje UX con N° de OT (cliente lo sigue viendo) =====
-        const otBox = document.getElementById('otInfoBox');
+        document.getElementById("c_nombre").textContent = j.clienteNombre || "-";
+        document.getElementById("c_tel").textContent = j.clienteTelefono || "-";
+        document.getElementById("c_mail").textContent = j.clienteEmail || "-";
+        document.getElementById("u_desc").textContent = [j.tipoUnidad, j.marca, j.modelo].filter(Boolean).join(" ") || "-";
+        document.getElementById("u_motor").textContent = j.nroMotor || "-";
+        document.getElementById("desc").textContent = j.descripcion || "-";
+        document.getElementById("creada").textContent = fmt(j.creadaEn);
+        document.getElementById("dec_usuario").textContent = j.decisionUsuario || "-";
+        document.getElementById("dec_fecha").textContent = fmt(j.decisionFecha);
+        document.getElementById("dec_motivo").textContent = j.decisionMotivo || "-";
+        paintStatus(document.getElementById("chipEstado"), j.estado);
+
+        const otBox = document.getElementById("otInfoBox");
         if (otBox) {
             if (j.otNroOrden) {
                 otBox.innerHTML = `
-                <strong>Tu número de orden es ${j.otNroOrden}.</strong><br>
-                Podés seguir el avance en la página de
-                <a href="/consulta.html?nro=${encodeURIComponent(j.otNroOrden)}" class="fw-bold">
-                    Consulta de estado
-                </a>.
-            `;
-                otBox.classList.remove('d-none');
+                    <strong>Tu número de orden es ${j.otNroOrden}.</strong><br>
+                    Podés seguir el avance en la página de
+                    <a href="/consulta.html?nro=${encodeURIComponent(j.otNroOrden)}" class="fw-bold">
+                        Consulta de estado
+                    </a>.
+                `;
+                otBox.classList.remove("d-none");
             } else {
-                otBox.classList.add('d-none');
-                otBox.innerHTML = '';
+                otBox.classList.add("d-none");
+                otBox.innerHTML = "";
             }
         }
-        // ===== FIN BLOQUE UX =====
 
-        card.classList.remove('d-none');
-        card.scrollIntoView({behavior:'smooth', block:'start'});
+        card.classList.remove("d-none");
+        card.scrollIntoView({ behavior: "smooth", block: "start" });
 
         if (j.presupuestoId) {
-            await cargarPagoInfo(j.presupuestoId, j);       // cliente + admin
-            await cargarRepuestosCliente(j.presupuestoId, j); // 👈 solo mostrará algo si está logueado
+            await cargarPagoInfo(j.presupuestoId, j);
+            await cargarRepuestosCliente(j.presupuestoId, j);
         } else {
-            document.getElementById('pagoBox').classList.add('d-none');
-            const infoMsg = document.getElementById('pagoInfoNoDisponible');
-            infoMsg.textContent = "Todavía no hay un presupuesto asociado a esta solicitud.";
-            infoMsg.classList.remove('d-none');
+            document.getElementById("pagoBox")?.classList.add("d-none");
 
-            const repBox = document.getElementById('repuestosBox');
-            const repBody = document.getElementById('repBody');
-            if (repBox && repBody) {
-                repBox.classList.add('d-none');
-                repBody.innerHTML = "";
+            const infoMsg = document.getElementById("pagoInfoNoDisponible");
+            if (infoMsg) {
+                infoMsg.textContent = "Todavía no hay un presupuesto asociado a esta solicitud.";
+                infoMsg.classList.remove("d-none");
             }
+
+            document.getElementById("repuestosBox")?.classList.add("d-none");
+            const repBody = document.getElementById("repBody");
+            if (repBody) repBody.innerHTML = "";
         }
     }
 
@@ -753,7 +1067,10 @@
         pagoError.textContent = '';
         document.getElementById('mp-card-container').innerHTML = '';
 
-        const r = await fetch(`/public/pagos/api/info-sena/${encodeURIComponent(presupuestoId)}`);
+        const r = await fetch(
+            `/public/pagos/api/info-sena/${encodeURIComponent(presupuestoId)}`,
+            { headers: authHeaders(currentSolicitudId) }
+        );
         const info = await r.json().catch(()=> ({}));
         if (!r.ok) {
             infoMsg.textContent = info?.message || 'No se pudo obtener la información de pago.';
@@ -787,7 +1104,7 @@
             btnFactura.onclick = async () => {
                 try {
                     const url = `/public/facturas/pdf/by-solicitud/${encodeURIComponent(currentSolicitudId)}`;
-                    const r = await fetch(url);
+                    const r = await fetch(url, { headers: authHeaders(currentSolicitudId) });
                     if (!r.ok) {
                         const txt = await r.text();
                         alert('No se pudo descargar la factura: ' + (txt || `HTTP ${r.status}`));
@@ -921,7 +1238,10 @@
 
         if (currentBrick) { try { await currentBrick.unmount(); } catch (_) {} }
 
-        const rInfo = await fetch(`/public/pagos/api/info-sena/${encodeURIComponent(presupuestoIdForPay)}`);
+        const rInfo = await fetch(
+            `/public/pagos/api/info-sena/${encodeURIComponent(presupuestoIdForPay)}`,
+            { headers: authHeaders(currentSolicitudId) }
+        );
         const info  = await rInfo.json().catch(()=> ({}));
         if (!rInfo.ok) {
             pagoError.textContent = info?.message || 'No se pudo obtener información actualizada del pago.';
@@ -976,7 +1296,7 @@
                     try {
                         const res = await fetch(`/public/pagos/api/cobrar-sena/${encodeURIComponent(presupuestoIdForPay)}`, {
                             method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
+                            headers: authHeaders(currentSolicitudId, { 'Content-Type': 'application/json' }),
                             body: JSON.stringify(payload)
                         });
 
@@ -1019,8 +1339,14 @@
     }
 
     const q = new URLSearchParams(location.search);
+
+    const idFromUrl = q.get('id');
     const idInput = document.getElementById('id');
-    if (q.get('id')) idInput.value = q.get('id');
+
+    if (idFromUrl) {
+        idInput.value = idFromUrl;
+        consultarSolicitud(idFromUrl);
+    }
 
     document.getElementById('frm').addEventListener('submit', (e)=>{
         e.preventDefault();
@@ -1033,9 +1359,9 @@
         await montarBrickYPagar();
     });
 
-    if (idInput.value) consultarSolicitud(idInput.value);
+
 </script>
+
 <script src="/js/main.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

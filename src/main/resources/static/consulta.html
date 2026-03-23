@@ -5,10 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Consulta de Estado | Rectificadora</title>
     <link rel="stylesheet" href="./css/styles.css">
-    <link
-            href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
-            rel="stylesheet"
-    >
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
 
     <style>
@@ -166,6 +163,75 @@
             font-size: .9rem;
             vertical-align: middle;
         }
+        /* ===== Puntito estado activo ===== */
+        #tablaHistorial tbody tr.row-active td:first-child {
+            position: relative;
+            padding-left: 28px;
+        }
+
+        /* círculo base */
+        #tablaHistorial tbody tr.row-active td:first-child::before {
+            content: "";
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--recti-red);
+            box-shadow: 0 0 0 0 rgba(229, 57, 53, 0.7);
+            animation: pulseRecti 1.8s infinite;
+        }
+
+        /* animación pulse suave */
+        @keyframes pulseRecti {
+            0% {
+                box-shadow: 0 0 0 0 rgba(229, 57, 53, 0.6);
+            }
+            70% {
+                box-shadow: 0 0 0 10px rgba(229, 57, 53, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(229, 57, 53, 0);
+            }
+        }
+        .otp-wrap {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 10px;
+        }
+
+        .otp-digit {
+            width: 46px;
+            height: 54px;
+            border: 1px solid #ddd;
+            border-radius: 12px;
+            text-align: center;
+            font-size: 1.4rem;
+            font-weight: 700;
+            outline: none;
+            transition: border-color .2s ease, box-shadow .2s ease;
+            background: #fff;
+        }
+
+        .otp-digit:focus {
+            border-color: var(--recti-red);
+            box-shadow: 0 0 0 3px rgba(229,57,53,0.12);
+        }
+
+        @media (max-width: 576px) {
+            .otp-wrap {
+                gap: 8px;
+            }
+
+            .otp-digit {
+                width: 40px;
+                height: 50px;
+                font-size: 1.2rem;
+            }
+        }
     </style>
 
 </head>
@@ -203,11 +269,13 @@
     </div>
 
     <form id="consultaForm" class="mb-4">
-        <div class="row g-3 justify-content-center">
-            <div class="col-lg-7 col-md-8 col-12">
+        <div class="row g-3 justify-content-center align-items-end">
+
+            <div class="col-lg-6 col-md-7 col-12">
+                <label class="form-label mb-1">N° de orden</label>
                 <input type="text" id="nroOrden"
                        class="form-control"
-                       placeholder="Ingresá N° de orden (ej: OT-0001)"
+                       placeholder="OT-0001"
                        required>
             </div>
 
@@ -328,146 +396,364 @@
 
     </div>
 </footer>
+<div class="modal fade" id="pinModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
 
-<script>
-    const fmtDate = (s) => s ? new Date(s).toLocaleString() : "-";
-    function paintStatus(el, estado) {
-        el.classList.remove('ok','warn','stop');
-        const label = el.querySelector('.label');
-        const normalized = (estado || '').toUpperCase();
+            <div class="modal-header">
+                <h5 class="modal-title">Validar acceso</h5>
+            </div>
 
-        if (normalized.includes('LISTO') || normalized.includes('RETIRAR')) {
-            el.classList.add('ok');
-        } else if (normalized.includes('ESPERA') || normalized.includes('DEMORA')) {
-            el.classList.add('warn');
-        } else if (normalized.includes('IRREPARABLE')) {
-            el.classList.add('stop');
-        }
-        label.textContent = estado || '-';
-    }
+            <div class="modal-body">
+                <p class="small text-muted mb-2">
+                    Ingresá el PIN de 6 dígitos que te enviamos por WhatsApp.
+                </p>
 
-    // 👉 NUEVO: cargar historial y pintar tabla
-    async function cargarHistorial(nro) {
-        const rHist = await fetch(`/public/ordenes/${encodeURIComponent(nro)}/historial`);
-        if (!rHist.ok) {
-            console.warn("No se pudo cargar historial para", nro);
-            return;
-        }
-        const historial = await rHist.json();
+                <div class="otp-wrap" id="otpWrap">
+                    <input type="text" class="otp-digit" maxlength="1" inputmode="numeric">
+                    <input type="text" class="otp-digit" maxlength="1" inputmode="numeric">
+                    <input type="text" class="otp-digit" maxlength="1" inputmode="numeric">
+                    <input type="text" class="otp-digit" maxlength="1" inputmode="numeric">
+                    <input type="text" class="otp-digit" maxlength="1" inputmode="numeric">
+                    <input type="text" class="otp-digit" maxlength="1" inputmode="numeric">
+                </div>
 
-        const tbody = document.querySelector("#tablaHistorial tbody");
-        tbody.innerHTML = "";
-        historial.forEach(h => {
-            const isActive = !h.fechaFin;
-            const rowClass = isActive ? 'row-active' : 'row-closed';
-            tbody.insertAdjacentHTML('beforeend', `
-                <tr class="${rowClass}">
-                  <td><strong>${h.etapaCodigo}</strong></td>
-                  <td>${fmtDate(h.fechaInicio)}</td>
-                  <td>${fmtDate(h.fechaFin)}</td>
-                  <td>${h.observacion || "-"}</td>
-                </tr>
-            `);
-        });
+                <div id="pinModalError" class="text-danger small mt-3 d-none"></div>
+            </div>
 
-        document.getElementById("wrapTabla").classList.remove("d-none");
-    }
+            <div class="modal-footer d-flex justify-content-between">
+                <button type="button" class="btn btn-outline-secondary" id="btnReenviarPin">
+                    Reenviar código
+                </button>
 
-    document.getElementById("consultaForm").addEventListener("submit", async (e) => {
-        e.preventDefault();
-        const nro = document.getElementById("nroOrden").value.trim();
-        if (!nro) return;
+                <button type="button" class="btn btn-primary" id="btnConfirmPin">
+                    Continuar
+                </button>
+            </div>
 
-        const resp = await fetch(`/public/ordenes/${encodeURIComponent(nro)}/estado`);
-        if (!resp.ok) {
-            alert("Orden no encontrada");
-            return;
-        }
-        const data = await resp.json();
-
-        const estado = data.estado ? data.estado : data;
-        document.getElementById("orden").textContent        = estado.nroOrden ?? "-";
-        document.getElementById("creadaEn").textContent     = fmtDate(estado.creadaEn);
-        document.getElementById("garantiaDesde").textContent= estado.garantiaDesde ?? "-";
-        document.getElementById("garantiaHasta").textContent= estado.garantiaHasta ?? "-";
-
-        paintStatus(document.getElementById('chipEstado'), estado.estadoActual || data.estado || '-');
-
-        document.getElementById("resultado").classList.remove("d-none");
-        document.getElementById("resultado").scrollIntoView({behavior:'smooth', block:'start'});
-
-        // 👉 después de pintar estado, cargamos historial
-        await cargarHistorial(nro);
-
-        // y conectamos SSE como ya lo tenías
-        startSSE(nro);
-    });
-</script>
-
+        </div>
+    </div>
+</div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
-<!-- SSE + Toast helpers (igual que antes) -->
 <script>
-    function __showToast(msg) {
-        const el = document.getElementById('toastNotif');
-        const body = document.getElementById('toastBody');
-        if (!el || !body) return;
-        body.textContent = msg || 'Notificación';
-        const t = new bootstrap.Toast(el, { delay: 6000 });
-        t.show();
+    const PUBLIC_TOKEN_KEY = "publicOrdenToken";
+
+    function getToken() {
+        return localStorage.getItem(PUBLIC_TOKEN_KEY);
     }
 
-    let __es = null;
-    function startSSE(nroOrden) {
-        try { if (__es) { __es.close(); __es = null; } } catch {}
-        if (!nroOrden) return;
-        window.NRO_ORDEN = nroOrden;
+    function setToken(token) {
+        localStorage.setItem(PUBLIC_TOKEN_KEY, token);
+    }
 
-        const url = `/public/notificaciones/stream?nroOrden=${encodeURIComponent(nroOrden)}`;
-        __es = new EventSource(url);
+    function clearToken() {
+        localStorage.removeItem(PUBLIC_TOKEN_KEY);
+    }
 
-        __es.addEventListener('connected', () => { /* ok */ });
+    function authHeaders(extra = {}) {
+        const t = getToken();
+        return t ? { ...extra, Authorization: "Bearer " + t } : extra;
+    }
 
-        __es.addEventListener('listo-retirar', (ev) => {
-            let data = {};
-            try { data = JSON.parse(ev.data); } catch { data = { mensaje: ev.data }; }
-            __showToast(data.mensaje || 'Tu orden está lista para retirar.');
-            if (data.id) {
-                fetch(`/public/notificaciones/${encodeURIComponent(data.id)}/leida`, { method: 'POST' }).catch(()=>{});
+    function getOtpDigits() {
+        return Array.from(document.querySelectorAll("#otpWrap .otp-digit"));
+    }
+
+    function getOtpValue() {
+        return getOtpDigits().map(i => i.value).join("");
+    }
+
+    function clearOtp() {
+        getOtpDigits().forEach(i => i.value = "");
+        const err = document.getElementById("pinModalError");
+        if (err) {
+            err.textContent = "";
+            err.classList.add("d-none");
+        }
+    }
+
+    function focusFirstOtp() {
+        const first = getOtpDigits()[0];
+        if (first) first.focus();
+    }
+
+    function initOtpInputs() {
+        const inputs = getOtpDigits();
+
+        inputs.forEach((input, index) => {
+            input.addEventListener("input", () => {
+                input.value = (input.value || "").replace(/\D/g, "").slice(0, 1);
+
+                if (input.value && index < inputs.length - 1) {
+                    inputs[index + 1].focus();
+                }
+            });
+
+            input.addEventListener("keydown", (e) => {
+                if (e.key === "Backspace" && !input.value && index > 0) {
+                    inputs[index - 1].focus();
+                }
+
+                if (e.key === "ArrowLeft" && index > 0) {
+                    inputs[index - 1].focus();
+                }
+
+                if (e.key === "ArrowRight" && index < inputs.length - 1) {
+                    inputs[index + 1].focus();
+                }
+
+                if (e.key === "Enter") {
+                    e.preventDefault();
+                    document.getElementById("btnConfirmPin")?.click();
+                }
+            });
+
+            input.addEventListener("paste", (e) => {
+                e.preventDefault();
+
+                const pasted = (e.clipboardData.getData("text") || "")
+                    .replace(/\D/g, "")
+                    .slice(0, 6);
+
+                if (!pasted) return;
+
+                pasted.split("").forEach((char, i) => {
+                    if (inputs[i]) inputs[i].value = char;
+                });
+
+                const nextIndex = Math.min(pasted.length, 5);
+                inputs[nextIndex]?.focus();
+            });
+        });
+    }
+
+    function pedirPinEnModal(nroOrden, mensaje = "") {
+        return new Promise((resolve) => {
+            const modalEl = document.getElementById("pinModal");
+            const modal = new bootstrap.Modal(modalEl);
+            const err = document.getElementById("pinModalError");
+            const btn = document.getElementById("btnConfirmPin");
+            const btnReenviar = document.getElementById("btnReenviarPin");
+
+            clearOtp();
+
+            if (mensaje) {
+                err.textContent = mensaje;
+                err.classList.remove("d-none");
             }
+
+            btn.onclick = () => {
+                const otp = getOtpValue();
+
+                if (otp.length !== 6) {
+                    err.textContent = "Ingresá los 6 dígitos del PIN.";
+                    err.classList.remove("d-none");
+                    return;
+                }
+
+                modal.hide();
+                resolve(otp);
+            };
+
+            if (btnReenviar) {
+                btnReenviar.onclick = async () => {
+                    try {
+                        btnReenviar.disabled = true;
+                        await reenviarPinOrden(nroOrden);
+                        clearOtp();
+                        err.textContent = "Te reenviamos un nuevo código por WhatsApp.";
+                        err.classList.remove("d-none");
+                        setTimeout(() => focusFirstOtp(), 150);
+                    } catch (e) {
+                        err.textContent = e.message || "No se pudo reenviar el código.";
+                        err.classList.remove("d-none");
+                    } finally {
+                        btnReenviar.disabled = false;
+                    }
+                };
+            }
+
+            modal.show();
+            setTimeout(() => focusFirstOtp(), 250);
+        });
+    }
+    async function loginPorOrden(nroOrden, pin) {
+        const resp = await fetch(`/public/auth/orden/${encodeURIComponent(nroOrden)}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ pin })
         });
 
-        __es.onerror = () => { /* opcional: reconectar manual */ };
+        const data = await resp.json().catch(() => ({}));
 
-        fetch(`/public/notificaciones/ultimas?nroOrden=${encodeURIComponent(nroOrden)}`)
-            .then(r => r.json())
-            .then(items => {
-                if (Array.isArray(items) && items.length) {
-                    const n = items[0];
-                    if (n && n.tipo === 'LISTO_RETIRAR' && n.estado !== 'LEIDA') {
-                        __showToast(n.mensaje);
-                        fetch(`/public/notificaciones/${encodeURIComponent(n.id)}/leida`, { method: 'POST' })
-                            .catch(()=>{});
-                    }
-                }
-            })
-            .catch(()=>{});
+        if (!resp.ok) {
+            const err = new Error(data?.message || data?.error || "PIN inválido.");
+            err.status = resp.status;
+            err.code = data?.error || null;
+            throw err;
+        }
+
+        if (!data.accessToken) {
+            throw new Error("No se recibió accessToken.");
+        }
+
+        setToken(data.accessToken);
+        return data.accessToken;
+    }
+    async function reenviarPinOrden(nroOrden) {
+        const resp = await fetch(`/public/auth/orden/${encodeURIComponent(nroOrden)}/reenviar-pin`, {
+            method: "POST"
+        });
+
+        const data = await resp.json().catch(() => ({}));
+
+        if (!resp.ok) {
+            throw new Error(data?.message || "No se pudo reenviar el PIN.");
+        }
+
+        return data;
     }
 
-    // Si viene ?nro=OT-0001 en la URL, rellenamos el input y disparamos la consulta
-    (function initFromQuery(){
-        const params = new URLSearchParams(location.search);
-        const nro = params.get('nro');
-        if (!nro) return;
+    const fmtDate = (s) => (s ? new Date(s).toLocaleString() : "-");
 
-        const input = document.getElementById('nroOrden');
-        const form  = document.getElementById('consultaForm');
+    function paintStatus(el, estado) {
+        if (!el) return;
 
-        if (input && form) {
-            input.value = nro;
-            form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+        el.classList.remove("ok", "warn", "stop");
+        const label = el.querySelector(".label");
+        const normalized = (estado || "").toUpperCase();
+
+        if (normalized.includes("LISTO") || normalized.includes("RETIRAR")) {
+            el.classList.add("ok");
+        } else if (normalized.includes("ESPERA") || normalized.includes("DEMORA")) {
+            el.classList.add("warn");
+        } else if (normalized.includes("IRREPARABLE")) {
+            el.classList.add("stop");
         }
-    })();
+
+        if (label) label.textContent = estado || "-";
+    }
+
+    async function cargarHistorial(nro) {
+        const rHist = await fetch(`/public/ordenes/${encodeURIComponent(nro)}/historial`, {
+            headers: authHeaders()
+        });
+
+        if (!rHist.ok) {
+            console.warn("No se pudo cargar historial para", nro, "HTTP", rHist.status);
+            return;
+        }
+
+        const historial = await rHist.json().catch(() => []);
+        const tbody = document.querySelector("#tablaHistorial tbody");
+        if (!tbody) return;
+
+        tbody.innerHTML = "";
+
+        (historial || []).forEach((h) => {
+            const isActive = !h.fechaFin;
+            const rowClass = isActive ? "row-active" : "row-closed";
+
+            tbody.insertAdjacentHTML(
+                "beforeend",
+                `
+                <tr class="${rowClass}">
+                    <td><strong>${h.etapaCodigo ?? "-"}</strong></td>
+                    <td>${fmtDate(h.fechaInicio)}</td>
+                    <td>${fmtDate(h.fechaFin)}</td>
+                    <td>${h.observacion || "-"}</td>
+                </tr>
+                `
+            );
+        });
+
+        document.getElementById("wrapTabla")?.classList.remove("d-none");
+    }
+
+    async function consultarOrden(nro, pinManual = null) {
+        let pin = pinManual;
+
+        let resp = await fetch(`/public/ordenes/${encodeURIComponent(nro)}/estado`, {
+            headers: authHeaders()
+        });
+
+        // Si no hay token válido o no corresponde, pedir/login con PIN
+        if (resp.status === 401 || resp.status === 403) {
+            clearToken();
+
+            if (!pin) {
+                pin = await pedirPinEnModal(nro, "Ingresá el PIN para validar el acceso a esta orden.");
+            }
+
+            try {
+                await loginPorOrden(nro, pin);
+            } catch (e) {
+                const mensaje =
+                    e.code === "PIN_EXPIRADO"
+                        ? "Tu PIN expiró. Pedí uno nuevo."
+                        : e.status === 429 || e.code === "PIN_BLOQUEADO"
+                            ? "PIN bloqueado por demasiados intentos. Probá más tarde."
+                            : e.status === 404
+                                ? "No existe una solicitud asociada a esa orden."
+                                : (e.message || "PIN inválido.");
+
+                pin = await pedirPinEnModal(nro, mensaje);
+                return consultarOrden(nro, pin);
+            }
+
+            resp = await fetch(`/public/ordenes/${encodeURIComponent(nro)}/estado`, {
+                headers: authHeaders()
+            });
+        }
+
+        if (!resp.ok) {
+            if (resp.status === 404) {
+                alert("Orden no encontrada.");
+                return;
+            }
+
+            const txt = await resp.text().catch(() => "");
+            alert(txt || `Error consultando la orden (HTTP ${resp.status}).`);
+            return;
+        }
+
+        const data = await resp.json().catch(() => ({}));
+        const estado = data.estado ? data.estado : data;
+
+        document.getElementById("orden").textContent = estado.nroOrden ?? "-";
+        document.getElementById("creadaEn").textContent = fmtDate(estado.creadaEn);
+        document.getElementById("garantiaDesde").textContent = estado.garantiaDesde ?? "-";
+        document.getElementById("garantiaHasta").textContent = estado.garantiaHasta ?? "-";
+
+        paintStatus(document.getElementById("chipEstado"), estado.estadoActual || data.estado || "-");
+
+        document.getElementById("resultado")?.classList.remove("d-none");
+        document.getElementById("resultado")?.scrollIntoView({ behavior: "smooth", block: "start" });
+
+        await cargarHistorial(nro);
+
+        window.history.replaceState({}, document.title, "/consulta.html?nro=" + encodeURIComponent(nro));
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+        initOtpInputs();
+
+        document.getElementById("consultaForm").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const nro = document.getElementById("nroOrden")?.value.trim();
+            if (!nro) return;
+            await consultarOrden(nro);
+        });
+
+        const params = new URLSearchParams(location.search);
+        const nro = params.get("nro");
+
+        if (nro) {
+            document.getElementById("nroOrden").value = nro;
+            consultarOrden(nro);
+        }
+    });
 </script>
 
 <!-- Toast de SSE -->

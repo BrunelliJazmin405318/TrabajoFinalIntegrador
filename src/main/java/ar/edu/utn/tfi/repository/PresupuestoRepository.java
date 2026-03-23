@@ -17,4 +17,7 @@ public interface PresupuestoRepository extends JpaRepository<Presupuesto, Long> 
     Optional<Presupuesto> findFirstBySolicitudIdOrderByCreadaEnDesc(Long solicitudId);
 
     boolean existsBySolicitudId(Long solicitudId);
+
+
+    Optional<Presupuesto> findByOtNroOrden(String otNroOrden);
 }
