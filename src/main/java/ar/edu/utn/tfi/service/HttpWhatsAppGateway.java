@@ -24,18 +24,33 @@ public class HttpWhatsAppGateway implements WhatsAppGateway {
     @Value("${wa.api.from-number}")
     private String fromNumber;
 
+    // 👇 NUEVO
+    @Value("${spring.profiles.active:dev}")
+    private String activeProfile;
+
     public HttpWhatsAppGateway(WebClient.Builder builder) {
         this.webClient = builder.build();
     }
 
+    // 👇 NUEVO
+    private boolean isDev() {
+        return "dev".equalsIgnoreCase(activeProfile);
+    }
+
     @Override
     public void send(String telefonoDestino, String mensaje) {
+
         if (!enabled) {
-            System.out.println("📲 [WA deshabilitado] -> " + telefonoDestino + " | " + mensaje);
+            if (isDev()) {
+                System.out.println("📲 [WA deshabilitado] -> " + mensaje);
+            }
             return;
         }
+
         if (telefonoDestino == null || telefonoDestino.isBlank()) {
-            System.out.println("📲 [WA] sin teléfono destino. Mensaje: " + mensaje);
+            if (isDev()) {
+                System.out.println("📲 [WA] sin teléfono destino");
+            }
             return;
         }
 
@@ -54,9 +69,14 @@ public class HttpWhatsAppGateway implements WhatsAppGateway {
                     .toBodilessEntity()
                     .block();
 
-            System.out.println("✅ [WA] enviado a " + telefonoDestino + " | " + mensaje);
+            if (isDev()) {
+                System.out.println("✅ [WA] enviado correctamente");
+            }
+
         } catch (Exception e) {
-            System.out.println("❌ [WA] error al enviar a " + telefonoDestino + ": " + e.getMessage());
+            if (isDev()) {
+                System.out.println("❌ [WA] error al enviar: " + e.getMessage());
+            }
         }
     }
 }

@@ -32,7 +32,6 @@ public class AuditoriaService {
         a.setValorNuevo(nuevo);
         a.setUsuario(usuario);
         repo.saveAndFlush(a); // <- flush para forzar escritura inmediata
-        System.out.println("✅ Auditoría INSERTADA para ordenId=" + ordenId + " campo=" + campo);
     }
 
     @Transactional(readOnly = true)

@@ -895,7 +895,9 @@
 
         if (!sid) return;
         try {
-            const r = await fetch(`/public/presupuestos/solicitud/${encodeURIComponent(sid)}`);
+            const r = await fetch(`/admin/presupuestos/solicitudes/${encodeURIComponent(sid)}`, {
+                headers: { ...getAuthHeader() }
+            });
             const j = await r.json().catch(() => ({}));
             if (!r.ok) throw new Error(j.message || `Solicitud ${sid} no encontrada`);
 

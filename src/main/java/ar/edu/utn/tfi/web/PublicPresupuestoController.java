@@ -2,12 +2,15 @@ package ar.edu.utn.tfi.web;
 
 import ar.edu.utn.tfi.domain.Presupuesto;
 import ar.edu.utn.tfi.domain.SolicitudPresupuesto;
+import ar.edu.utn.tfi.repository.PresupuestoRepository;
 import ar.edu.utn.tfi.service.PresupuestoService;
 import ar.edu.utn.tfi.web.dto.SolicitudCreateDTO;
 import ar.edu.utn.tfi.web.dto.SolicitudDTO;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import ar.edu.utn.tfi.security.PinService;
+import ar.edu.utn.tfi.security.PublicAuth;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -19,9 +22,11 @@ import java.util.regex.Pattern;
 public class PublicPresupuestoController {
 
     private final PresupuestoService service;
+    private final PinService pinService;
 
-    public PublicPresupuestoController(PresupuestoService service) {
+    public PublicPresupuestoController(PresupuestoService service, PinService pinService) {
         this.service = service;
+        this.pinService = pinService;
     }
 
     // Regex súper simple para email (demo)
@@ -71,9 +76,8 @@ public class PublicPresupuestoController {
             errors.put("clienteTelefono", "El teléfono no puede superar los 30 caracteres.");
         }
 
-        if (email.isBlank()) {
-            errors.put("clienteEmail", "El email es obligatorio.");
-        } else if (!EMAIL_RE.matcher(email).matches()) {
+        // Email opcional (porque notifican por WhatsApp)
+        if (!email.isBlank() && !EMAIL_RE.matcher(email).matches()) {
             errors.put("clienteEmail", "El email no tiene un formato válido.");
         }
 
@@ -146,25 +150,41 @@ public class PublicPresupuestoController {
                 tipoConsulta  // ⬅️ NUEVO
         );
 
-        var s = service.crearSolicitud(cleanDto);
+        String pin = pinService.generarPin6();
+
+        var s = service.crearSolicitud(cleanDto, pin);
+
         return ResponseEntity.ok(Map.of(
                 "id", s.getId(),
                 "estado", s.getEstado()
         ));
     }
 
-    // Ver solicitud (público) — devuelve también info del presupuesto asociado si existe
     @GetMapping("/solicitud/{id}")
     public ResponseEntity<?> ver(@PathVariable Long id) {
-        SolicitudPresupuesto s = service.getById(id); // lanza EntityNotFound si no existe
 
-        // Intentamos traer el presupuesto más reciente; si hay uno APROBADO, priorizarlo
+        Long sid = PublicAuth.solicitudIdFromTokenOrNull();
+        if (sid == null) {
+            return ResponseEntity.status(401).body(Map.of(
+                    "error", "TOKEN_REQUIRED",
+                    "message", "Falta el token. Iniciá con PIN para obtener accessToken."
+            ));
+        }
+
+        if (!sid.equals(id)) {
+            return ResponseEntity.status(403).body(Map.of(
+                    "error", "FORBIDDEN",
+                    "message", "El token no corresponde a esta solicitud."
+            ));
+        }
+
+        SolicitudPresupuesto s = service.getById(id);
+
         List<Presupuesto> aprobados = service.listar("APROBADO", id);
         Presupuesto p = !aprobados.isEmpty()
                 ? aprobados.get(0)
-                : firstOrNull(service.listar(null, id)); // cualquier estado, el más nuevo
+                : firstOrNull(service.listar(null, id));
 
-        // Armamos respuesta base con datos de la solicitud
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("id", s.getId());
         out.put("clienteNombre", s.getClienteNombre());
@@ -182,7 +202,6 @@ public class PublicPresupuestoController {
         out.put("decisionFecha", s.getDecisionFecha());
         out.put("decisionMotivo", s.getDecisionMotivo());
 
-        // Si hay presupuesto, agregamos info para el botón de pago en estado-solicitud.html
         if (p != null) {
             out.put("presupuestoId", p.getId());
             out.put("presupuestoEstado", p.getEstado());
@@ -192,14 +211,11 @@ public class PublicPresupuestoController {
             out.put("senaPaymentId", p.getSenaPaymentId());
             out.put("senaPaymentStatus", p.getSenaPaymentStatus());
             out.put("senaPaidAt", p.getSenaPaidAt());
-
-            // 🟢 NUEVO: número de OT asociada al presupuesto (para mostrar repuestos)
             out.put("otNroOrden", p.getOtNroOrden());
         }
 
         return ResponseEntity.ok(out);
     }
-
     private static Presupuesto firstOrNull(List<Presupuesto> list) {
         return (list == null || list.isEmpty()) ? null : list.get(0);
     }

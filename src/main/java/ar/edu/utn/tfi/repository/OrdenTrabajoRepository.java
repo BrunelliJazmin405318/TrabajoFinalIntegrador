@@ -6,4 +6,5 @@ import java.util.Optional;
 public interface OrdenTrabajoRepository extends JpaRepository<OrdenTrabajo, Long> {
     Optional<OrdenTrabajo> findByNroOrden(String nroOrden);
     Optional<OrdenTrabajo> findTopByUnidadIdOrderByCreadaEnDesc(Long unidadId);
+    long countByEstadoActual(String estadoActual);
 }

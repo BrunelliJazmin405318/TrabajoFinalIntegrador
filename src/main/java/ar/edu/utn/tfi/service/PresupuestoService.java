@@ -8,15 +8,23 @@ import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ar.edu.utn.tfi.service.NotificationService;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import java.security.SecureRandom;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
 public class PresupuestoService {
+    private static final int MAX_PIN_INTENTOS = 5;
+    private static final int MINUTOS_BLOQUEO_PIN = 15;
+    private static final int LARGO_PIN = 6;
+
     private final SolicitudPresupuestoRepository repo;
     private final PresupuestoRepository repository;
     private final NotificationService notificationService;
+    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+    private final SecureRandom random = new SecureRandom();
 
     public PresupuestoService(SolicitudPresupuestoRepository repo,  PresupuestoRepository repository, NotificationService notificationService) {
         this.repo = repo;
@@ -111,6 +119,41 @@ public class PresupuestoService {
 
         return saved;
     }
+    public void exigirPin(Long solicitudId, String pin) {
+        if (pin == null || pin.isBlank()) throw new IllegalStateException("PIN_REQUERIDO");
+        verificarPinSolicitud(solicitudId, pin.trim());
+    }
+    @Transactional(readOnly = true)
+    public void exigirPinPorOrden(String nroOrden, String pin) {
+        Presupuesto p = repository.findByOtNroOrden(nroOrden)
+                .orElseThrow(() -> new EntityNotFoundException("No existe presupuesto para la orden: " + nroOrden));
+
+        exigirPin(p.getSolicitudId(), pin); // reutiliza tu lógica central
+    }
+    // Público (nuevo) - crea solicitud + guarda pin hash + expira
+    @Transactional
+    public SolicitudPresupuesto crearSolicitud(SolicitudCreateDTO dto, String pinPlano) {
+
+        SolicitudPresupuesto s = crearSolicitud(dto);
+
+        s.setPinHash(passwordEncoder.encode(pinPlano));
+        s.setPinExpiraEn(LocalDateTime.now().plusMinutes(20));
+        s.setPinIntentos(0);
+        s.setPinBloqueadoHasta(null);
+
+        // ✅ Guardamos cambios primero (para tener todo persistido)
+        SolicitudPresupuesto saved = repo.save(s);
+
+        // ✅ Notificación (WhatsApp mock a consola por ahora)
+        notificationService.notificarPinSolicitud(
+                saved.getClienteTelefono(),
+                saved.getId(),
+                pinPlano,
+                20 // minutos
+        );
+
+        return saved;
+    }
 
     public List<Presupuesto> listar(String estado, Long solicitudId) {
         boolean tieneEstado = estado != null && !estado.isBlank();
@@ -125,5 +168,116 @@ public class PresupuestoService {
         } else {
             return repository.findAllByOrderByCreadaEnDesc();
         }
+    }
+    @Transactional
+    public void verificarPinSolicitud(Long solicitudId, String pinPlano) {
+        SolicitudPresupuesto s = getById(solicitudId);
+        LocalDateTime ahora = LocalDateTime.now();
+
+        // 0) Validación básica del PIN
+        if (pinPlano == null || pinPlano.isBlank()) {
+            throw new IllegalStateException("PIN_REQUERIDO");
+        }
+
+        pinPlano = pinPlano.trim();
+
+        if (!pinPlano.matches("\\d{" + LARGO_PIN + "}")) {
+            throw new IllegalStateException("PIN_INVALIDO");
+        }
+
+        // 1) Si estaba bloqueado pero el tiempo ya venció, limpiamos el bloqueo
+        if (s.getPinBloqueadoHasta() != null && !s.getPinBloqueadoHasta().isAfter(ahora)) {
+            s.setPinBloqueadoHasta(null);
+            s.setPinIntentos(0);
+            repo.save(s);
+        }
+
+        // 2) ¿Sigue bloqueado?
+        if (s.getPinBloqueadoHasta() != null && s.getPinBloqueadoHasta().isAfter(ahora)) {
+            throw new IllegalStateException("PIN_BLOQUEADO");
+        }
+
+        // 3) ¿Expiró?
+        if (s.getPinExpiraEn() == null || s.getPinExpiraEn().isBefore(ahora)) {
+            throw new IllegalStateException("PIN_EXPIRADO");
+        }
+
+        // 4) ¿Hash existe?
+        if (s.getPinHash() == null || s.getPinHash().isBlank()) {
+            throw new IllegalStateException("PIN_NO_CONFIGURADO");
+        }
+
+        // 5) Validar pin
+        boolean ok = passwordEncoder.matches(pinPlano, s.getPinHash());
+
+        if (ok) {
+            s.setPinIntentos(0);
+            s.setPinBloqueadoHasta(null);
+            repo.save(s);
+            return;
+        }
+
+        // 6) Sumar intento y eventualmente bloquear
+        int intentos = (s.getPinIntentos() == null) ? 0 : s.getPinIntentos();
+        intentos++;
+        s.setPinIntentos(intentos);
+
+        if (intentos >= MAX_PIN_INTENTOS) {
+            s.setPinBloqueadoHasta(ahora.plusMinutes(MINUTOS_BLOQUEO_PIN));
+        }
+
+        repo.save(s);
+        throw new IllegalStateException("PIN_INVALIDO");
+    }
+    @Transactional(readOnly = true)
+    public Long getSolicitudIdByNroOrden(String nroOrden) {
+        return repository.findByOtNroOrden(nroOrden)
+                .map(Presupuesto::getSolicitudId)
+                .orElseThrow(() -> new EntityNotFoundException("No existe presupuesto/OT para nroOrden: " + nroOrden));
+    }
+    @Transactional
+    public String regenerarPinSolicitud(Long solicitudId, int minutos) {
+        SolicitudPresupuesto s = getById(solicitudId);
+
+        String pinPlano = String.format("%06d", random.nextInt(1_000_000));
+
+        s.setPinHash(passwordEncoder.encode(pinPlano));
+        s.setPinExpiraEn(LocalDateTime.now().plusMinutes(minutos));
+        s.setPinIntentos(0);
+        s.setPinBloqueadoHasta(null);
+
+        repo.save(s);
+
+        return pinPlano;
+    }
+    @Transactional
+    public void reenviarPinSolicitud(Long solicitudId, int minutos) {
+
+        String pinPlano = regenerarPinSolicitud(solicitudId, minutos);
+
+        SolicitudPresupuesto solicitud = getById(solicitudId);
+
+        notificationService.notificarReenvioPinSolicitud(
+                solicitud.getClienteTelefono(),
+                solicitud.getId(),
+                pinPlano,
+                minutos
+        );
+    }
+    @Transactional
+    public void reenviarPinOrden(String nroOrden, int minutos) {
+        Presupuesto p = repository.findByOtNroOrden(nroOrden)
+                .orElseThrow(() -> new EntityNotFoundException("No existe presupuesto para la orden: " + nroOrden));
+
+        SolicitudPresupuesto solicitud = getById(p.getSolicitudId());
+
+        String pinPlano = regenerarPinSolicitud(solicitud.getId(), minutos);
+
+        notificationService.notificarReenvioPinOrden(
+                solicitud.getClienteTelefono(),
+                nroOrden,
+                pinPlano,
+                minutos
+        );
     }
 }

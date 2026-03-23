@@ -11,8 +11,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+
 import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
 import ar.edu.utn.tfi.domain.SolicitudPresupuesto;
 import ar.edu.utn.tfi.domain.Presupuesto;
 import ar.edu.utn.tfi.domain.Cliente;
@@ -29,7 +29,10 @@ public class NotificationService {
     // Registro simple de suscriptores por email
     private final Map<String, SseEmitter> emittersByEmail = new ConcurrentHashMap<>();
 
-    public NotificationService(NotificacionRepository repo, NotificationHub hub, WhatsAppGateway whatsapp, SolicitudPresupuestoRepository solicitudRepo) {
+    public NotificationService(NotificacionRepository repo,
+                               NotificationHub hub,
+                               WhatsAppGateway whatsapp,
+                               SolicitudPresupuestoRepository solicitudRepo) {
         this.repo = repo;
         this.hub = hub;
         this.whatsapp = whatsapp;
@@ -40,7 +43,12 @@ public class NotificationService {
     public void emitirListoRetirar(OrdenTrabajo ot, String destinoClienteOpt) {
         String etapa = "LISTO_RETIRAR";
 
-        var msg = "Tu orden " + ot.getNroOrden() + " está lista para retirar.";
+        String link = "http://localhost:8080/consulta.html?nro=" + ot.getNroOrden();
+
+        String msg =
+                "Tu orden " + ot.getNroOrden() + " está lista para retirar.\n\n" +
+                        "Podés seguir el estado acá:\n" +
+                        link;
 
         // In-App
         var n = new Notificacion();
@@ -61,7 +69,7 @@ public class NotificationService {
                 "{\"id\":" + n.getId() + ",\"tipo\":\"LISTO_RETIRAR\",\"mensaje\":\"" + msg + "\"}"
         );
 
-        // WhatsApp real
+        // WhatsApp
         whatsapp.send(destinoClienteOpt, msg);
 
         // Registramos la notificación de WhatsApp
@@ -77,32 +85,27 @@ public class NotificationService {
         repo.save(w);
     }
 
-    // ───────────── Métodos requeridos por el Controller ─────────────
-
-    /** Devuelve (y registra) un SseEmitter para ese email. */
     public SseEmitter subscribe(String email) {
-        var emitter = new SseEmitter(0L); // sin timeout
+        var emitter = new SseEmitter(0L);
         emittersByEmail.put(email, emitter);
 
         emitter.onCompletion(() -> emittersByEmail.remove(email));
         emitter.onTimeout(() -> emittersByEmail.remove(email));
         emitter.onError((ex) -> emittersByEmail.remove(email));
 
-        // Enviamos un "ping" inicial opcional
         try {
             emitter.send(SseEmitter.event().name("ping").data("subscribed:" + email));
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
 
         return emitter;
     }
 
-    /** Devuelve últimas 20 notificaciones no leídas del usuario. */
     @Transactional(readOnly = true)
     public List<Notificacion> unread(String email) {
         return repo.findTop20ByClienteEmailAndReadAtIsNullOrderByCreatedAtDesc(email);
     }
 
-    /** Marca una notificación como leída (read_at = now). */
     @Transactional
     public void markRead(Long id) {
         repo.findById(id).ifPresent(n -> {
@@ -110,6 +113,7 @@ public class NotificationService {
             repo.save(n);
         });
     }
+
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void notificarDecisionSolicitud(SolicitudPresupuesto s) {
         String tel = s.getClienteTelefono();
@@ -120,11 +124,12 @@ public class NotificationService {
 
         String msg = switch (s.getEstado()) {
             case "APROBADO" -> "Hola " + s.getClienteNombre()
-                    + ", tu solicitud #" + s.getId() + " fue APROBADA. Motivo: " + motivo;
+                    + ". Tu solicitud #" + s.getId() + " fue aprobada. Motivo: " + motivo;
             case "RECHAZADO" -> "Hola " + s.getClienteNombre()
-                    + ", tu solicitud #" + s.getId() + " fue RECHAZADA. Motivo: " + motivo;
+                    + ". Tu solicitud #" + s.getId() + " fue rechazada. Motivo: " + motivo;
             default -> "Hola " + s.getClienteNombre()
-                    + ", tu solicitud #" + s.getId() + " cambió de estado a: " + s.getEstado();
+                    + ". Tu solicitud #" + s.getId() + " cambió de estado a: " + s.getEstado() + ".";
+
         };
 
         whatsapp.send(tel, msg);
@@ -139,6 +144,7 @@ public class NotificationService {
         n.setClienteDestino(tel);
         repo.save(n);
     }
+
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void notificarPresupuestoGenerado(Presupuesto p, SolicitudPresupuesto s) {
         String tel = s.getClienteTelefono();
@@ -181,13 +187,12 @@ public class NotificationService {
                 : cliente.getNombre();
 
         String msg = "Hola " + nombre
-                + ", tu unidad ingresó al taller. Nro de orden: " + ot.getNroOrden()
-                + ". Te avisaremos cuando esté lista para retirar.";
+                + ". Tu unidad ingresó al taller correctamente. "
+                + "Número de orden: " + ot.getNroOrden()
+                + ". Te notificaremos cuando esté lista para retirar.";
 
-        // 👉 Enviar WhatsApp (o mock si está deshabilitado)
         whatsapp.send(tel, msg);
 
-        // 👉 Registrar la notificación en la tabla notification
         var n = new Notificacion();
         n.setOrdenId(ot.getId());
         n.setNroOrden(ot.getNroOrden());
@@ -207,7 +212,6 @@ public class NotificationService {
             return;
         }
 
-        // Tratamos de buscar la solicitud para obtener el teléfono
         SolicitudPresupuesto s = null;
         if (p.getSolicitudId() != null) {
             s = solicitudRepo.findById(p.getSolicitudId()).orElse(null);
@@ -221,7 +225,6 @@ public class NotificationService {
             nombreCliente = s.getClienteNombre();
         }
 
-        // fallback al nombre del presupuesto
         if (nombreCliente == null || nombreCliente.isBlank()) {
             nombreCliente = p.getClienteNombre();
         }
@@ -240,19 +243,18 @@ public class NotificationService {
 
         String msg = switch (p.getEstado()) {
             case "APROBADO" -> "Hola " + nombreCliente
-                    + ", tu presupuesto #" + p.getId() + " fue APROBADO. Total estimado: " + p.getTotal()
+                    + ". Tu presupuesto #" + p.getId() + " fue aprobado. Total estimado: " + p.getTotal()
                     + ". Motivo: " + motivo;
             case "RECHAZADO" -> "Hola " + nombreCliente
-                    + ", tu presupuesto #" + p.getId() + " fue RECHAZADO. Motivo: " + motivo;
+                    + ". Tu presupuesto #" + p.getId() + " fue rechazado. Motivo: " + motivo;
             default -> "Hola " + nombreCliente
-                    + ", tu presupuesto #" + p.getId() + " cambió de estado a: " + p.getEstado()
+                    + ". Tu presupuesto #" + p.getId() + " cambió de estado a: " + p.getEstado()
                     + ". Motivo: " + motivo;
+
         };
 
-        // 👉 Enviar WhatsApp (o mock, según config)
         whatsapp.send(tel, msg);
 
-        // 👉 Registrar notificación en tabla notification
         var n = new Notificacion();
         n.setSolicitudId(p.getSolicitudId());
         n.setCanal("WHATSAPP");
@@ -262,5 +264,63 @@ public class NotificationService {
         n.setEstado("ENVIADA");
         n.setClienteDestino(tel);
         repo.save(n);
+    }
+
+    public void notificarPinSolicitud(String telefono, Long solicitudId, String pin, int minutos) {
+        String link = "http://localhost:8080/estado-solicitud.html?id=" + solicitudId;
+
+        String mensaje =
+                "Hola.\n\n" +
+                        "Recibimos tu solicitud #" + solicitudId + ".\n\n" +
+                        "Código de acceso: " + pin + "\n\n" +
+                        "Podés consultar el estado desde este enlace:\n" +
+                        link + "\n\n" +
+                        "Ingresá el código cuando el sistema te lo solicite.\n\n" +
+                        "El código vence en " + minutos + " minutos.";
+
+        whatsapp.send(telefono, mensaje);
+    }
+
+    public void notificarOtCreada(String telefono, Long solicitudId, String nroOrden, String pin, int minutos) {
+        String link = "http://localhost:8080/consulta.html?nro=" + nroOrden;
+
+        String mensaje =
+                "Hola.\n\n" +
+                        "Tu unidad ingresó al taller y se generó la orden de trabajo " + nroOrden + ".\n\n" +
+                        "Código de acceso: " + pin + "\n\n" +
+                        "Podés seguir el estado desde este enlace:\n" +
+                        link + "\n\n" +
+                        "Ingresá el código cuando el sistema te lo solicite.\n\n" +
+                        "El código vence en " + minutos + " minutos.";
+
+        whatsapp.send(telefono, mensaje);
+    }
+    public void notificarReenvioPinSolicitud(String telefono, Long solicitudId, String pin, int minutos) {
+
+        String link = "http://localhost:8080/estado-solicitud.html?id=" + solicitudId;
+
+        String mensaje =
+                "Hola.\n\n" +
+                        "Te enviamos un nuevo código de acceso para consultar tu solicitud #" + solicitudId + ".\n\n" +
+                        "Nuevo código: " + pin + "\n\n" +
+                        "Ingresá desde este enlace:\n" +
+                        link + "\n\n" +
+                        "El código vence en " + minutos + " minutos.";
+
+        whatsapp.send(telefono, mensaje);
+    }
+    public void notificarReenvioPinOrden(String telefono, String nroOrden, String pin, int minutos) {
+
+        String link = "http://localhost:8080/consulta.html?nro=" + nroOrden;
+
+        String mensaje =
+                "Hola.\n\n" +
+                        "Te enviamos un nuevo código de acceso para consultar la orden " + nroOrden + ".\n\n" +
+                        "Nuevo código: " + pin + "\n\n" +
+                        "Ingresá desde este enlace:\n" +
+                        link + "\n\n" +
+                        "El código vence en " + minutos + " minutos.";
+
+        whatsapp.send(telefono, mensaje);
     }
 }

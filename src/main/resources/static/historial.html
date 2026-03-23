@@ -357,18 +357,36 @@
         if (e === "SEMI_ARMADO") btnDemora.classList.remove("d-none");
     }
 
-    // === Cargar historial + estado ===
+    // helper: header admin
+    async function adminHeaders() {
+        try {
+            const mod = await import("/js/auth.js");
+            return mod.getAuthHeader ? mod.getAuthHeader() : {};
+        } catch {
+            return {};
+        }
+    }
+
     async function cargarHistorial(nro) {
-        const rHist = await fetch(`/public/ordenes/${encodeURIComponent(nro)}/historial`);
+        const headers = await adminHeaders();
+
+        // Si no está logueado como admin, mandalo a login (esta pantalla es interna)
+        if (!headers || Object.keys(headers).length === 0) {
+            alert("Necesitás iniciar sesión para ver el historial interno.");
+            window.location.href = "/login.html";
+            return;
+        }
+
+        const rHist = await fetch(`/admin/ordenes/${encodeURIComponent(nro)}/historial`, { headers });
         if (!rHist.ok) { alert("Orden no encontrada"); return; }
         const historial = await rHist.json();
 
         let estadoActual = '-';
         try {
-            const rEst = await fetch(`/public/ordenes/${encodeURIComponent(nro)}/estado`);
+            const rEst = await fetch(`/admin/ordenes/${encodeURIComponent(nro)}/estado`, { headers });
             if (rEst.ok) {
                 const data = await rEst.json();
-                estadoActual = data.estado ? data.estado.estadoActual : (data.estadoActual || '-');
+                estadoActual = data.estadoActual || data.estado?.estadoActual || '-';
             }
         } catch(_) {}
 

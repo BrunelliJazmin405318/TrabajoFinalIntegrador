@@ -20,16 +20,16 @@ spring:
   jpa:
     hibernate:
       ddl-auto: validate
-    show-sql: true
+    show-sql: false
   flyway:
     enabled: true
     locations: classpath:db/migration
 
   mail:
-    host: localhost         # MailHog
-    port: 1025              # MailHog SMTP
-    username: ""            # sin auth
-    password: ""            # sin auth
+    host: localhost
+    port: 1025
+    username: ""
+    password: ""
     properties:
       mail:
         smtp:
@@ -45,24 +45,20 @@ springdoc:
 server:
   port: 8080
 
-# —— Mercado Pago ——————————————————————————————————————
 mp:
   api:
-    public-key: TEST-57f55bd7-4769-45fe-8268-c776df0b3791
-    access-token: TEST-4873687935529088-103120-fe51dfbb79ff5e60c5cb340551bd4715-806147879
+    public-key: ${MP_PUBLIC_KEY}
+    access-token: ${MP_ACCESS_TOKEN}
   sena-percent: 0.30
 
-# —— Base URL para integraciones (HU11 webhook) —————————
 app:
-  base-url: ${APP_PUBLIC_BASE_URL:https://yaretzi-evangelistic-unsecularly.ngrok-free.dev
-  public-base-url: ${APP_PUBLIC_BASE_URL:https://yaretzi-evangelistic-unsecularly.ngrok-free.dev
+  base-url: ${APP_PUBLIC_BASE_URL}
+  public-base-url: ${APP_PUBLIC_BASE_URL}
 
-#wa:
-#  api:
-#    enabled: true
-#    base-url: https://mi-proveedor-wa.com/api   # o la URL de Twilio/Meta
-#    token: ${WA_API_TOKEN:dummy}
-#    from-number: "+5493510000000"
+  jwt:
+    secret: ${JWT_SECRET}
+    ttl-minutes: 20
+
 wa:
   api:
     enabled: false

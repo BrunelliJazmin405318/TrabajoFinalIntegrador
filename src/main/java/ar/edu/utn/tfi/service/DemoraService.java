@@ -34,15 +34,8 @@ public class DemoraService {
         this.auditoriaRepo = auditoriaRepo;
     }
 
-    /**
-     * Registra una demora sobre la ETAPA ACTIVA (sin crear fila nueva).
-     * - Solo en SEMI_ARMADO.
-     * - Actualiza observación de la fila activa y setea motivo.
-     * - Inserta auditoría directamente (sin pasar por otro servicio).
-     */
     @Transactional
     public void registrarDemoraPorNro(String nroOrden, String codigoMotivo, String observacion, String usuario) {
-        System.out.println("🟡 Iniciando registro de demora para orden " + nroOrden);
 
         OrdenTrabajo orden = ordenRepo.findByNroOrden(nroOrden)
                 .orElseThrow(() -> new EntityNotFoundException("Orden no encontrada: " + nroOrden));
@@ -70,7 +63,7 @@ public class DemoraService {
         activa.setDemoraMotivoId(motivo.getId());
         historialRepo.save(activa);
 
-        System.out.println("✅ Demora aplicada a historial. Grabando auditoría…");
+
 
         // 👇 Auditar acá mismo, directo al repo (saveAndFlush para ver el INSERT al toque)
         AuditoriaCambio a = new AuditoriaCambio();
@@ -82,7 +75,6 @@ public class DemoraService {
         a.setFecha(LocalDateTime.now());
         auditoriaRepo.saveAndFlush(a);
 
-        System.out.println("✅ Auditoría INSERTADA para ordenId=" + orden.getId());
     }
 
     private String buildObservacionConDemora(String anterior, String codigoMotivo, String observacionLibre) {
